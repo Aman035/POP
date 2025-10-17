@@ -1,0 +1,17 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.24"
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 1_000
+# `via_ir` disabled due to stack-too-deep bug in solc 0.8.24 when compiling Market.sol
+via_ir = false
+bytecode_hash = "none"
+cbor_metadata = false
+remappings = ["forge-std/=lib/forge-std/src/"]
+
+[fmt]
+line_length = 100
+tab_width = 4
