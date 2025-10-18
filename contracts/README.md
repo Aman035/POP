@@ -1,6 +1,6 @@
-# Bet on Tweets – Smart Contracts
+# POP – Predict on Posts · Smart Contracts
 
-This package contains the onchain core for Bet on Tweets. It covers market lifecycle management for Twitter/X polls: deploying individual markets, handling liquidity, and distributing payouts once polls resolve.
+This package contains the onchain core for **POP – Predict on Posts**. It covers market lifecycle management for Twitter/X polls: deploying individual markets, handling liquidity, and distributing payouts once polls resolve.
 
 ## Layout
 

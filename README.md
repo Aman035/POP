@@ -1,6 +1,6 @@
 ## 1. Concept
 
-**Bet on Tweets** lets anyone turn a **Twitter/X poll** into an onchain prediction market.
+**POP – Predict on Posts** lets anyone turn a **Twitter/X poll** into an onchain prediction market.
 
 When a creator posts a poll on X — for example:
 
@@ -16,7 +16,7 @@ In short: **Polymarket, but embedded directly in Twitter.**
 
 ## 2. Why It’s Needed
 
-| Pain Point                                                                              | How Bet on Tweets Solves It                                                       |
+| Pain Point                                                                              | How POP Solves It                                                                 |
 | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Prediction markets are siloed off on external platforms like Polymarket, kalshi, myriad | Markets live _inside X itself_, accessible through a browser extension            |
 | Onboarding friction (bridging, swapping, connecting wallets)                            | One-click “Bridge & Execute” via **Avail Nexus** handles everything automatically |
