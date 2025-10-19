@@ -1,0 +1,73 @@
+.pop-button {
+    margin-left: 10px;
+    background: #1d9bf0;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+    height: fit-content;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pop-button:hover {
+    background-color: #1a8cd8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+}
+
+.pop-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(29, 155, 240, 0.2);
+}
+
+/* Ensure the button fits well in Twitter's compose toolbar */
+.pop-button:before {
+    content: "🎯";
+    margin-right: 4px;
+}
+
+/* Market Button for All Posts */
+.market-button {
+    margin-left: 8px;
+    background: linear-gradient(135deg, #1d9bf0, #1a8cd8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+    height: fit-content;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.2);
+}
+
+.market-button:hover {
+    background: linear-gradient(135deg, #1a8cd8, #1681c7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+}
+
+.market-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(29, 155, 240, 0.2);
+}
+
+/* Ensure the button fits well in Twitter's tweet actions layout */
+.market-button:before {
+    content: "📈";
+    margin-right: 4px;
+}

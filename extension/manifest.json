@@ -1,0 +1,42 @@
+{
+    "manifest_version": 3,
+    "name": "Pop Market Extension",
+    "version": "1.0",
+    "description": "Adds a Pop Market button on Twitter compose page to create prediction markets.",
+    "permissions": [
+        "activeTab",
+        "storage",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "http://localhost:3000/*"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.x.com/*",
+                "https://*.twitter.com/*"
+            ],
+            "js": [
+                "content.js",
+                "common.js"
+            ],
+            "css": [
+                "styles.css"
+            ]
+        }
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
+}
