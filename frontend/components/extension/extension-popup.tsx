@@ -27,9 +27,9 @@ export function ExtensionPopup() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <PopLogo className="scale-75" />
-            <div>
-              <h1 className="text-sm font-bold">POP</h1>
-              <p className="text-xs text-muted-foreground">Predict on Posts</p>
+            <div className="flex flex-col">
+              <h1 className="text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent tracking-tight">POP</h1>
+              <p className="text-xs text-muted-foreground font-medium">Predict on Posts</p>
             </div>
           </div>
           <Badge className="gold-gradient text-background text-xs">Connected</Badge>

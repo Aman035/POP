@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 
 export function PopSplash() {
   return (
@@ -11,22 +12,24 @@ export function PopSplash() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {["P", "O", "P"].map((letter, i) => (
-          <motion.span
-            key={i}
-            className="text-6xl font-bold gold-text"
-            animate={{
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              delay: i * 0.2,
-            }}
-          >
-            {letter}
-          </motion.span>
-        ))}
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+          }}
+        >
+          <Image
+            src="/POP-logo.png"
+            alt="POP Logo"
+            width={120}
+            height={120}
+            className="w-30 h-30 object-contain drop-shadow-2xl"
+            priority
+          />
+        </motion.div>
       </motion.div>
     </div>
   )
