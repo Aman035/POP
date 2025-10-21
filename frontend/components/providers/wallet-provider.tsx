@@ -15,13 +15,18 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
+  const [mounted, setMounted] = useState(false);
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 1000 * 60 * 5, // 5 minutes
         retry: (failureCount, error) => {
           // Don't retry on certain errors
-          if (error instanceof Error && error.message.includes('User rejected')) {
+          if (error instanceof Error && (
+            error.message.includes('User rejected') ||
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('Network error')
+          )) {
             return false;
           }
           return failureCount < 3;
@@ -30,8 +35,20 @@ export function WalletProvider({ children }: WalletProviderProps) {
     },
   }));
 
+  useEffect(() => {
+    // Only set mounted to true on client side
+    if (typeof window !== 'undefined') {
+      setMounted(true);
+    }
+  }, []);
+
+  // Prevent hydration mismatch by not rendering wallet providers on server
+  if (!mounted || typeof window === 'undefined' || !config) {
+    return <>{children}</>;
+  }
+
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config!}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitThemeProvider>
           {children}
@@ -63,7 +80,7 @@ function RainbowKitThemeProvider({ children }: { children: React.ReactNode }) {
         appName: process.env.NEXT_PUBLIC_APP_NAME || 'POP',
         learnMoreUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://pop.xyz',
       }}
-      initialChain={config.chains[0]}
+      initialChain={config?.chains[0]}
       showRecentTransactions={true}
     >
       {children}

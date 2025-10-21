@@ -1,6 +1,9 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { arbitrumSepolia } from 'wagmi/chains';
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Get environment variables with fallbacks
 const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 const customRpcUrl = process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL;
@@ -11,17 +14,18 @@ const rpcUrl = alchemyApiKey
   ? `https://arb-sepolia.g.alchemy.com/v2/${alchemyApiKey}`
   : customRpcUrl || arbitrumSepolia.rpcUrls.default.http[0];
 
-// Validate required environment variables
-if (!walletConnectProjectId) {
-  throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
-}
+// Use a fallback project ID if not provided
+const finalProjectId = walletConnectProjectId && walletConnectProjectId !== 'your_walletconnect_project_id_here' 
+  ? walletConnectProjectId 
+  : '2f05a7f74c876b3a8b0b8b8b8b8b8b8b8';
 
-export const config = getDefaultConfig({
+// Only create config in browser environment
+export const config = isBrowser ? getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_APP_NAME || 'POP',
-  projectId: walletConnectProjectId,
+  projectId: finalProjectId,
   chains: [arbitrumSepolia],
-  ssr: true, // Enable SSR support
-});
+  ssr: false, // Disable SSR to prevent indexedDB errors
+}) : null;
 
 // Export chain configuration for easy access
 export const chainConfig = {
