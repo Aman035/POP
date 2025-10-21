@@ -2,21 +2,12 @@
 
 import { PopLogo } from "@/components/branding/pop-logo"
 import { Button } from "@/components/ui/button"
-import { Bell, Settings, Wallet, User } from "lucide-react"
+import { Bell, Settings } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { WalletConnectButton } from "@/components/wallet/wallet-connect-button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function AppHeader() {
-  const [isConnected, setIsConnected] = useState(false)
-
   return (
     <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -38,36 +29,10 @@ export function AppHeader() {
           </Button>
 
           {/* Wallet Connection */}
-          {isConnected ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 bg-transparent">
-                  <Wallet className="w-4 h-4" />
-                  <span className="hidden sm:inline">0x1234...5678</span>
-                  <span className="inline sm:hidden">Wallet</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Balance: 100 PYUSD
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsConnected(false)}>Disconnect</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button onClick={() => setIsConnected(true)} className="gold-gradient text-background font-semibold">
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
-            </Button>
-          )}
+          <WalletConnectButton />
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Settings */}
           <Link href="/app/settings">
