@@ -2,11 +2,10 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
-
 import {MarketFactory} from "../src/MarketFactory.sol";
 import {IERC20} from "../src/interfaces/IERC20.sol";
 
-contract DeployMarketFactory is Script {
+contract DeployArbitrumSepolia is Script {
     function run() external returns (MarketFactory factory) {
         // Load environment variables
         address collateral = vm.envAddress("COLLATERAL");
