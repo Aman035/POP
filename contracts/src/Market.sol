@@ -21,17 +21,32 @@ contract Market is ReentrancyGuard {
         uint64 endTime;
         uint256 identifier;
         string[] options;
+
+        // NEW metadata fields
+        string question;
+        string description;
+        string category;
+        string resolutionSource;
     }
 
     event BetPlaced(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool);
     event BetExited(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool);
     event ProposedResolution(uint8 indexed option, address indexed proposer, string evidenceURI);
-    event MarketResolved(
-        uint8 indexed option,
-        address indexed resolver,
-        uint256 creatorFee
-    );
+    event MarketResolved(uint8 indexed option, address indexed resolver, uint256 creatorFee);
     event PayoutClaimed(address indexed user, uint256 amount);
+
+    // Emitted once, at deployment, so indexers/UIs can read metadata without extra calls.
+    event MarketMetadataSet(
+        uint256 indexed identifier,
+        string question,
+        string description,
+        string category,
+        string resolutionSource,
+        string[] options,
+        uint64 endTime,
+        uint96 creatorFeeBps,
+        address creator
+    );
 
     IERC20 public immutable collateral;
     address public immutable factory;
@@ -41,6 +56,12 @@ contract Market is ReentrancyGuard {
     address public immutable creator;
     uint96 public immutable creatorFeeBps;
     uint64 public immutable endTime;
+
+    // NEW metadata storage
+    string public question;
+    string public description;
+    string public category;
+    string public resolutionSource;
 
     State public state;
     uint8 public proposedOutcome;
@@ -99,12 +120,33 @@ contract Market is ReentrancyGuard {
         identifier = params.identifier;
         factory = msg.sender;
 
+        // Copy options into storage
         for (uint256 i = 0; i < params.options.length; i++) {
             _options.push(params.options[i]);
         }
 
+        // Store metadata
+        question = params.question;
+        description = params.description;
+        category = params.category;
+        resolutionSource = params.resolutionSource;
+
         state = State.Trading;
+
+        emit MarketMetadataSet(
+            params.identifier,
+            params.question,
+            params.description,
+            params.category,
+            params.resolutionSource,
+            params.options,
+            params.endTime,
+            params.creatorFeeBps,
+            params.creator
+        );
     }
+
+    // ----- Views -----
 
     function optionCount() external view returns (uint256) {
         return _options.length;
@@ -122,6 +164,8 @@ contract Market is ReentrancyGuard {
         }
         return optionsCopy;
     }
+
+    // ----- Trading -----
 
     function placeBet(uint8 option, uint256 amount)
         external
@@ -163,6 +207,8 @@ contract Market is ReentrancyGuard {
 
         emit BetExited(msg.sender, option, amount, optionLiquidity[option]);
     }
+
+    // ----- Resolution -----
 
     function proposeResolution(uint8 option, string calldata evidenceURI)
         external
@@ -242,6 +288,8 @@ contract Market is ReentrancyGuard {
 
         emit MarketResolved(outcome, resolvingAddress, creatorFee);
     }
+
+    // ----- Internal token helpers -----
 
     function _safeTransferFrom(address from, uint256 amount) private {
         (bool success, bytes memory data) = address(collateral).call(

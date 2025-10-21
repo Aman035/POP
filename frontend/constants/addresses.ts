@@ -3,8 +3,8 @@
 
 export const CONTRACTS = {
   ARBITRUM_SEPOLIA: {
-    MARKET_FACTORY: "0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa",
-    COLLATERAL_TOKEN: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC
+    MARKET_FACTORY: "0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263", // Will be updated after redeployment
+    COLLATERAL_TOKEN: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d", // Testnet USDC
     RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
     BLOCK_EXPLORER: "https://sepolia.arbiscan.io",
     CHAIN_ID: 421614,

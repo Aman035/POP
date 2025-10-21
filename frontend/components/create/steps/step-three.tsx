@@ -22,33 +22,39 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
         <p className="text-muted-foreground">Set the end date, creator fee, and resolution source</p>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <Label>End Date</Label>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="end-date">End Date</Label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start text-left font-normal mt-2 bg-transparent">
+              <Button 
+                id="end-date"
+                variant="outline" 
+                className="w-full justify-start text-left font-normal bg-background border-border hover:bg-accent hover:text-accent-foreground"
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {marketData.endDate ? format(marketData.endDate, "PPP") : <span>Pick a date</span>}
+                {marketData.endDate ? format(marketData.endDate, "PPP") : <span className="text-muted-foreground">Pick a date</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
                 selected={marketData.endDate}
                 onSelect={(date) => updateMarketData({ endDate: date })}
                 initialFocus
                 disabled={(date) => date < new Date()}
+                className="rounded-md border"
               />
             </PopoverContent>
           </Popover>
-          <p className="text-xs text-muted-foreground mt-1">When betting will close for this market</p>
+          <p className="text-xs text-muted-foreground">When betting will close for this market</p>
         </div>
 
-        <div>
-          <Label>Creator Fee: {marketData.creatorFee}%</Label>
-          <div className="mt-4">
+        <div className="space-y-2">
+          <Label htmlFor="creator-fee">Creator Fee: {marketData.creatorFee}%</Label>
+          <div className="px-1">
             <Slider
+              id="creator-fee"
               value={[marketData.creatorFee]}
               onValueChange={(value) => updateMarketData({ creatorFee: value[0] })}
               min={1}
@@ -57,41 +63,41 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
               className="w-full"
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground">
             You'll earn {marketData.creatorFee}% of every bet placed in this market
           </p>
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="resolution-source">Resolution Source</Label>
           <Textarea
             id="resolution-source"
             placeholder="e.g., CoinMarketCap, Coinbase, Binance official price data"
             value={marketData.resolutionSource}
             onChange={(e) => updateMarketData({ resolutionSource: e.target.value })}
-            className="mt-2"
+            className="min-h-[80px] resize-none"
           />
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground">
             What source will you use to determine the outcome? Be specific.
           </p>
         </div>
       </div>
 
       {/* Fee Estimate */}
-      <div className="p-4 rounded-lg bg-background border border-border">
-        <h4 className="font-semibold mb-2">Estimated Earnings</h4>
-        <div className="space-y-1 text-sm">
-          <div className="flex items-center justify-between">
+      <div className="p-4 rounded-lg bg-muted/50 border border-border">
+        <h4 className="font-semibold mb-3 text-foreground">Estimated Earnings</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center justify-between py-1">
             <span className="text-muted-foreground">If total pool reaches $1,000</span>
-            <span className="font-medium text-gold-2">${(1000 * marketData.creatorFee) / 100}</span>
+            <span className="font-medium text-gold-2">${(1000 * marketData.creatorFee / 100).toFixed(2)}</span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between py-1">
             <span className="text-muted-foreground">If total pool reaches $5,000</span>
-            <span className="font-medium text-gold-2">${(5000 * marketData.creatorFee) / 100}</span>
+            <span className="font-medium text-gold-2">${(5000 * marketData.creatorFee / 100).toFixed(2)}</span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between py-1">
             <span className="text-muted-foreground">If total pool reaches $10,000</span>
-            <span className="font-medium text-gold-2">${(10000 * marketData.creatorFee) / 100}</span>
+            <span className="font-medium text-gold-2">${(10000 * marketData.creatorFee / 100).toFixed(2)}</span>
           </div>
         </div>
       </div>

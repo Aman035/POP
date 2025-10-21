@@ -24,7 +24,7 @@ RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
 PRIVATE_KEY=your_private_key_here
 
 # Collateral Token Address
-COLLATERAL=0xaf88d065e77c8cC2239327C5EDb3A432268e5831  # USDC on Arbitrum Sepolia
+COLLATERAL=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d  # Testnet USDC on Arbitrum Sepolia
 
 # Deployment Configuration
 CREATOR_OVERRIDE_WINDOW=21600  # 6 hours in seconds
@@ -54,16 +54,32 @@ COLLATERAL=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 
 | Network | Contract Address | Collateral Token | Status |
 |---------|------------------|------------------|---------|
-| Arbitrum Sepolia | [`0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`](https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa) | USDC (0xaf88d...) | ✅ **Deployed & Verified** |
+| Arbitrum Sepolia | [`0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263`](https://sepolia.arbiscan.io/address/0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263) | Testnet USDC (0x75faf...) | ✅ **Deployed & Verified** |
 | Arbitrum Mainnet | `TBD` | USDC (0xaf88d...) | Ready for deployment |
 
+### Previous Deployment (Deprecated)
+
+| Network | Contract Address | Collateral Token | Status |
+|---------|------------------|------------------|---------|
+| Arbitrum Sepolia | [`0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`](https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa) | USDC (0xaf88d...) | ⚠️ **Deprecated - Using Mainnet USDC** |
+
 #### Latest Deployment Details
+
+- **Contract Address**: `0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263`
+- **Network**: Arbitrum Sepolia (Chain ID: 421614)
+- **Collateral Token**: `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` (Testnet USDC)
+- **Creator Override Window**: 21,600 seconds (6 hours)
+- **Arbiscan**: https://sepolia.arbiscan.io/address/0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263
+- **Verification**: ✅ **Verified** (GUID: 6mhszduslisc8whzltnbz2ksyi3fv1rz8sa9mlafviy3hxm21s)
+- **Deployment Date**: October 22, 2024
+
+#### Previous Deployment (Deprecated)
 
 - **Contract Address**: `0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`
 - **Network**: Arbitrum Sepolia (Chain ID: 421614)
 - **Transaction Hash**: `0xb5cf489dc739be79fc376498455e81fb5e19e1427cfebd1e3ce6b72c721246d9`
 - **Arbiscan**: https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa
-- **Collateral Token**: `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` (USDC on Arbitrum)
+- **Collateral Token**: `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` (Mainnet USDC - Not suitable for testnet)
 - **Creator Override Window**: 21,600 seconds (6 hours)
 - **Owner**: `0x92380866B0Ea999097d6cd15D6B33888412A524d`
 - **Deployment Date**: October 21, 2024
@@ -76,7 +92,7 @@ The MarketFactory is now live on Arbitrum Sepolia. You can interact with it usin
 
 ```solidity
 // Contract ABI and address
-address marketFactory = 0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa;
+address marketFactory = 0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263;
 ```
 
 ### Key Functions
@@ -91,10 +107,13 @@ address marketFactory = 0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa;
 Update your frontend configuration with:
 
 ```javascript
-const MARKET_FACTORY_ADDRESS = "0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa";
-const COLLATERAL_TOKEN = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // USDC
+// Updated with new deployment
+const MARKET_FACTORY_ADDRESS = "0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263";
+const COLLATERAL_TOKEN = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Testnet USDC
 const NETWORK = "arbitrum-sepolia";
 ```
+
+**✅ Updated**: The frontend has been updated with the new contract address and testnet USDC. All files are synchronized and ready for use.
 
 ## Layout
 

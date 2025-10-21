@@ -1,11 +1,15 @@
 // TypeScript interfaces for POP - Predict on Posts contracts
 
 export interface MarketCreationParams {
-  identifier: string;
+  identifier: number;
   options: string[];
   creator: string;
   endTime: number;
   creatorFeeBps: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
 }
 
 export interface MarketFactoryConfig {
@@ -15,7 +19,7 @@ export interface MarketFactoryConfig {
 
 export interface MarketInfo {
   address: string;
-  identifier: string;
+  identifier: number;
   creator: string;
   options: string[];
   endTime: number;
@@ -23,6 +27,10 @@ export interface MarketInfo {
   totalLiquidity: string;
   isResolved: boolean;
   winningOption?: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
 }
 
 export interface BetInfo {
@@ -63,11 +71,16 @@ export interface ContractAddresses {
 
 // Event types
 export interface MarketCreatedEvent {
-  identifier: string;
+  identifier: number;
   creator: string;
   market: string;
   options: string[];
   endTime: number;
+  creatorFeeBps: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
 }
 
 export interface BetPlacedEvent {
@@ -80,6 +93,18 @@ export interface BetPlacedEvent {
 export interface MarketResolvedEvent {
   winningOption: number;
   timestamp: number;
+}
+
+export interface MarketMetadataSetEvent {
+  identifier: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
+  options: string[];
+  endTime: number;
+  creatorFeeBps: number;
+  creator: string;
 }
 
 // Contract method return types

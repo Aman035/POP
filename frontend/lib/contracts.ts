@@ -2,8 +2,8 @@
 // Deployed on Arbitrum Sepolia
 
 // Contract addresses
-export const MARKET_FACTORY_ADDRESS = "0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa";
-export const COLLATERAL_TOKEN_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // USDC on Arbitrum
+export const MARKET_FACTORY_ADDRESS = "0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263"; // Will be updated after redeployment
+export const COLLATERAL_TOKEN_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Testnet USDC
 
 // Network configuration
 export const NETWORK_CONFIG = {
@@ -36,11 +36,15 @@ export const CONTRACT_CONFIG = {
 
 // TypeScript interfaces for contract interactions
 export interface MarketCreationParams {
-  identifier: string;
+  identifier: number;
   options: string[];
   creator: string;
   endTime: number;
   creatorFeeBps: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
 }
 
 export interface MarketFactoryConfig {

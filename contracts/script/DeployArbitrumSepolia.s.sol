@@ -7,9 +7,9 @@ import {IERC20} from "../src/interfaces/IERC20.sol";
 
 contract DeployArbitrumSepolia is Script {
     function run() external returns (MarketFactory factory) {
-        // Load environment variables
-        address collateral = vm.envAddress("COLLATERAL");
-        uint64 overrideWindow = uint64(vm.envUint("CREATOR_OVERRIDE_WINDOW"));
+        // Use the new testnet USDC address
+        address collateral = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d;
+        uint64 overrideWindow = 21600; // 6 hours
         
         require(collateral != address(0), "Deploy: collateral not set");
         require(overrideWindow > 0, "Deploy: override window must be > 0");

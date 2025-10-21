@@ -1,14 +1,165 @@
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle } from "lucide-react"
 import { format } from "date-fns"
+import { useCreateMarket } from "@/hooks/use-contracts"
+import { useState, useEffect } from "react"
+import { toast } from "@/hooks/use-toast"
 
 interface StepFourProps {
   marketData: any
+  onCreateMarket?: (marketAddress: string, txHash: string) => void
 }
 
-export function StepFour({ marketData }: StepFourProps) {
+export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
+  const { createMarket, loading: creatingMarket, error: createError, hash, isConfirmed } = useCreateMarket()
+  const [isCreating, setIsCreating] = useState(false)
+  const [txHash, setTxHash] = useState<string | null>(null)
+  const [marketAddress, setMarketAddress] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  
   const PlatformIcon = marketData.platform === "twitter" ? Twitter : MessageSquare
+
+  const generateIdentifier = () => {
+    // Generate a numeric identifier that can be converted to BigInt
+    const timestamp = Date.now()
+    const random = Math.floor(Math.random() * 1000000) // 6-digit random number
+    return timestamp * 1000000 + random // Combine timestamp and random to create unique numeric ID
+  }
+
+  const handleCreateMarket = async () => {
+    if (!marketData.question || !marketData.description || marketData.options.length < 2) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Check if all options are filled
+    const emptyOptions = marketData.options.some((option: string) => !option.trim())
+    if (emptyOptions) {
+      toast({
+        title: "Empty Options",
+        description: "Please fill in all market options",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!marketData.endDate) {
+      toast({
+        title: "Missing End Date",
+        description: "Please set an end date for your market",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsCreating(true)
+      
+      // Generate unique identifier
+      const identifier = generateIdentifier()
+      
+      // Convert endDate to timestamp
+      const endTime = Math.floor(marketData.endDate.getTime() / 1000)
+      
+      // Convert creator fee percentage to basis points
+      const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100) // Convert percentage to basis points
+      
+      const marketParams = {
+        identifier,
+        options: marketData.options.filter((option: string) => option.trim()),
+        creator: "", // Will be filled by the contract with msg.sender
+        endTime,
+        creatorFeeBps,
+        question: marketData.question,
+        description: marketData.description,
+        category: marketData.category || "other",
+        resolutionSource: marketData.resolutionSource || ""
+      }
+
+      toast({
+        title: "Creating Market",
+        description: "Please confirm the transaction in your wallet...",
+      })
+
+      const result = await createMarket(marketParams)
+      
+      if (result) {
+        // Set the transaction hash immediately
+        setTxHash(hash || "")
+        
+        toast({
+          title: "Transaction Submitted",
+          description: "Your market creation transaction has been submitted to the blockchain",
+        })
+        
+        // Wait for confirmation
+        if (isConfirmed && hash) {
+          setMarketAddress(hash) // Using hash as placeholder for market address
+          
+          toast({
+            title: "Market Created Successfully!",
+            description: `Your market has been deployed to the blockchain`,
+          })
+          
+          // Call the callback if provided
+          if (onCreateMarket) {
+            onCreateMarket(hash, hash)
+          }
+        }
+      } else {
+        throw new Error("Failed to create market")
+      }
+    } catch (error) {
+      console.error("Error creating market:", error)
+      toast({
+        title: "Error Creating Market",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      toast({
+        title: "Copied!",
+        description: "Address copied to clipboard",
+      })
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+    }
+  }
+
+  const isMarketCreated = marketAddress || marketData.marketAddress
+
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && hash && !marketAddress) {
+      setMarketAddress(hash) // Using hash as placeholder for market address
+      setTxHash(hash)
+      
+      toast({
+        title: "Market Created Successfully!",
+        description: `Your market has been deployed to the blockchain`,
+      })
+      
+      // Call the callback if provided
+      if (onCreateMarket) {
+        onCreateMarket(hash, hash)
+      }
+    }
+  }, [isConfirmed, hash, marketAddress, onCreateMarket])
 
   return (
     <div className="space-y-6">
@@ -84,6 +235,104 @@ export function StepFour({ marketData }: StepFourProps) {
           <p className="text-sm text-muted-foreground mb-2">Resolution Source</p>
           <p className="text-sm">{marketData.resolutionSource}</p>
         </Card>
+
+        {/* Smart Contract Creation */}
+        {!isMarketCreated ? (
+          <Card className="p-6 bg-background border-border">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-gold-2/10 flex items-center justify-center mx-auto">
+                <Clock className="w-6 h-6 text-gold-2" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Deploy to Blockchain</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create your market on the blockchain. No USDC required upfront.
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleCreateMarket}
+                disabled={isCreating || creatingMarket}
+                className="w-full gold-gradient text-background font-semibold"
+                size="lg"
+              >
+                {isCreating || creatingMarket ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Market...
+                  </>
+                ) : (
+                  "Deploy Market to Blockchain"
+                )}
+              </Button>
+              
+              {createError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm text-destructive text-center">
+                    {createError}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6 bg-background border-border border-green-500/20">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-green-500">Market Created Successfully!</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your market has been deployed to the blockchain
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-background border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Market Address</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono flex-1 text-left truncate">
+                      {marketAddress || marketData.marketAddress}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(marketAddress || marketData.marketAddress)}
+                    >
+                      {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                
+                {txHash && (
+                  <div className="p-3 rounded-lg bg-background border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-mono flex-1 text-left truncate">
+                        {txHash}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(txHash)}
+                      >
+                        {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(`https://sepolia.arbiscan.io/tx/${txHash}`, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   )

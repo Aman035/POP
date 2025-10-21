@@ -20,6 +20,12 @@ interface MarketData {
   endDate: Date | null
   creatorFee: number
   resolutionSource: string
+  // Smart contract fields
+  marketAddress?: string
+  txHash?: string
+  identifier?: string
+  endTime?: number
+  creatorFeeBps?: number
 }
 
 interface CreateMarketWizardProps {
@@ -60,10 +66,33 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
   }
 
   const handleCreate = async () => {
-    // Simulate API call
+    // If market was already created on blockchain, just close
+    if (marketData.marketAddress) {
+      onClose()
+      return
+    }
+    
+    // If we're on step 4 and market hasn't been created yet, show message
+    if (currentStep === 4 && !marketData.marketAddress) {
+      alert("Please deploy your market to the blockchain first!")
+      return
+    }
+    
+    // Simulate API call for non-blockchain creation (fallback)
     await new Promise((resolve) => setTimeout(resolve, 2000))
     alert("Market created successfully!")
     onClose()
+  }
+
+  const handleMarketCreated = (marketAddress: string, txHash: string) => {
+    // Market was created on blockchain, update the data
+    updateMarketData({ 
+      marketAddress,
+      txHash,
+      identifier: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      endTime: marketData.endDate ? Math.floor(marketData.endDate.getTime() / 1000) : undefined,
+      creatorFeeBps: Math.floor((marketData.creatorFee || 2) * 100)
+    })
   }
 
   return (
@@ -89,7 +118,7 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
         {currentStep === 1 && <StepOne marketData={marketData} updateMarketData={updateMarketData} />}
         {currentStep === 2 && <StepTwo marketData={marketData} updateMarketData={updateMarketData} />}
         {currentStep === 3 && <StepThree marketData={marketData} updateMarketData={updateMarketData} />}
-        {currentStep === 4 && <StepFour marketData={marketData} />}
+        {currentStep === 4 && <StepFour marketData={marketData} onCreateMarket={handleMarketCreated} />}
       </Card>
 
       {/* Navigation */}
@@ -102,8 +131,12 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
             Continue
           </Button>
         ) : (
-          <Button onClick={handleCreate} className="gold-gradient text-background font-semibold">
-            Create Market
+          <Button 
+            onClick={handleCreate} 
+            className="gold-gradient text-background font-semibold"
+            disabled={currentStep === 4 && !marketData.marketAddress}
+          >
+            {marketData.marketAddress ? "Finish" : "Create Market"}
           </Button>
         )}
       </div>

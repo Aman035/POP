@@ -5,11 +5,16 @@ This document explains how to use the deployed POP contracts in the frontend app
 ## 📋 Contract Details
 
 ### Deployed Contract
-- **Contract Address**: `0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`
+- **Contract Address**: `TBD` (Will be updated after redeployment)
 - **Network**: Arbitrum Sepolia (Chain ID: 421614)
-- **Collateral Token**: USDC (`0xaf88d065e77c8cC2239327C5EDb3A432268e5831`)
+- **Collateral Token**: Testnet USDC (`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d`)
 - **Creator Override Window**: 21,600 seconds (6 hours)
-- **Owner**: `0x92380866B0Ea999097d6cd15D6B33888412A524d`
+- **Owner**: TBD (Will be updated after deployment)
+
+### Previous Deployment (Deprecated)
+- **Contract Address**: `0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263`
+- **Collateral Token**: USDC (`0xaf88d065e77c8cC2239327C5EDb3A432268e5831`) - Mainnet USDC (not suitable for testnet)
+- **Status**: ⚠️ **Deprecated - Using Mainnet USDC**
 
 ### Arbiscan Links
 - **Contract**: https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa
