@@ -1,11 +1,12 @@
 'use client'
 
 import type React from 'react'
+import { Suspense } from 'react'
 import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { useSearchParams } from 'next/navigation'
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
   const isEmbedded = searchParams.get('embed') === 'true'
   const hideUI = searchParams.get('hideUI') === 'true'
@@ -28,5 +29,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
+  )
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </Suspense>
   )
 }
