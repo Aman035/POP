@@ -23,6 +23,9 @@ function injectPopButtonOnPage() {
 
   // Always check for all posts on any Twitter page
   window.checkForAllPosts()
+
+  // Always check for sidebar and add Pop items
+  window.checkForSidebar()
 }
 
 // Initialize the MutationObserver for DOM changes
