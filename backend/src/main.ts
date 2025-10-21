@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +23,7 @@ async function bootstrap() {
     .addTag('health', 'Health check endpoints')
     .addTag('markets', 'Prediction market operations')
     .addTag('posts', 'Post management')
+    .addTag('tweet-analyzer', 'AI-powered tweet analysis for market generation')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
