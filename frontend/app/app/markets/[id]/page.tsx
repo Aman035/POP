@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useSearchParams } from "next/navigation"
 
 // Mock market data - in real app this would come from API
 const mockMarket = {
@@ -51,18 +52,23 @@ const mockMarket = {
 export default function MarketDetailPage({ params }: { params: { id: string } }) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const searchParams = useSearchParams()
+  const isEmbedded = searchParams.get("embed") === "true"
+  const hideUI = searchParams.get("hideUI") === "true"
 
   const timeRemaining = getTimeRemaining(mockMarket.endsAt)
   const PlatformIcon = mockMarket.platform === "twitter" ? Twitter : MessageSquare
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Back Button */}
-      <Link href="/app/markets">
-        <Button variant="ghost" size="sm">
-          ← Back to Markets
-        </Button>
-      </Link>
+      {/* Back Button - only show if not embedded */}
+      {!(isEmbedded && hideUI) && (
+        <Link href="/app/markets">
+          <Button variant="ghost" size="sm">
+            ← Back to Markets
+          </Button>
+        </Link>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
