@@ -43,7 +43,7 @@ export function WalletConnectButton({
 
   return (
     <WalletErrorBoundary>
-      <div className="space-y-2">
+      <div className="flex items-center gap-2">
         <ConnectButton.Custom>
         {({
           account,
@@ -81,8 +81,10 @@ export function WalletConnectButton({
                     <Button
                       onClick={openConnectModal}
                       className={`gold-gradient text-background font-semibold ${className}`}
+                      size="sm"
                     >
-                      Connect Wallet
+                      <span className="hidden sm:inline">Connect Wallet</span>
+                      <span className="sm:hidden">Connect</span>
                     </Button>
                   );
                 }
@@ -93,25 +95,29 @@ export function WalletConnectButton({
                       onClick={openChainModal}
                       variant="destructive"
                       className={className}
+                      size="sm"
                     >
-                      Wrong network
+                      <span className="hidden sm:inline">Wrong Network</span>
+                      <span className="sm:hidden">Wrong Net</span>
                     </Button>
                   );
                 }
 
                 return (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={openAccountModal}
-                      variant="outline"
-                      className={`bg-transparent ${className}`}
-                    >
+                  <Button
+                    onClick={openAccountModal}
+                    variant="outline"
+                    className={`bg-transparent ${className}`}
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline">
                       {account.displayName}
-                      {account.displayBalance
-                        ? ` (${account.displayBalance})`
-                        : ''}
-                    </Button>
-                  </div>
+                      {account.displayBalance ? ` (${account.displayBalance})` : ''}
+                    </span>
+                    <span className="sm:hidden">
+                      {account.displayName.split('...')[0]}...
+                    </span>
+                  </Button>
                 );
               })()}
             </div>
@@ -119,59 +125,74 @@ export function WalletConnectButton({
         }}
       </ConnectButton.Custom>
 
-      {/* Chain Switch Button */}
-      {isConnected && !isCorrectChain && showChainSwitch && (
-        <Button
-          onClick={handleChainSwitch}
-          variant="outline"
-          size="sm"
-          className="w-full"
-          disabled={isSwitchingChain}
-        >
-          {isSwitchingChain ? (
-            <>
-              <WalletLoading type="spinner" className="mr-2" />
-              Switching...
-            </>
-          ) : (
-            'Switch to Arbitrum Sepolia'
-          )}
-        </Button>
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{error}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearError}
-              className="ml-2 h-auto p-1"
-            >
-              ×
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Network Info */}
+      {/* Network Info - Right Side */}
       {isConnected && isCorrectChain && (
-        <div className="text-xs text-muted-foreground text-center">
-          Connected to {arbitrumSepolia.name}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+            </div>
+            <span className="hidden sm:inline">Arbitrum Sepolia</span>
+            <span className="sm:hidden">Arb Sepolia</span>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            className="ml-2 h-auto p-1"
+            className="h-auto p-1 hover:bg-blue-50 dark:hover:bg-blue-950"
             onClick={() => window.open(arbitrumSepolia.blockExplorers?.default.url, '_blank')}
+            title="View on Arbiscan"
           >
             <ExternalLink className="h-3 w-3" />
           </Button>
         </div>
       )}
       </div>
+
+      {/* Chain Switch Button - Below */}
+      {isConnected && !isCorrectChain && showChainSwitch && (
+        <div className="mt-2">
+          <Button
+            onClick={handleChainSwitch}
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={isSwitchingChain}
+          >
+            {isSwitchingChain ? (
+              <>
+                <WalletLoading type="spinner" className="mr-2" />
+                <span className="hidden sm:inline">Switching...</span>
+                <span className="sm:hidden">Switch</span>
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline">Switch to Arbitrum Sepolia</span>
+                <span className="sm:hidden">Switch Network</span>
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Error Display - Below */}
+      {error && (
+        <div className="mt-2">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearError}
+                className="ml-2 h-auto p-1"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
     </WalletErrorBoundary>
   );
 }
