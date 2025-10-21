@@ -28,6 +28,22 @@
     box-shadow: 0 2px 6px rgba(29, 155, 240, 0.2);
 }
 
+.pop-button--disabled,
+.pop-button[disabled] {
+    background: rgba(239, 243, 244, 0.4);
+    color: rgba(15, 20, 25, 0.6);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.pop-button--disabled:hover,
+.pop-button[disabled]:hover {
+    background: rgba(239, 243, 244, 0.4);
+    box-shadow: none;
+    transform: none;
+}
+
 /* Ensure the button fits well in Twitter's compose toolbar */
 .pop-button:before {
     content: "🎯";
@@ -140,4 +156,66 @@
     bottom: -6px;
     border-bottom: none;
     border-top: 6px solid rgba(15, 20, 25, 0.92);
+}
+
+.pop-create-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    min-height: 36px;
+    border-radius: 9999px;
+    border: 1px solid rgba(29, 155, 240, 0.4);
+    background: transparent;
+    color: #1d9bf0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.pop-create-button:hover {
+    background-color: rgba(29, 155, 240, 0.12);
+    color: #1a8cd8;
+}
+
+.pop-create-button:active {
+    transform: scale(0.96);
+}
+
+.pop-create-button:focus-visible {
+    outline: 2px solid rgba(29, 155, 240, 0.4);
+    outline-offset: 2px;
+}
+
+.pop-create-button-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.pop-create-button-icon svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+.pop-create-button-label {
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Loading animation for create button */
+.pop-create-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.pop-create-button-icon svg circle {
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
 }

@@ -11,16 +11,8 @@ const observeHistoryChanges = () => {
   })
 }
 
-// Main function to inject Pop Market button on compose page and detect all posts
+// Main function to inject Pop Market button and detect all posts
 function injectPopButtonOnPage() {
-  // Check if we're on the compose page
-  if (
-    window.location.pathname === '/compose/post' ||
-    window.location.pathname.includes('/compose/post')
-  ) {
-    window.checkForComposePage()
-  }
-
   // Always check for all posts on any Twitter page
   window.checkForAllPosts()
 

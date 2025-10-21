@@ -1,8 +1,9 @@
-// Configuration - Change this to your production URL
+// Configuration - Change these to your production URLs
 const POP_SITE_URL = 'http://localhost:3000'
+const POP_API_URL = 'http://localhost:3001' // Backend API URL
 
 // Function to create and show the Pop Market modal
-function showPopModal() {
+function showPopModal(iframeUrl) {
   // Create the modal container
   const modal = document.createElement('div')
   modal.style = `
@@ -20,7 +21,7 @@ function showPopModal() {
 
   // Create the iframe
   const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/create?embed=true&hideUI=true`
+  iframe.src = iframeUrl || `${POP_SITE_URL}/app/create?embed=true&hideUI=true`
   iframe.style = `
       width: 450px; 
       height: 750px; 
@@ -400,6 +401,234 @@ function showMarketBookmarksModal() {
   document.addEventListener('click', handleOutsideClick)
 }
 
+const marketStatusCache = new Map()
+const marketStatusRequests = new Map()
+const tweetAnalysisCache = new Map()
+
+async function analyzeTweetContent(content, tweetId) {
+  if (!content || !tweetId) return null
+
+  // Check cache first
+  if (tweetAnalysisCache.has(tweetId)) {
+    return tweetAnalysisCache.get(tweetId)
+  }
+
+  console.log(`[Pop] Analyzing tweet content for ${tweetId}`)
+
+  try {
+    const response = await fetch(`${POP_API_URL}/api/tweet-analyzer/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: content.trim(),
+        source: 'twitter',
+        postId: tweetId,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Tweet analysis failed with ${response.status}`)
+    }
+
+    const analysis = await response.json()
+    console.log(`[Pop] Tweet analysis result for ${tweetId}:`, analysis)
+
+    // Cache the result
+    tweetAnalysisCache.set(tweetId, analysis)
+    return analysis
+  } catch (error) {
+    console.warn('[Pop] Tweet analysis failed:', error)
+    return null
+  }
+}
+
+async function fetchMarketStatus(tweetId) {
+  if (!tweetId) return { exists: false }
+
+  if (marketStatusCache.has(tweetId)) {
+    return marketStatusCache.get(tweetId)
+  }
+
+  if (marketStatusRequests.has(tweetId)) {
+    return marketStatusRequests.get(tweetId)
+  }
+
+  const url = new URL('/api/markets/exists', POP_API_URL)
+  url.searchParams.set('postId', tweetId)
+  url.searchParams.set('source', 'twitter')
+
+  console.log(`[Pop] Checking market existence for tweet: ${tweetId}`)
+
+  const requestPromise = fetch(url.toString(), {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Market existence check failed with ${response.status}`)
+      }
+      const data = await response.json().catch(() => ({}))
+      const result = {
+        exists: Boolean(data?.exists),
+      }
+      console.log(`[Pop] Market status for ${tweetId}:`, result)
+      marketStatusCache.set(tweetId, result)
+      return result
+    })
+    .catch((error) => {
+      console.warn('[Pop] Market existence lookup failed:', error)
+      return { exists: false, error: true }
+    })
+    .finally(() => {
+      marketStatusRequests.delete(tweetId)
+    })
+
+  marketStatusRequests.set(tweetId, requestPromise)
+  return requestPromise
+}
+
+function getComposeQuestionText() {
+  const editor = document.querySelector(
+    'div[role="textbox"][data-testid="tweetTextarea_0"]'
+  )
+  if (!editor) return ''
+  return editor.textContent?.trim() || ''
+}
+
+function getPollOptions() {
+  const optionInputs = document.querySelectorAll('input[name^="Choice"]')
+  const options = []
+
+  optionInputs.forEach((input) => {
+    const value = input.value?.trim()
+    if (value) {
+      options.push(value)
+    }
+  })
+
+  return options
+}
+
+function getPollDuration() {
+  const daysSelect = document.querySelector('[data-testid="selectPollDays"]')
+  const hoursSelect = document.querySelector('[data-testid="selectPollHours"]')
+  const minutesSelect = document.querySelector(
+    '[data-testid="selectPollMinutes"]'
+  )
+
+  const parseValue = (element) => {
+    if (!element) return 0
+    const value = parseInt(element.value, 10)
+    return Number.isNaN(value) ? 0 : value
+  }
+
+  return {
+    days: parseValue(daysSelect),
+    hours: parseValue(hoursSelect),
+    minutes: parseValue(minutesSelect),
+  }
+}
+
+function collectPollDataFromCompose() {
+  const duration = getPollDuration()
+  const totalMinutes =
+    duration.days * 24 * 60 + duration.hours * 60 + duration.minutes
+
+  return {
+    source: 'twitter-poll',
+    question: getComposeQuestionText(),
+    options: getPollOptions(),
+    duration,
+    totalMinutes,
+  }
+}
+
+function buildCreateMarketUrl(params = {}) {
+  const url = new URL('/app/create', POP_SITE_URL)
+  url.searchParams.set('embed', 'true')
+  url.searchParams.set('hideUI', 'true')
+
+  const source = params.source || 'extension'
+  url.searchParams.set('source', source)
+
+  if (params.tweetId) {
+    url.searchParams.set('tweetId', params.tweetId)
+  }
+
+  if (params.tweetUrl) {
+    url.searchParams.set('tweetUrl', params.tweetUrl)
+  }
+
+  if (params.question) {
+    url.searchParams.set('question', params.question)
+  }
+
+  if (Array.isArray(params.options)) {
+    params.options.forEach((option, index) => {
+      if (option) {
+        url.searchParams.set(`option${index + 1}`, option)
+      }
+    })
+  }
+
+  // Handle analysis parameters
+  if (params.category) {
+    url.searchParams.set('category', params.category)
+  }
+
+  if (params.confidence) {
+    url.searchParams.set('confidence', String(params.confidence))
+  }
+
+  // Handle options as comma-separated string (from analysis)
+  if (params.options && typeof params.options === 'string') {
+    const optionsArray = params.options.split(',')
+    optionsArray.forEach((option, index) => {
+      if (option && option.trim()) {
+        url.searchParams.set(`option${index + 1}`, option.trim())
+      }
+    })
+  }
+
+  if (params.duration) {
+    const { days, hours, minutes } = params.duration
+    if (Number.isFinite(params.totalMinutes)) {
+      url.searchParams.set('durationTotalMinutes', String(params.totalMinutes))
+    }
+    if (days) url.searchParams.set('durationDays', String(days))
+    if (hours) url.searchParams.set('durationHours', String(hours))
+    if (minutes) url.searchParams.set('durationMinutes', String(minutes))
+  } else {
+    if (Number.isFinite(params.totalMinutes)) {
+      url.searchParams.set('durationTotalMinutes', String(params.totalMinutes))
+    }
+    if (params.durationDays) {
+      url.searchParams.set('durationDays', String(params.durationDays))
+    }
+    if (params.durationHours) {
+      url.searchParams.set('durationHours', String(params.durationHours))
+    }
+    if (params.durationMinutes) {
+      url.searchParams.set('durationMinutes', String(params.durationMinutes))
+    }
+  }
+
+  return url.toString()
+}
+
+function openCreateMarketFromPoll() {
+  const pollData = collectPollDataFromCompose()
+  console.log('[Pop] Captured poll data:', pollData)
+
+  const createUrl = buildCreateMarketUrl(pollData)
+  showPopModal(createUrl)
+}
+
 // Helper function to create Pop Market button
 function createPopButton() {
   const popButton = document.createElement('button')
@@ -497,6 +726,130 @@ function createMarketButton() {
   marketButton.addEventListener('click', hideTooltip)
 
   return marketButton
+}
+
+function extractTweetText(tweetElement) {
+  const textNodes = tweetElement.querySelectorAll('[data-testid="tweetText"]')
+  if (!textNodes.length) {
+    return ''
+  }
+
+  const combined = Array.from(textNodes)
+    .map((node) => node.textContent || '')
+    .join(' ')
+
+  return combined.replace(/\s+/g, ' ').trim()
+}
+
+function extractTweetUrl(tweetElement, tweetId) {
+  const candidateLink = tweetElement.querySelector('a[href*="/status/"]')
+  if (!candidateLink) {
+    if (tweetId) {
+      return `https://x.com/i/status/${tweetId}`
+    }
+    return ''
+  }
+
+  const href = candidateLink.getAttribute('href') || ''
+  if (!href) {
+    return ''
+  }
+
+  if (href.startsWith('http')) {
+    return href
+  }
+
+  return `https://x.com${href}`
+}
+
+function createInlineCreateButton(tweetElement, tweetId) {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.classList.add('pop-create-button')
+  button.setAttribute('aria-label', 'Create market for this post')
+  button.innerHTML = `
+    <span class="pop-create-button-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path d="M11 11V4h2v7h7v2h-7v7h-2v-7H4v-2h7z" fill="currentColor"></path>
+      </svg>
+    </span>
+    <span class="pop-create-button-label">Create</span>
+  `
+
+  button.addEventListener('click', async (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    // Disable button during analysis
+    button.disabled = true
+    button.innerHTML = `
+      <span class="pop-create-button-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2">
+            <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" values="0 12 12;360 12 12"/>
+          </circle>
+        </svg>
+      </span>
+      <span class="pop-create-button-label">Analyzing...</span>
+    `
+
+    try {
+      const tweetContent = extractTweetText(tweetElement)
+      const tweetUrl = extractTweetUrl(tweetElement, tweetId)
+
+      console.log(`[Pop] Analyzing tweet content: "${tweetContent}"`)
+
+      // Analyze tweet content with backend
+      const analysis = await analyzeTweetContent(tweetContent, tweetId)
+
+      if (analysis && analysis.question && analysis.options) {
+        // Use analyzed data to create market
+        const createUrl = buildCreateMarketUrl({
+          source: 'twitter-post',
+          tweetId,
+          tweetUrl,
+          question: analysis.question,
+          options: analysis.options.join(','),
+          category: analysis.category,
+          confidence: analysis.confidence,
+        })
+
+        console.log(
+          `[Pop] Opening create market modal with analysis:`,
+          analysis
+        )
+        showPopModal(createUrl)
+      } else {
+        // Fallback to original behavior if analysis fails
+        console.warn('[Pop] Analysis failed, using fallback')
+        const createUrl = buildCreateMarketUrl({
+          source: 'twitter-post',
+          tweetId,
+          tweetUrl,
+          question: tweetContent,
+        })
+
+        showPopModal(createUrl)
+      }
+    } catch (error) {
+      console.error('[Pop] Error creating market:', error)
+      // Show error or fallback
+      alert('Failed to analyze tweet. Please try again.')
+    } finally {
+      // Re-enable button
+      button.disabled = false
+      button.innerHTML = `
+        <span class="pop-create-button-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M11 11V4h2v7h7v2h-7v7h-2v-7H4v-2h7z" fill="currentColor"></path>
+          </svg>
+        </span>
+        <span class="pop-create-button-label">Create</span>
+      `
+    }
+  })
+
+  return button
 }
 
 // Function to add sidebar items to Twitter's navigation
@@ -735,56 +1088,143 @@ function addPopButtonToCompose() {
     composeToolbar.appendChild(popButton)
 
     popButton.addEventListener('click', function (event) {
+      event.preventDefault()
       event.stopPropagation()
-      window.showPopModal()
+      if (popButton.disabled) return
+      openCreateMarketFromPoll()
     })
+  }
+
+  const popButton = composeToolbar?.querySelector('.pop-button')
+  if (!popButton) return
+
+  const pollActive = Boolean(
+    document.querySelector('[data-testid="selectPollDays"]') ||
+      document.querySelector('[data-testid="selectPollHours"]') ||
+      document.querySelector('[data-testid="selectPollMinutes"]') ||
+      document.querySelector('[data-testid="removePollButton"]')
+  )
+
+  if (!pollActive) {
+    popButton.style.display = 'none'
+    popButton.setAttribute('aria-hidden', 'true')
+    popButton.disabled = true
+    popButton.classList.add('pop-button--disabled')
+    return
+  }
+
+  popButton.style.display = 'inline-flex'
+  popButton.removeAttribute('aria-hidden')
+
+  const tweetButton = document.querySelector('[data-testid="tweetButton"]')
+  const tweetDisabled =
+    !tweetButton ||
+    tweetButton.getAttribute('aria-disabled') === 'true' ||
+    tweetButton.hasAttribute('disabled')
+
+  if (tweetDisabled) {
+    popButton.disabled = true
+    popButton.classList.add('pop-button--disabled')
+  } else {
+    popButton.disabled = false
+    popButton.classList.remove('pop-button--disabled')
   }
 }
 
 // Function to add market button to a tweet
-function addMarketButtonToTweet(tweetElement) {
-  // Check if button already exists to prevent duplicates
-  if (tweetElement.querySelector('.market-button')) return
+async function addMarketButtonToTweet(tweetElement) {
+  if (!tweetElement || !tweetElement.isConnected) return
 
-  const marketButton = window.createMarketButton()
+  const parentArticle = tweetElement.closest('article[data-testid="tweet"]')
+  if (parentArticle) {
+    tweetElement = parentArticle
+  }
+
+  if (!tweetElement.matches?.('article[data-testid="tweet"]')) {
+    return
+  }
+
   const tweetId = extractTweetId(tweetElement)
+  if (!tweetId) return
 
-  // Find the tweet actions area (where like, retweet, etc. buttons are)
+  const statusFlag = tweetElement.dataset.popMarketStatus
+  if (statusFlag === 'loading') {
+    return
+  }
+
+  if (
+    statusFlag === 'loaded' &&
+    tweetElement.querySelector('.pop-market-action')
+  ) {
+    return
+  }
+
+  tweetElement.dataset.popMarketStatus = 'loading'
+
   const actionsArea =
     tweetElement.querySelector('[role="group"]') ||
     tweetElement.querySelector('[data-testid="reply"]')?.parentElement ||
     tweetElement.querySelector('[aria-label*="Reply"]')?.parentElement
 
-  if (actionsArea) {
-    // Insert the market button in the actions area
-    const wrapper = document.createElement('div')
-    wrapper.classList.add('market-button-wrapper')
-    wrapper.appendChild(marketButton)
-    actionsArea.appendChild(wrapper)
-  } else {
-    // Fallback: append to the tweet element
-    const wrapper = document.createElement('div')
-    wrapper.classList.add('market-button-wrapper')
-    wrapper.appendChild(marketButton)
-    tweetElement.appendChild(wrapper)
+  if (!actionsArea) {
+    delete tweetElement.dataset.popMarketStatus
+    return
   }
 
-  // Add click event listener
-  marketButton.addEventListener('click', function (event) {
-    event.stopPropagation()
-    window.showMarketWidgetModal(tweetId)
-  })
+  let wrapper = actionsArea.querySelector('.pop-market-action')
+  if (!wrapper) {
+    wrapper = document.createElement('div')
+    wrapper.classList.add('market-button-wrapper', 'pop-market-action')
+    actionsArea.appendChild(wrapper)
+  }
+
+  wrapper.innerHTML = ''
+  wrapper.dataset.tweetId = tweetId
+
+  try {
+    const status = await fetchMarketStatus(tweetId)
+
+    if (!tweetElement.isConnected || !wrapper.isConnected) {
+      return
+    }
+
+    wrapper.innerHTML = ''
+
+    if (status.exists) {
+      // Market exists - show "Predict" button
+      const marketButton = window.createMarketButton()
+      marketButton.title = 'View and predict on this market'
+      marketButton.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        window.showMarketWidgetModal(tweetId)
+      })
+
+      wrapper.appendChild(marketButton)
+      console.log(`[Pop] Added predict button for tweet ${tweetId}`)
+    } else if (!status.error) {
+      // Market doesn't exist - show "Create" button
+      const createButton = createInlineCreateButton(tweetElement, tweetId)
+      createButton.title = 'Create prediction market for this post'
+      wrapper.appendChild(createButton)
+      console.log(`[Pop] Added create button for tweet ${tweetId}`)
+    } else {
+      // API error - show error state or nothing
+      console.warn(`[Pop] API error for tweet ${tweetId}, not showing button`)
+    }
+
+    tweetElement.dataset.popMarketStatus = 'loaded'
+  } catch (error) {
+    console.warn('[Pop] Failed to render market button:', error)
+    wrapper.innerHTML = ''
+    delete tweetElement.dataset.popMarketStatus
+  }
 }
 
-// Function to check for compose page and add Pop Market button
+// Function to check for compose page (disabled - no longer adding buttons to compose)
 function checkForComposePage() {
-  // Check if we're on compose page and add the button
-  if (
-    window.location.pathname === '/compose/post' ||
-    window.location.pathname.includes('/compose/post')
-  ) {
-    addPopButtonToCompose()
-  }
+  // Compose page functionality removed as requested
+  return
 }
 
 // Function to detect and add market buttons to all tweets
