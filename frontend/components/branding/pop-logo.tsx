@@ -2,23 +2,23 @@
 
 import { motion } from "framer-motion"
 import { useState } from "react"
+import Image from "next/image"
 
 export function PopLogo({ className = "" }: { className?: string }) {
   const [isHovered, setIsHovered] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
 
-  const letterVariants = {
+  const logoVariants = {
     initial: { scale: 0, rotate: -180 },
-    animate: (i: number) => ({
+    animate: {
       scale: 1,
       rotate: 0,
       transition: {
         type: "spring",
         damping: 12,
         stiffness: 200,
-        delay: i * 0.1,
       },
-    }),
+    },
     hover: {
       scale: 1.06,
       transition: {
@@ -55,20 +55,21 @@ export function PopLogo({ className = "" }: { className?: string }) {
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
     >
-      <div className="flex items-center gap-1">
-        {["P", "O", "P"].map((letter, i) => (
-          <motion.span
-            key={i}
-            custom={i}
-            variants={letterVariants}
-            initial="initial"
-            animate={isHovered ? "hover" : "animate"}
-            className="text-4xl font-bold gold-text"
-          >
-            {letter}
-          </motion.span>
-        ))}
-      </div>
+      <motion.div
+        variants={logoVariants}
+        initial="initial"
+        animate={isHovered ? "hover" : "animate"}
+        className="relative flex-shrink-0"
+      >
+        <Image
+          src="/POP-logo.png"
+          alt="POP Logo"
+          width={48}
+          height={48}
+          className="w-12 h-12 object-contain drop-shadow-lg"
+          priority
+        />
+      </motion.div>
 
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none">

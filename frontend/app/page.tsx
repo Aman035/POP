@@ -72,11 +72,11 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <PopLogo />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Predict on Posts</h1>
-              <p className="text-xs text-muted-foreground">Micro-markets embedded in social</p>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent tracking-tight">Predict on Posts</h1>
+              <p className="text-sm text-muted-foreground font-medium">Micro-markets embedded in social</p>
             </div>
           </div>
           <div className="flex items-center gap-4">

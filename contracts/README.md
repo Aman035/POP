@@ -2,6 +2,100 @@
 
 This package contains the onchain core for **POP – Predict on Posts**. It covers market lifecycle management for Twitter/X polls: deploying individual markets, handling liquidity, and distributing payouts once polls resolve.
 
+## 🚀 Deployment
+
+### Quick Deploy
+
+```bash
+# Create .env file with your configuration
+# Then run deployment
+./deploy.sh
+```
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```bash
+# Network Configuration
+RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
+
+# Private Key (for deployment)
+PRIVATE_KEY=your_private_key_here
+
+# Collateral Token Address
+COLLATERAL=0xaf88d065e77c8cC2239327C5EDb3A432268e5831  # USDC on Arbitrum Sepolia
+
+# Deployment Configuration
+CREATOR_OVERRIDE_WINDOW=21600  # 6 hours in seconds
+
+# Block Explorer API Keys (optional, for verification)
+ARBISCAN_API_KEY=your_arbiscan_api_key
+```
+
+**Example for different networks:**
+
+```bash
+# Arbitrum Mainnet
+RPC_URL=https://arb-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+COLLATERAL=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
+
+# Ethereum Mainnet  
+RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+COLLATERAL=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+```
+
+### Deployment Scripts
+
+- `deploy.sh` - Main deployment script (reads from .env)
+- `script/DeployArbitrumSepolia.s.sol` - Foundry deployment script
+
+### Deployed Contracts
+
+| Network | Contract Address | Collateral Token | Status |
+|---------|------------------|------------------|---------|
+| Arbitrum Sepolia | [`0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`](https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa) | USDC (0xaf88d...) | ✅ **Deployed & Verified** |
+| Arbitrum Mainnet | `TBD` | USDC (0xaf88d...) | Ready for deployment |
+
+#### Latest Deployment Details
+
+- **Contract Address**: `0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa`
+- **Network**: Arbitrum Sepolia (Chain ID: 421614)
+- **Transaction Hash**: `0xb5cf489dc739be79fc376498455e81fb5e19e1427cfebd1e3ce6b72c721246d9`
+- **Arbiscan**: https://sepolia.arbiscan.io/address/0xbf5520a88eaec703042dd53693da943fe6ec3faa
+- **Collateral Token**: `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` (USDC on Arbitrum)
+- **Creator Override Window**: 21,600 seconds (6 hours)
+- **Owner**: `0x92380866B0Ea999097d6cd15D6B33888412A524d`
+- **Deployment Date**: October 21, 2024
+
+## 🔗 Contract Interaction
+
+### Using the Deployed Contract
+
+The MarketFactory is now live on Arbitrum Sepolia. You can interact with it using:
+
+```solidity
+// Contract ABI and address
+address marketFactory = 0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa;
+```
+
+### Key Functions
+
+- `createMarket()` - Deploy a new prediction market
+- `getMarket()` - Retrieve market address by identifier
+- `collateral()` - Get the collateral token address
+- `creatorOverrideWindow()` - Get the override window duration
+
+### Frontend Integration
+
+Update your frontend configuration with:
+
+```javascript
+const MARKET_FACTORY_ADDRESS = "0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa";
+const COLLATERAL_TOKEN = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // USDC
+const NETWORK = "arbitrum-sepolia";
+```
+
 ## Layout
 
 ```

@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="frontend/public/POP-logo.png" alt="POP Logo" width="200" height="200" />
+</div>
+
 ## 1. Concept
 
 **POP – Predict on Posts** lets anyone turn a **Twitter/X poll** into an onchain prediction market.
