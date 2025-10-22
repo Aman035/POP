@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Twitter, MessageSquare, LinkIcon } from "lucide-react"
+import { Platform } from "@/lib/types"
 
 interface StepOneProps {
   marketData: any
@@ -12,15 +13,15 @@ interface StepOneProps {
 
 export function StepOne({ marketData, updateMarketData }: StepOneProps) {
   const handleUrlChange = (url: string) => {
-    updateMarketData({ pollUrl: url })
+    updateMarketData({ pollUrl: url, postUrl: url })
 
     // Auto-detect platform
     if (url.includes("twitter.com") || url.includes("x.com")) {
-      updateMarketData({ platform: "twitter" })
+      updateMarketData({ platform: Platform.Twitter })
     } else if (url.includes("warpcast.com") || url.includes("farcaster")) {
-      updateMarketData({ platform: "farcaster" })
+      updateMarketData({ platform: Platform.Farcaster })
     } else {
-      updateMarketData({ platform: null })
+      updateMarketData({ platform: Platform.Other })
     }
   }
 
@@ -49,15 +50,20 @@ export function StepOne({ marketData, updateMarketData }: StepOneProps) {
           </div>
         </div>
 
-        {marketData.platform && (
+        {marketData.platform !== null && (
           <div className="p-4 rounded-lg bg-background border border-border">
             <div className="flex items-center gap-2 mb-2">
-              {marketData.platform === "twitter" ? (
+              {marketData.platform === Platform.Twitter ? (
                 <Twitter className="w-5 h-5 text-blue-400" />
-              ) : (
+              ) : marketData.platform === Platform.Farcaster ? (
                 <MessageSquare className="w-5 h-5 text-purple-400" />
+              ) : (
+                <LinkIcon className="w-5 h-5 text-gray-400" />
               )}
-              <Badge variant="secondary">{marketData.platform === "twitter" ? "Twitter/X" : "Farcaster"}</Badge>
+              <Badge variant="secondary">
+                {marketData.platform === Platform.Twitter ? "Twitter/X" : 
+                 marketData.platform === Platform.Farcaster ? "Farcaster" : "Other"}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground">Platform detected successfully</p>
           </div>

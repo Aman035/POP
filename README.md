@@ -148,10 +148,16 @@ flowchart LR
 
 ## 7. Smart Contracts Overview
 
-| Contract          | Responsibility                                              |
-| ----------------- | ----------------------------------------------------------- |
-| **MarketFactory** | Deploys markets for detected polls                          |
-| **Market**        | Stores stakes, allows exits, handles resolution and payouts |
+| Contract          | Responsibility                                              | Address (Arbitrum Sepolia)                    |
+| ----------------- | ----------------------------------------------------------- | ---------------------------------------------- |
+| **MarketFactory** | Deploys markets for detected polls                          | `0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4` |
+| **Market**        | Stores stakes, allows exits, handles resolution and payouts | Deployed dynamically by MarketFactory         |
+
+**Network Details:**
+- **Network**: Arbitrum Sepolia (Chain ID: 421614)
+- **Collateral Token**: Testnet USDC (`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d`)
+- **Creator Override Window**: 21,600 seconds (6 hours)
+- **Block Explorer**: https://sepolia.arbiscan.io
 
 **Market.sol key functions**
 

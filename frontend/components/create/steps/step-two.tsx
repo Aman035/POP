@@ -69,7 +69,7 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
             <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50">
               <SelectItem value="crypto">Crypto</SelectItem>
               <SelectItem value="tech">Tech</SelectItem>
               <SelectItem value="finance">Finance</SelectItem>
@@ -91,9 +91,10 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
                   placeholder={`Option ${index + 1}`}
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
+                  className="flex-1"
                 />
                 {marketData.options.length > 2 && (
-                  <Button variant="ghost" size="icon" onClick={() => removeOption(index)}>
+                  <Button variant="ghost" size="icon" onClick={() => removeOption(index)} className="shrink-0">
                     <X className="w-4 h-4" />
                   </Button>
                 )}
@@ -101,7 +102,7 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
             ))}
           </div>
           {marketData.options.length < 5 && (
-            <Button variant="outline" size="sm" onClick={addOption} className="mt-2 bg-transparent">
+            <Button variant="outline" size="sm" onClick={addOption} className="mt-2 bg-transparent w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Option
             </Button>

@@ -11,14 +11,14 @@ export default function CreateMarketPage() {
 
   if (showWizard) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto px-4">
         <CreateMarketWizard onClose={() => setShowWizard(false)} />
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 px-4">
       {/* Hero Section */}
       <div className="text-center space-y-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-4">
@@ -42,7 +42,7 @@ export default function CreateMarketPage() {
       </div>
 
       {/* Benefits */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 bg-card border-border card-glow">
           <div className="w-12 h-12 rounded-lg gold-gradient flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-background" />
@@ -77,7 +77,7 @@ export default function CreateMarketPage() {
       {/* How It Works */}
       <Card className="p-8 bg-card border-border">
         <h2 className="text-2xl font-bold mb-6 text-center">How It Works</h2>
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             {
               step: "1",

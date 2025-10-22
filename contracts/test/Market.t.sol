@@ -33,13 +33,21 @@ contract MarketTest is Test {
     }
 
     function _createDefaultMarket() internal returns (Market market) {
-        MarketFactory.MarketCreation memory params = MarketFactory.MarketCreation({
-            identifier: 123,
-            options: _defaultOptions(),
-            creator: pollCreator,
-            endTime: uint64(block.timestamp + 1 days),
-            creatorFeeBps: creatorFeeBps
-        });
+        MarketFactory.MarketCreation memory params;
+        params.identifier = 123;
+        params.options = _defaultOptions();
+        params.creator = pollCreator;
+        params.endTime = uint64(block.timestamp + 1 days);
+        params.creatorFeeBps = creatorFeeBps;
+        params.question = "Will this test pass?";
+        params.description = "A test market for development";
+        params.category = "Test";
+        params.resolutionSource = "Test results";
+        params.platform = Market.Platform.Default;
+        params.postUrl = "";
+        params.minBet = 0;
+        params.maxBetPerUser = 0;
+        params.maxTotalStake = 0;
 
         address deployed = factory.createMarket(params);
         market = Market(deployed);
@@ -79,13 +87,21 @@ contract MarketTest is Test {
     function testCannotCreateDuplicateMarket() public {
         _createDefaultMarket();
 
-        MarketFactory.MarketCreation memory params = MarketFactory.MarketCreation({
-            identifier: 123,
-            options: _defaultOptions(),
-            creator: pollCreator,
-            endTime: uint64(block.timestamp + 1 days),
-            creatorFeeBps: creatorFeeBps
-        });
+        MarketFactory.MarketCreation memory params;
+        params.identifier = 123;
+        params.options = _defaultOptions();
+        params.creator = pollCreator;
+        params.endTime = uint64(block.timestamp + 1 days);
+        params.creatorFeeBps = creatorFeeBps;
+        params.question = "Will this test pass?";
+        params.description = "A test market for development";
+        params.category = "Test";
+        params.resolutionSource = "Test results";
+        params.platform = Market.Platform.Default;
+        params.postUrl = "";
+        params.minBet = 0;
+        params.maxBetPerUser = 0;
+        params.maxTotalStake = 0;
 
         vm.expectRevert(bytes("Factory: market exists"));
         factory.createMarket(params);

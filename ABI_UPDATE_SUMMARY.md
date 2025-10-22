@@ -1,4 +1,19 @@
-# ABI Update Summary
+# Contract Redeployment & ABI Update Summary
+
+## 🚀 Contract Redeployment
+
+The smart contracts have been successfully redeployed to Arbitrum Sepolia with updated code and new contract addresses.
+
+### New Contract Addresses
+- **MarketFactory**: `0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4` (✅ Verified)
+- **Network**: Arbitrum Sepolia (Chain ID: 421614)
+- **Collateral Token**: Testnet USDC (`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d`)
+- **Creator Override Window**: 21,600 seconds (6 hours)
+- **Arbiscan**: https://sepolia.arbiscan.io/address/0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4
+
+### Previous Deployment (Deprecated)
+- **Old MarketFactory**: `0x0F4f4c1BdDAf3e93fC55b2ecc600265B4C838263`
+- **Status**: ⚠️ **Deprecated - Using Mainnet USDC**
 
 ## 📋 Updated ABIs
 

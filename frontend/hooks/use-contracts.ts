@@ -11,6 +11,7 @@ import {
   MarketCreationParams 
 } from '@/lib/contracts';
 import { MarketInfo, BetInfo, MarketStats } from '@/lib/types';
+import { useWallet } from './use-wallet';
 
 // Hook for MarketFactory contract
 export const useMarketFactory = () => {
@@ -65,6 +66,7 @@ export const useCollateralToken = () => {
 // Hook for creating a new market
 export const useCreateMarket = () => {
   const { address, isConnected } = useAccount();
+  const { address: walletAddress, isConnected: walletConnected } = useWallet();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +76,11 @@ export const useCreateMarket = () => {
   });
 
   const createMarket = useCallback(async (params: MarketCreationParams) => {
-    if (!isConnected || !address) {
+    // Use wallet address as fallback if useAccount address is not available
+    const userAddress = address || walletAddress;
+    const isWalletConnected = isConnected || walletConnected;
+
+    if (!isWalletConnected || !userAddress) {
       setError('Wallet not connected');
       return null;
     }
@@ -83,49 +89,71 @@ export const useCreateMarket = () => {
       setLoading(true);
       setError(null);
 
-      // Prepare the createMarket function call
-      const createMarketData = encodeFunctionData({
-        abi: MARKET_FACTORY_ABI,
-        functionName: 'createMarket',
-        args: [{
-          identifier: BigInt(params.identifier),
-          options: params.options,
-          creator: address as `0x${string}`,
-          endTime: BigInt(params.endTime),
-          creatorFeeBps: BigInt(params.creatorFeeBps),
-          question: params.question,
-          description: params.description,
-          category: params.category,
-          resolutionSource: params.resolutionSource,
-        }]
-      });
+      console.log('Creating market with params:', params);
+      console.log('useAccount address:', address);
+      console.log('useWallet address:', walletAddress);
+      console.log('Final user address:', userAddress);
+      console.log('Contract address:', MARKET_FACTORY_ADDRESS);
 
-      // Write the contract
+      // Validate required parameters
+      if (!params.question || !params.description || !params.options || params.options.length < 2) {
+        throw new Error('Missing required market parameters');
+      }
+
+      if (params.endTime <= Math.floor(Date.now() / 1000)) {
+        throw new Error('End time must be in the future');
+      }
+
+      // Check if the user address is the same as contract address (this would cause the error)
+      if (userAddress === MARKET_FACTORY_ADDRESS) {
+        console.error('CRITICAL: Wallet is returning contract address instead of user address!');
+        console.error('This indicates a serious wallet connection issue.');
+        console.error('Please try: 1) Disconnect wallet 2) Refresh page 3) Reconnect wallet');
+        throw new Error('Wallet address is the same as contract address. Please disconnect and reconnect your wallet.');
+      }
+
+      // Additional validation: check if address looks like a contract address (starts with 0x and is 42 chars)
+      if (!userAddress || userAddress.length !== 42 || !userAddress.startsWith('0x')) {
+        throw new Error('Invalid wallet address format. Please reconnect your wallet.');
+      }
+
+      // Write the contract with all required parameters
+      const marketCreationParams = {
+        identifier: BigInt(params.identifier),
+        options: params.options,
+        creator: userAddress as `0x${string}`, // Use the validated user address
+        endTime: BigInt(params.endTime),
+        creatorFeeBps: BigInt(params.creatorFeeBps),
+        question: params.question,
+        description: params.description,
+        category: params.category,
+        resolutionSource: params.resolutionSource,
+        platform: params.platform,
+        postUrl: params.postUrl,
+        minBet: BigInt(params.minBet),
+        maxBetPerUser: BigInt(params.maxBetPerUser),
+        maxTotalStake: BigInt(params.maxTotalStake),
+      };
+
+      console.log('Creator in params:', marketCreationParams.creator);
+      console.log('Market creation params:', marketCreationParams);
+
       writeContract({
         address: MARKET_FACTORY_ADDRESS as `0x${string}`,
         abi: MARKET_FACTORY_ABI,
         functionName: 'createMarket',
-        args: [{
-          identifier: BigInt(params.identifier),
-          options: params.options,
-          creator: address as `0x${string}`,
-          endTime: BigInt(params.endTime),
-          creatorFeeBps: BigInt(params.creatorFeeBps),
-          question: params.question,
-          description: params.description,
-          category: params.category,
-          resolutionSource: params.resolutionSource,
-        }]
+        args: [marketCreationParams]
       });
 
       return { hash, isPending, isConfirming, isConfirmed };
     } catch (err) {
+      console.error('Error in createMarket:', err);
       setError(err instanceof Error ? err.message : 'Failed to create market');
       return null;
     } finally {
       setLoading(false);
     }
-  }, [isConnected, address, writeContract]);
+  }, [isConnected, address, walletConnected, walletAddress, writeContract]);
 
   // Return transaction status for the component to handle
   const getTransactionResult = useCallback(() => {
@@ -255,7 +283,16 @@ export const useAllMarkets = () => {
                 description: description.result as string,
                 category: category.result as string,
                 resolutionSource: resolutionSource.result as string,
+                platform: 0, // Default platform
+                postUrl: "", // Will be populated from contract
+                createdAt: Math.floor(Date.now() / 1000), // Will be populated from contract
+                minBet: 0, // Will be populated from contract
+                maxBetPerUser: 0, // Will be populated from contract
+                maxTotalStake: 0, // Will be populated from contract
                 optionLiquidity: [], // Will be populated separately
+                state: Number(state.result) as any,
+                status: Number(state.result) === 2 ? 1 : Number(state.result) === 3 ? 2 : 0,
+                activeParticipantsCount: 0, // Will be populated from contract
               };
 
               marketDetails.push(marketInfo);
@@ -392,7 +429,16 @@ export const useMarketDetails = (marketAddress: string) => {
             description: description.result as string,
             category: category.result as string,
             resolutionSource: resolutionSource.result as string,
+            platform: 0, // Default platform
+            postUrl: "", // Will be populated from contract
+            createdAt: Math.floor(Date.now() / 1000), // Will be populated from contract
+            minBet: 0, // Will be populated from contract
+            maxBetPerUser: 0, // Will be populated from contract
+            maxTotalStake: 0, // Will be populated from contract
             optionLiquidity: [], // Will be populated separately
+            state: Number(state.result) as any,
+            status: Number(state.result) === 2 ? 1 : Number(state.result) === 3 ? 2 : 0,
+            activeParticipantsCount: 0, // Will be populated from contract
           };
 
           const marketStatsData: MarketStats = {
@@ -402,6 +448,9 @@ export const useMarketDetails = (marketAddress: string) => {
             isActive: Number(state.result) === 0 && Number(endTime.result) > Math.floor(Date.now() / 1000),
             isResolved: Number(state.result) === 2,
             winningOption: Number(state.result) === 2 ? Number(finalOutcome.result) : undefined,
+            activeParticipantsCount: 0, // Will be populated from contract
+            state: Number(state.result) as any,
+            status: Number(state.result) === 2 ? 1 : Number(state.result) === 3 ? 2 : 0,
           };
 
           setMarketInfo(marketInfoData);

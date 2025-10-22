@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle } from "lucide-react"
+import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle, Shield, Target, Users } from "lucide-react"
 import { format } from "date-fns"
 import { useCreateMarket } from "@/hooks/use-contracts"
 import { useState, useEffect } from "react"
 import { toast } from "@/hooks/use-toast"
+import { Platform } from "@/lib/types"
 
 interface StepFourProps {
   marketData: any
@@ -19,7 +20,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
   const [marketAddress, setMarketAddress] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   
-  const PlatformIcon = marketData.platform === "twitter" ? Twitter : MessageSquare
+  const PlatformIcon = marketData.platform === Platform.Twitter ? Twitter : 
+                       marketData.platform === Platform.Farcaster ? MessageSquare : 
+                       MessageSquare // Default fallback
 
   const generateIdentifier = () => {
     // Generate a numeric identifier that can be converted to BigInt
@@ -79,7 +82,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         question: marketData.question,
         description: marketData.description,
         category: marketData.category || "other",
-        resolutionSource: marketData.resolutionSource || ""
+        resolutionSource: marketData.resolutionSource || "",
+        platform: marketData.platform || 0, // Default to Platform.Default
+        postUrl: marketData.postUrl || marketData.pollUrl || "",
+        minBet: marketData.minBet || 1,
+        maxBetPerUser: marketData.maxBetPerUser || 1000,
+        maxTotalStake: marketData.maxTotalStake || 10000
       }
 
       toast({
@@ -117,9 +125,28 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       }
     } catch (error) {
       console.error("Error creating market:", error)
+      
+      let errorMessage = "An unknown error occurred"
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      // Handle specific MetaMask errors
+      if (errorMessage.includes("External transactions to internal accounts cannot include data")) {
+        errorMessage = "Wallet connection issue. Please disconnect and reconnect your wallet, then try again."
+      } else if (errorMessage.includes("wallet_sendTransaction")) {
+        errorMessage = "MetaMask connection issue. Please refresh the page and try again."
+      } else if (errorMessage.includes("User rejected")) {
+        errorMessage = "Transaction was cancelled by user."
+      } else if (errorMessage.includes("insufficient funds")) {
+        errorMessage = "Insufficient funds for transaction. Please add ETH to your wallet."
+      } else if (errorMessage.includes("Wallet address is the same as contract address")) {
+        errorMessage = "Wallet connection error detected. Please follow these steps:\n1. Disconnect your wallet from the app\n2. Refresh the page\n3. Reconnect your wallet\n4. Try creating the market again"
+      }
+      
       toast({
         title: "Error Creating Market",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
@@ -178,7 +205,10 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
             <PlatformIcon className="w-5 h-5 text-gold-2" />
             <div>
               <p className="text-sm text-muted-foreground">Platform</p>
-              <p className="font-medium">{marketData.platform === "twitter" ? "Twitter/X" : "Farcaster"}</p>
+              <p className="font-medium">
+                {marketData.platform === Platform.Twitter ? "Twitter/X" : 
+                 marketData.platform === Platform.Farcaster ? "Farcaster" : "Other"}
+              </p>
             </div>
           </div>
         </Card>
@@ -208,7 +238,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         </Card>
 
         {/* Parameters */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="p-4 bg-background border-border">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-gold-2" />
@@ -234,6 +264,37 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         <Card className="p-4 bg-background border-border">
           <p className="text-sm text-muted-foreground mb-2">Resolution Source</p>
           <p className="text-sm">{marketData.resolutionSource}</p>
+        </Card>
+
+        {/* Betting Limits */}
+        <Card className="p-4 bg-background border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-4 h-4 text-gold-2" />
+            <p className="text-sm font-medium">Betting Limits</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Min Bet</p>
+                <p className="text-sm font-medium">${marketData.minBet.toFixed(2)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Max Per User</p>
+                <p className="text-sm font-medium">${marketData.maxBetPerUser.toFixed(2)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Max Total</p>
+                <p className="text-sm font-medium">${marketData.maxTotalStake.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Smart Contract Creation */}
