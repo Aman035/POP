@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { MarketInfo } from "@/lib/types"
+import { formatUnits } from "viem"
 
 interface MarketCardProps {
   market: MarketInfo
@@ -12,13 +13,17 @@ interface MarketCardProps {
 export function MarketCard({ market }: MarketCardProps) {
   const timeRemaining = getTimeRemaining(new Date(market.endTime * 1000))
   const totalLiquidity = parseFloat(market.totalLiquidity)
-  const isResolved = market.isResolved
-  const statusColor = isResolved ? "bg-green-500" : "bg-blue-500"
+  const isResolved = market.status === 1 // 1 = resolved
+  const isCancelled = market.status === 2 // 2 = cancelled
+  const isActive = market.status === 0 // 0 = active
+  const statusColor = isResolved ? "bg-green-500" : isCancelled ? "bg-red-500" : "bg-blue-500"
 
-  // Calculate odds for each option
+  // Calculate odds for each option (handle case when optionLiquidity is empty)
   const optionsWithOdds = market.options.map((option, index) => {
-    const optionLiquidity = parseFloat(market.optionLiquidity[index] || "0")
-    const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 0
+    const optionLiquidity = market.optionLiquidity && market.optionLiquidity[index] 
+      ? parseFloat(market.optionLiquidity[index]) 
+      : 0
+    const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50 // Default to 50% if no liquidity
     return {
       label: option,
       odds: Math.round(odds * 100) / 100,
@@ -40,7 +45,7 @@ export function MarketCard({ market }: MarketCardProps) {
                 {market.category}
               </Badge>
               <Badge className={`text-xs text-white ${statusColor}`}>
-                {isResolved ? "Resolved" : "Active"}
+                {isResolved ? "Resolved" : isCancelled ? "Cancelled" : "Active"}
               </Badge>
               {isResolved && market.winningOption !== undefined && (
                 <Badge className="text-xs bg-green-600 text-white">
@@ -89,6 +94,12 @@ export function MarketCard({ market }: MarketCardProps) {
               <Users className="w-4 h-4" />
               <span>Creator: {market.creator.slice(0, 6)}...{market.creator.slice(-4)}</span>
             </div>
+            {market.platform > 0 && (
+              <div className="flex items-center gap-1">
+                <Twitter className="w-4 h-4" />
+                <span>Platform: {market.platform === 1 ? 'Twitter' : market.platform === 2 ? 'Farcaster' : 'Other'}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 text-gold-2">
             <Clock className="w-4 h-4" />
@@ -96,13 +107,30 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </div>
 
+        {/* Additional Info */}
+        {market.minBet > 0 && (
+          <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+            <div className="flex justify-between">
+              <span>Min Bet: ${formatUnits(BigInt(market.minBet), 6)}</span>
+              {market.maxBetPerUser > 0 && (
+                <span>Max per User: ${formatUnits(BigInt(market.maxBetPerUser), 6)}</span>
+              )}
+            </div>
+            {market.maxTotalStake > 0 && (
+              <div className="mt-1">
+                <span>Max Total: ${formatUnits(BigInt(market.maxTotalStake), 6)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Quick Bet Button */}
         <Button 
           className="w-full mt-4 gold-gradient text-background font-semibold group-hover:opacity-90 transition-opacity"
-          disabled={isResolved}
+          disabled={isResolved || isCancelled}
         >
           <TrendingUp className="w-4 h-4 mr-2" />
-          {isResolved ? "Market Resolved" : "Place Bet"}
+          {isResolved ? "Market Resolved" : isCancelled ? "Market Cancelled" : "Place Bet"}
         </Button>
       </Card>
     </Link>
