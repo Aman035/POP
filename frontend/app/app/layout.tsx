@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { WalletGuard } from '@/components/wallet/wallet-guard'
+import { ClientOnly } from '@/components/providers/client-only'
 import { useSearchParams } from 'next/navigation'
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
@@ -23,15 +24,17 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Normal layout with header and sidebar - protected by wallet guard
   return (
-    <WalletGuard>
-      <div className="min-h-screen bg-background">
-        <AppHeader />
-        <div className="flex">
-          <AppSidebar />
-          <main className="flex-1 p-6">{children}</main>
+    <ClientOnly fallback={<div className="min-h-screen bg-background" />}>
+      <WalletGuard>
+        <div className="min-h-screen bg-background">
+          <AppHeader />
+          <div className="flex">
+            <AppSidebar />
+            <main className="flex-1 p-6">{children}</main>
+          </div>
         </div>
-      </div>
-    </WalletGuard>
+      </WalletGuard>
+    </ClientOnly>
   )
 }
 

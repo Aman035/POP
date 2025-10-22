@@ -31,6 +31,7 @@ export interface MarketInfo {
   description: string;
   category: string;
   resolutionSource: string;
+  optionLiquidity: string[];
 }
 
 export interface BetInfo {

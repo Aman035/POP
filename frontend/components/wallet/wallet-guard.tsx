@@ -16,18 +16,28 @@ export function WalletGuard({
   fallback,
   requireCorrectChain = true 
 }: WalletGuardProps) {
+  const [mounted, setMounted] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Always call useWallet to maintain consistent hook order
   const { 
     isConnected, 
     isCorrectChain, 
     isConnecting,
     isSwitchingChain 
   } = useWallet();
-  
-  const [showModal, setShowModal] = useState(false);
-  const [hasChecked, setHasChecked] = useState(false);
 
-  // Check wallet connection status
+  // Check wallet connection status - always call this hook
   useEffect(() => {
+    if (!mounted) {
+      return; // Don't run until mounted
+    }
+    
     if (isConnecting || isSwitchingChain) {
       return; // Still loading, don't show modal yet
     }
@@ -39,7 +49,12 @@ export function WalletGuard({
     }
     
     setHasChecked(true);
-  }, [isConnected, isCorrectChain, isConnecting, isSwitchingChain, requireCorrectChain, hasChecked]);
+  }, [mounted, isConnected, isCorrectChain, isConnecting, isSwitchingChain, requireCorrectChain, hasChecked]);
+
+  // Don't render until mounted to prevent SSR issues
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   // Show loading state while checking connection
   if (isConnecting || isSwitchingChain) {

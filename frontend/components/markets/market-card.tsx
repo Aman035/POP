@@ -3,38 +3,31 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp } from "lucide-react"
 import Link from "next/link"
-
-interface MarketOption {
-  id: string
-  label: string
-  odds: number
-  pool: number
-}
-
-interface Market {
-  id: string
-  question: string
-  creator: string
-  platform: "twitter" | "farcaster"
-  postUrl: string
-  totalPool: number
-  participants: number
-  endsAt: Date
-  options: MarketOption[]
-  category: string
-  status: "active" | "resolved" | "cancelled"
-}
+import { MarketInfo } from "@/lib/types"
 
 interface MarketCardProps {
-  market: Market
+  market: MarketInfo
 }
 
 export function MarketCard({ market }: MarketCardProps) {
-  const timeRemaining = getTimeRemaining(market.endsAt)
-  const PlatformIcon = market.platform === "twitter" ? Twitter : MessageSquare
+  const timeRemaining = getTimeRemaining(new Date(market.endTime * 1000))
+  const totalLiquidity = parseFloat(market.totalLiquidity)
+  const isResolved = market.isResolved
+  const statusColor = isResolved ? "bg-green-500" : "bg-blue-500"
+
+  // Calculate odds for each option
+  const optionsWithOdds = market.options.map((option, index) => {
+    const optionLiquidity = parseFloat(market.optionLiquidity[index] || "0")
+    const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 0
+    return {
+      label: option,
+      odds: Math.round(odds * 100) / 100,
+      pool: optionLiquidity,
+    }
+  })
 
   return (
-    <Link href={`/app/markets/${market.id}`}>
+    <Link href={`/app/markets/${market.address}`}>
       <Card className="p-5 bg-card border-border hover:border-gold-2/50 transition-all cursor-pointer card-glow group">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -46,25 +39,40 @@ export function MarketCard({ market }: MarketCardProps) {
               <Badge variant="secondary" className="text-xs">
                 {market.category}
               </Badge>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <PlatformIcon className="w-3 h-3" />
-                <span>{market.platform}</span>
-              </div>
+              <Badge className={`text-xs text-white ${statusColor}`}>
+                {isResolved ? "Resolved" : "Active"}
+              </Badge>
+              {isResolved && market.winningOption !== undefined && (
+                <Badge className="text-xs bg-green-600 text-white">
+                  Winner: {market.options[market.winningOption]}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Description */}
+        {market.description && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {market.description}
+          </p>
+        )}
+
         {/* Options with Odds */}
         <div className="space-y-2 mb-4">
-          {market.options.map((option) => (
+          {optionsWithOdds.map((option, index) => (
             <div
-              key={option.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-background border border-border"
+              key={index}
+              className={`flex items-center justify-between p-3 rounded-lg bg-background border border-border ${
+                isResolved && market.winningOption === index ? "border-green-500 bg-green-50" : ""
+              }`}
             >
               <span className="font-medium">{option.label}</span>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">${option.pool.toLocaleString()}</span>
-                <Badge className="gold-gradient text-background font-semibold">{option.odds}%</Badge>
+                <Badge className="gold-gradient text-background font-semibold">
+                  {option.odds}%
+                </Badge>
               </div>
             </div>
           ))}
@@ -75,11 +83,11 @@ export function MarketCard({ market }: MarketCardProps) {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <DollarSign className="w-4 h-4" />
-              <span>${market.totalPool.toLocaleString()}</span>
+              <span>${totalLiquidity.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              <span>{market.participants}</span>
+              <span>Creator: {market.creator.slice(0, 6)}...{market.creator.slice(-4)}</span>
             </div>
           </div>
           <div className="flex items-center gap-1 text-gold-2">
@@ -89,9 +97,12 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
 
         {/* Quick Bet Button */}
-        <Button className="w-full mt-4 gold-gradient text-background font-semibold group-hover:opacity-90 transition-opacity">
+        <Button 
+          className="w-full mt-4 gold-gradient text-background font-semibold group-hover:opacity-90 transition-opacity"
+          disabled={isResolved}
+        >
           <TrendingUp className="w-4 h-4 mr-2" />
-          Place Bet
+          {isResolved ? "Market Resolved" : "Place Bet"}
         </Button>
       </Card>
     </Link>
