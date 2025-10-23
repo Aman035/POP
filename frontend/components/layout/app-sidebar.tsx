@@ -12,6 +12,7 @@ import {
   History,
   ChevronLeft,
   ChevronRight,
+  Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/app/activity", label: "Activity", icon: Activity },
   { href: "/app/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/app/history", label: "History", icon: History },
+  { href: "/app/nexus", label: "Cross-Chain", icon: Zap },
 ]
 
 export function AppSidebar() {

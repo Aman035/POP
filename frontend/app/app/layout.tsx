@@ -6,12 +6,16 @@ import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { WalletGuard } from '@/components/wallet/wallet-guard'
 import { ClientOnly } from '@/components/providers/client-only'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, usePathname } from 'next/navigation'
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const isEmbedded = searchParams.get('embed') === 'true'
   const hideUI = searchParams.get('hideUI') === 'true'
+  
+  // Disable chain check for Nexus page - it handles its own chain management
+  const isNexusPage = pathname === '/app/nexus'
 
   // If embedded and UI should be hidden, render only the content
   if (isEmbedded && hideUI) {
@@ -25,7 +29,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   // Normal layout with header and sidebar - protected by wallet guard
   return (
     <ClientOnly fallback={<div className="min-h-screen bg-background" />}>
-      <WalletGuard>
+      <WalletGuard requireCorrectChain={!isNexusPage}>
         <div className="min-h-screen bg-background">
           <AppHeader />
           <div className="flex">

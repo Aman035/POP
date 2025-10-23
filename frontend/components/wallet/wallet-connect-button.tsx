@@ -2,12 +2,17 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useWallet } from '@/hooks/use-wallet';
+import { useReadContract } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle, ExternalLink, Coins } from 'lucide-react';
 import { arbitrumSepolia } from 'wagmi/chains';
 import { WalletLoading } from './wallet-loading';
 import { WalletErrorBoundary } from './wallet-error-boundary';
+import { useState, useEffect } from 'react';
+import { formatUnits } from 'viem';
+import { IERC20_ABI } from '@/lib/contracts';
+import { COLLATERAL_TOKEN_ADDRESS } from '@/lib/contracts';
 
 interface WalletConnectButtonProps {
   className?: string;
@@ -23,10 +28,26 @@ export function WalletConnectButton({
     isCorrectChain, 
     isConnecting,
     isSwitchingChain,
+    address,
     error, 
     switchToArbitrumSepolia, 
     clearError 
   } = useWallet();
+  
+  // Get USDC balance using wagmi hook
+  const { data: usdcBalance, isLoading: isLoadingBalance } = useReadContract({
+    address: COLLATERAL_TOKEN_ADDRESS as `0x${string}`,
+    abi: IERC20_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: isConnected && isCorrectChain && !!address,
+      refetchInterval: 10000, // Refetch every 10 seconds
+    },
+  });
+
+  // Format the balance for display
+  const formattedBalance = usdcBalance ? formatUnits(usdcBalance as bigint, 6) : '0';
 
   const handleChainSwitch = async () => {
     try {
@@ -144,6 +165,32 @@ export function WalletConnectButton({
           >
             <ExternalLink className="h-3 w-3" />
           </Button>
+        </div>
+      )}
+
+      {/* USDC Balance Display */}
+      {isConnected && isCorrectChain && (
+        <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1">
+            <Coins className="w-3 h-3 text-gold-2" />
+            <span className="hidden sm:inline">
+              {isLoadingBalance ? 'Loading...' : `${parseFloat(formattedBalance).toFixed(2)} USDC`}
+            </span>
+            <span className="sm:hidden">
+              {isLoadingBalance ? '...' : `${parseFloat(formattedBalance).toFixed(1)} USDC`}
+            </span>
+          </div>
+          {parseFloat(formattedBalance) === 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-1 text-xs hover:bg-gold-50 dark:hover:bg-gold-950"
+              onClick={() => window.open('https://faucet.circle.com/', '_blank')}
+              title="Get USDC from Circle Faucet"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       )}
       </div>

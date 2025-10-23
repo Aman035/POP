@@ -6,6 +6,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@avail-project/nexus-core": "^0.0.1",
     "@emotion/is-prop-valid": "latest",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -53,6 +54,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "latest",
+    "uuid": "^9.0.0",
     "viem": "^2.38.3",
     "wagmi": "^2.18.1"
   },
