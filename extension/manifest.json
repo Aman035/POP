@@ -11,7 +11,8 @@
     "host_permissions": [
         "https://x.com/*",
         "https://twitter.com/*",
-        "http://localhost:3000/*"
+        "http://localhost:3000/*",
+        "http://localhost:3001/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -38,5 +39,17 @@
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
-    }
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "icons/prediction.png",
+                "icons/market.png"
+            ],
+            "matches": [
+                "https://*.x.com/*",
+                "https://*.twitter.com/*"
+            ]
+        }
+    ]
 }
