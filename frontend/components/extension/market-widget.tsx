@@ -10,6 +10,7 @@ import { QuickBetModal } from "./quick-bet-modal"
 interface MarketWidgetProps {
   market: {
     id: string
+    address?: string
     question: string
     options: Array<{ id: string; label: string; odds: number }>
     totalPool: number
@@ -79,7 +80,7 @@ export function MarketWidget({ market, compact = false }: MarketWidgetProps) {
               POP Market
             </Badge>
           </div>
-          <a href={`/app/markets/${market.id}`} target="_blank" rel="noopener noreferrer">
+          <a href={`/app/markets/${market.address || market.id}`} target="_blank" rel="noopener noreferrer">
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <ExternalLink className="w-4 h-4" />
             </Button>

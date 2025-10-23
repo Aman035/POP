@@ -9,10 +9,11 @@ import { StepTwo } from "./steps/step-two"
 import { StepThree } from "./steps/step-three"
 import { StepFour } from "./steps/step-four"
 import { X } from "lucide-react"
+import { Platform, MarketCreationParams } from "@/lib/types"
 
 interface MarketData {
   pollUrl: string
-  platform: "twitter" | "farcaster" | null
+  platform: Platform | null
   question: string
   description: string
   options: string[]
@@ -20,6 +21,17 @@ interface MarketData {
   endDate: Date | null
   creatorFee: number
   resolutionSource: string
+  postUrl: string
+  // Betting limits
+  minBet: number
+  maxBetPerUser: number
+  maxTotalStake: number
+  // Smart contract fields
+  marketAddress?: string
+  txHash?: string
+  identifier?: number
+  endTime?: number
+  creatorFeeBps?: number
 }
 
 interface CreateMarketWizardProps {
@@ -38,6 +50,10 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
     endDate: null,
     creatorFee: 2,
     resolutionSource: "",
+    postUrl: "",
+    minBet: 1,
+    maxBetPerUser: 1000,
+    maxTotalStake: 10000,
   })
 
   const totalSteps = 4
@@ -60,18 +76,41 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
   }
 
   const handleCreate = async () => {
-    // Simulate API call
+    // If market was already created on blockchain, just close
+    if (marketData.marketAddress) {
+      onClose()
+      return
+    }
+    
+    // If we're on step 4 and market hasn't been created yet, show message
+    if (currentStep === 4 && !marketData.marketAddress) {
+      alert("Please deploy your market to the blockchain first!")
+      return
+    }
+    
+    // Simulate API call for non-blockchain creation (fallback)
     await new Promise((resolve) => setTimeout(resolve, 2000))
     alert("Market created successfully!")
     onClose()
   }
 
+  const handleMarketCreated = (marketAddress: string, txHash: string) => {
+    // Market was created on blockchain, update the data
+    updateMarketData({ 
+      marketAddress,
+      txHash,
+      identifier: Date.now() + Math.floor(Math.random() * 1000000),
+      endTime: marketData.endDate ? Math.floor(marketData.endDate.getTime() / 1000) : undefined,
+      creatorFeeBps: Math.floor((marketData.creatorFee || 2) * 100)
+    })
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Create Market</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Create Market</h1>
           <p className="text-muted-foreground">
             Step {currentStep} of {totalSteps}
           </p>
@@ -85,25 +124,31 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
       <Progress value={progress} className="h-2" />
 
       {/* Step Content */}
-      <Card className="p-8 bg-card border-border">
-        {currentStep === 1 && <StepOne marketData={marketData} updateMarketData={updateMarketData} />}
-        {currentStep === 2 && <StepTwo marketData={marketData} updateMarketData={updateMarketData} />}
-        {currentStep === 3 && <StepThree marketData={marketData} updateMarketData={updateMarketData} />}
-        {currentStep === 4 && <StepFour marketData={marketData} />}
+      <Card className="p-4 md:p-8 bg-card border-border overflow-hidden">
+        <div className="max-h-[70vh] overflow-y-auto">
+          {currentStep === 1 && <StepOne marketData={marketData} updateMarketData={updateMarketData} />}
+          {currentStep === 2 && <StepTwo marketData={marketData} updateMarketData={updateMarketData} />}
+          {currentStep === 3 && <StepThree marketData={marketData} updateMarketData={updateMarketData} />}
+          {currentStep === 4 && <StepFour marketData={marketData} onCreateMarket={handleMarketCreated} />}
+        </div>
       </Card>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={handleBack} disabled={currentStep === 1} className="bg-transparent">
+      <div className="flex items-center justify-between gap-4">
+        <Button variant="outline" onClick={handleBack} disabled={currentStep === 1} className="bg-transparent flex-1 md:flex-none">
           Back
         </Button>
         {currentStep < totalSteps ? (
-          <Button onClick={handleNext} className="gold-gradient text-background font-semibold">
+          <Button onClick={handleNext} className="gold-gradient text-background font-semibold flex-1 md:flex-none">
             Continue
           </Button>
         ) : (
-          <Button onClick={handleCreate} className="gold-gradient text-background font-semibold">
-            Create Market
+          <Button 
+            onClick={handleCreate} 
+            className="gold-gradient text-background font-semibold flex-1 md:flex-none"
+            disabled={currentStep === 4 && !marketData.marketAddress}
+          >
+            {marketData.marketAddress ? "Finish" : "Create Market"}
           </Button>
         )}
       </div>

@@ -2,8 +2,8 @@
 // Deployed on Arbitrum Sepolia
 
 // Contract addresses
-export const MARKET_FACTORY_ADDRESS = "0xbF5520A88eAec703042Dd53693DA943FE6EC3Faa";
-export const COLLATERAL_TOKEN_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // USDC on Arbitrum
+export const MARKET_FACTORY_ADDRESS = "0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4"; // Correct contract address
+export const COLLATERAL_TOKEN_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Testnet USDC
 
 // Network configuration
 export const NETWORK_CONFIG = {
@@ -23,10 +23,10 @@ import MarketFactoryABI from '../abis/MarketFactory.json';
 import MarketABI from '../abis/Market.json';
 import IERC20ABI from '../abis/IERC20.json';
 
-// Export ABIs
-export const MARKET_FACTORY_ABI = MarketFactoryABI;
-export const MARKET_ABI = MarketABI;
-export const IERC20_ABI = IERC20ABI;
+// Export ABIs with proper typing
+export const MARKET_FACTORY_ABI = MarketFactoryABI.abi as any;
+export const MARKET_ABI = MarketABI.abi as any;
+export const IERC20_ABI = IERC20ABI as any;
 
 // Contract configuration
 export const CONTRACT_CONFIG = {
@@ -36,11 +36,20 @@ export const CONTRACT_CONFIG = {
 
 // TypeScript interfaces for contract interactions
 export interface MarketCreationParams {
-  identifier: string;
+  identifier: number;
   options: string[];
   creator: string;
   endTime: number;
   creatorFeeBps: number;
+  question: string;
+  description: string;
+  category: string;
+  resolutionSource: string;
+  platform: number;
+  postUrl: string;
+  minBet: number;
+  maxBetPerUser: number;
+  maxTotalStake: number;
 }
 
 export interface MarketFactoryConfig {

@@ -1,9 +1,41 @@
+"use client"
+
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, Clock, DollarSign, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { useTrendingMarkets } from "@/hooks/use-trending-markets"
+import { useMarketStats } from "@/hooks/use-market-stats"
+
+function getTimeRemaining(endsAt: Date): string {
+  const now = new Date()
+  const diff = endsAt.getTime() - now.getTime()
+
+  if (diff < 0) return "Ended"
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h`
+  return "< 1h"
+}
 
 export default function AppHomePage() {
+  const { markets: trendingMarkets, loading: trendingLoading, error: trendingError } = useTrendingMarkets()
+  const { stats, loading: statsLoading, error: statsError } = useMarketStats()
+
+  // Use stats from API or fallback to 0
+  const totalLiquidity = stats ? parseFloat(stats.totalLiquidity) : 0
+  const activeMarkets = stats?.activeMarkets || 0
+  const resolvedMarkets = stats?.resolvedMarkets || 0
+  const totalMarkets = stats?.totalMarkets || 0
+  const totalParticipants = stats?.totalParticipants || 0
+  const uniqueCategories = stats?.uniqueCategories || 0
+
+  const loading = trendingLoading || statsLoading
+  const error = trendingError || statsError
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Welcome Banner */}
@@ -31,7 +63,7 @@ export default function AppHomePage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Active Markets</p>
-              <p className="text-2xl font-bold">1,234</p>
+              <p className="text-2xl font-bold">{activeMarkets}</p>
             </div>
           </div>
         </Card>
@@ -42,8 +74,8 @@ export default function AppHomePage() {
               <DollarSign className="w-5 h-5 text-teal-1" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">24h Volume</p>
-              <p className="text-2xl font-bold">$45.2K</p>
+              <p className="text-sm text-muted-foreground">Total Liquidity</p>
+              <p className="text-2xl font-bold">${totalLiquidity.toLocaleString()}</p>
             </div>
           </div>
         </Card>
@@ -54,8 +86,8 @@ export default function AppHomePage() {
               <Users className="w-5 h-5 text-rose-1" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Users</p>
-              <p className="text-2xl font-bold">8,901</p>
+              <p className="text-sm text-muted-foreground">Total Participants</p>
+              <p className="text-2xl font-bold">{totalParticipants.toLocaleString()}</p>
             </div>
           </div>
         </Card>
@@ -66,8 +98,8 @@ export default function AppHomePage() {
               <Clock className="w-5 h-5 text-gold-2" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Avg Resolution</p>
-              <p className="text-2xl font-bold">2.3h</p>
+              <p className="text-sm text-muted-foreground">Resolved</p>
+              <p className="text-2xl font-bold">{resolvedMarkets}</p>
             </div>
           </div>
         </Card>
@@ -86,35 +118,103 @@ export default function AppHomePage() {
               </Button>
             </Link>
           </div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="p-4 rounded-lg bg-background border border-border hover:border-gold-2/50 transition-colors cursor-pointer"
-              >
-                <p className="font-medium mb-2">Will Bitcoin reach $100k by end of 2025?</p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Pool: $2,450</span>
-                  <span>Ends in 2d 5h</span>
-                </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2"></div>
+                <span>Loading markets...</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-600 mb-2">Error loading markets</p>
+              <p className="text-muted-foreground text-sm">{error}</p>
+            </div>
+          ) : trendingMarkets.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No markets available yet</p>
+              <Link href="/app/create">
+                <Button variant="outline" size="sm" className="mt-2">
+                  Create First Market
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {trendingMarkets.slice(0, 3).map((market) => (
+                <Link key={market.address} href={`/app/markets/${market.address}`}>
+                  <div className="p-4 rounded-lg bg-background border border-border hover:border-gold-2/50 transition-colors cursor-pointer">
+                    <p className="font-medium mb-2">{market.question}</p>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Pool: ${parseFloat(market.totalLiquidity).toLocaleString()}</span>
+                      <span>
+                        {market.isResolved 
+                          ? "Resolved" 
+                          : `Ends in ${getTimeRemaining(new Date(market.endTime * 1000))}`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </Card>
 
-        {/* Recent Activity */}
+        {/* Market Stats */}
         <Card className="p-6 bg-card border-border">
-          <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">User{i}</span> bet <span className="text-gold-2">$50</span>
-                </p>
-                <p className="text-muted-foreground text-xs">2 minutes ago</p>
+          <h2 className="text-xl font-bold mb-4">Market Stats</h2>
+          {statsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gold-2"></div>
+                <span className="text-sm">Loading stats...</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : statsError ? (
+            <div className="text-center py-4">
+              <p className="text-red-600 text-sm">Error loading stats</p>
+            </div>
+          ) : stats ? (
+            <div className="space-y-3">
+              <div className="text-sm">
+                <p className="text-foreground">
+                  <span className="font-semibold">Active Markets:</span> {activeMarkets}
+                </p>
+              </div>
+              <div className="text-sm">
+                <p className="text-foreground">
+                  <span className="font-semibold">Resolved Markets:</span> {resolvedMarkets}
+                </p>
+              </div>
+              <div className="text-sm">
+                <p className="text-foreground">
+                  <span className="font-semibold">Total Liquidity:</span> <span className="text-gold-2">${totalLiquidity.toLocaleString()}</span>
+                </p>
+              </div>
+              <div className="text-sm">
+                <p className="text-foreground">
+                  <span className="font-semibold">Total Participants:</span> {totalParticipants.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-sm">
+                <p className="text-foreground">
+                  <span className="font-semibold">Categories:</span> {uniqueCategories}
+                </p>
+              </div>
+              {stats.avgResolutionTime > 0 && (
+                <div className="text-sm">
+                  <p className="text-foreground">
+                    <span className="font-semibold">Avg Resolution:</span> {stats.avgResolutionTime.toFixed(1)}h
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground text-sm">No stats available</p>
+            </div>
+          )}
         </Card>
       </div>
     </div>

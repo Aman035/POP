@@ -23,8 +23,19 @@ export interface WalletActions {
 }
 
 export function useWallet(): WalletState & WalletActions {
-  const { address, isConnected, chainId } = useAccount();
-  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Always call all hooks to maintain consistent order
+  const { address, isConnected, chainId } = useAccount({
+    query: { enabled: mounted }
+  });
+  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect({
+    mutation: { onError: () => {} }
+  });
   const { disconnect, isPending: isDisconnecting } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain, error: switchError } = useSwitchChain();
   
@@ -96,6 +107,24 @@ export function useWallet(): WalletState & WalletActions {
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  // Return default values when not mounted to prevent SSR issues
+  if (!mounted) {
+    return {
+      isConnected: false,
+      isConnecting: false,
+      isDisconnecting: false,
+      isSwitchingChain: false,
+      address: undefined,
+      chainId: undefined,
+      isCorrectChain: false,
+      error: null,
+      connect: async () => {},
+      disconnect: async () => {},
+      switchToArbitrumSepolia: async () => {},
+      clearError: () => {},
+    };
+  }
 
   return {
     // State

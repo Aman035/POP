@@ -19,6 +19,19 @@ contract MarketFactory is Ownable {
         address creator;
         uint64 endTime;
         uint96 creatorFeeBps;
+
+        // metadata
+        string question;
+        string description;
+        string category;
+        string resolutionSource;
+        Market.Platform platform;
+        string postUrl;
+
+        // optional limits
+        uint256 minBet;
+        uint256 maxBetPerUser;
+        uint256 maxTotalStake;
     }
 
     event MarketCreated(
@@ -26,8 +39,20 @@ contract MarketFactory is Ownable {
         address indexed creator,
         address market,
         string[] options,
-        uint64 endTime
+        uint64 endTime,
+        uint96 creatorFeeBps,
+        string question,
+        string description,
+        string category,
+        string resolutionSource,
+        Market.Platform platform,
+        string postUrl,
+        uint64 createdAt,
+        uint256 minBet,
+        uint256 maxBetPerUser,
+        uint256 maxTotalStake
     );
+
     event CreatorOverrideWindowUpdated(uint64 previousWindow, uint64 newWindow);
 
     IERC20 public immutable collateral;
@@ -38,7 +63,6 @@ contract MarketFactory is Ownable {
 
     constructor(FactoryConfig memory config, address initialOwner) Ownable(initialOwner) {
         require(address(config.collateral) != address(0), "Factory: collateral required");
-
         collateral = config.collateral;
         creatorOverrideWindow = config.creatorOverrideWindow;
     }
@@ -62,7 +86,16 @@ contract MarketFactory is Ownable {
             creatorFeeBps: params.creatorFeeBps,
             endTime: params.endTime,
             identifier: params.identifier,
-            options: optionsCopy
+            options: optionsCopy,
+            question: params.question,
+            description: params.description,
+            category: params.category,
+            resolutionSource: params.resolutionSource,
+            platform: params.platform,
+            postUrl: params.postUrl,
+            minBet: params.minBet,
+            maxBetPerUser: params.maxBetPerUser,
+            maxTotalStake: params.maxTotalStake
         });
 
         Market deployed = new Market(constructorParams);
@@ -71,7 +104,24 @@ contract MarketFactory is Ownable {
         marketForIdentifier[params.identifier] = market;
         _markets.push(market);
 
-        emit MarketCreated(params.identifier, params.creator, market, optionsCopy, params.endTime);
+        emit MarketCreated(
+            params.identifier,
+            params.creator,
+            market,
+            optionsCopy,
+            params.endTime,
+            params.creatorFeeBps,
+            params.question,
+            params.description,
+            params.category,
+            params.resolutionSource,
+            params.platform,
+            params.postUrl,
+            uint64(block.timestamp),
+            params.minBet,
+            params.maxBetPerUser,
+            params.maxTotalStake
+        );
     }
 
     function setCreatorOverrideWindow(uint64 newWindow) external onlyOwner {

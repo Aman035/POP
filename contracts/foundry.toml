@@ -6,8 +6,8 @@ solc_version = "0.8.24"
 evm_version = "paris"
 optimizer = true
 optimizer_runs = 1_000
-# `via_ir` disabled due to stack-too-deep bug in solc 0.8.24 when compiling Market.sol
-via_ir = false
+# Enable `via_ir` to fix stack-too-deep errors
+via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
 remappings = ["forge-std/=lib/forge-std/src/"]

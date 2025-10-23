@@ -4,229 +4,263 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Search, Filter, RefreshCw, TrendingUp, DollarSign, Users, Clock, AlertCircle } from "lucide-react"
 import { MarketCard } from "@/components/markets/market-card"
-import { MarketFilters } from "@/components/markets/market-filters"
-import { Search, SlidersHorizontal } from "lucide-react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-
-// Mock market data
-const mockMarkets = [
-  {
-    id: "1",
-    question: "Will Bitcoin reach $100k by end of 2025?",
-    creator: "0x1234...5678",
-    platform: "twitter" as const,
-    postUrl: "https://twitter.com/example/status/123",
-    totalPool: 2450,
-    participants: 42,
-    endsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 65, pool: 1592.5 },
-      { id: "no", label: "No", odds: 35, pool: 857.5 },
-    ],
-    category: "crypto",
-    status: "active" as const,
-  },
-  {
-    id: "2",
-    question: "Will the next iPhone have USB-C?",
-    creator: "0xabcd...efgh",
-    platform: "farcaster" as const,
-    postUrl: "https://warpcast.com/example/123",
-    totalPool: 1820,
-    participants: 28,
-    endsAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 82, pool: 1492.4 },
-      { id: "no", label: "No", odds: 18, pool: 327.6 },
-    ],
-    category: "tech",
-    status: "active" as const,
-  },
-  {
-    id: "3",
-    question: "Will AI replace software engineers by 2030?",
-    creator: "0x9876...5432",
-    platform: "twitter" as const,
-    postUrl: "https://twitter.com/example/status/456",
-    totalPool: 5600,
-    participants: 89,
-    endsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 25, pool: 1400 },
-      { id: "no", label: "No", odds: 75, pool: 4200 },
-    ],
-    category: "tech",
-    status: "active" as const,
-  },
-  {
-    id: "4",
-    question: "Will SpaceX land on Mars in 2026?",
-    creator: "0xdef0...1234",
-    platform: "twitter" as const,
-    postUrl: "https://twitter.com/example/status/789",
-    totalPool: 3200,
-    participants: 56,
-    endsAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 15, pool: 480 },
-      { id: "no", label: "No", odds: 85, pool: 2720 },
-    ],
-    category: "science",
-    status: "active" as const,
-  },
-  {
-    id: "5",
-    question: "Will the S&P 500 hit 6000 this year?",
-    creator: "0xfeed...beef",
-    platform: "farcaster" as const,
-    postUrl: "https://warpcast.com/example/456",
-    totalPool: 8900,
-    participants: 124,
-    endsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 58, pool: 5162 },
-      { id: "no", label: "No", odds: 42, pool: 3738 },
-    ],
-    category: "finance",
-    status: "active" as const,
-  },
-  {
-    id: "6",
-    question: "Will there be a new COVID variant by summer?",
-    creator: "0xc0de...cafe",
-    platform: "twitter" as const,
-    postUrl: "https://twitter.com/example/status/999",
-    totalPool: 1200,
-    participants: 34,
-    endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    options: [
-      { id: "yes", label: "Yes", odds: 45, pool: 540 },
-      { id: "no", label: "No", odds: 55, pool: 660 },
-    ],
-    category: "health",
-    status: "active" as const,
-  },
-]
+import { useMarketsApi } from "@/hooks/use-markets-api"
+import { MarketInfo } from "@/lib/types"
 
 export default function MarketsPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("trending")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<"newest" | "liquidity" | "ending">("newest")
+  const [refreshKey, setRefreshKey] = useState(0)
+  
+  const { markets, loading, error } = useMarketsApi()
+  
+
+
 
   // Filter and sort markets
-  const filteredMarkets = mockMarkets
+  const filteredMarkets = markets
     .filter((market) => {
-      const matchesSearch = market.question.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesCategory = selectedCategory === "all" || market.category === selectedCategory
-      const matchesPlatform = selectedPlatform === "all" || market.platform === selectedPlatform
-      return matchesSearch && matchesCategory && matchesPlatform
+      const matchesSearch = market.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           market.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesCategory = !selectedCategory || market.category === selectedCategory
+      return matchesSearch && matchesCategory
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case "pool":
-          return b.totalPool - a.totalPool
-        case "ending-soon":
-          return a.endsAt.getTime() - b.endsAt.getTime()
-        case "participants":
-          return b.participants - a.participants
+        case "liquidity":
+          return parseFloat(b.totalLiquidity) - parseFloat(a.totalLiquidity)
+        case "ending":
+          return a.endTime - b.endTime
+        case "newest":
         default:
-          return b.totalPool - a.totalPool // trending = highest pool
+          return b.identifier - a.identifier
       }
     })
 
+  // Get unique categories
+  const categories = Array.from(new Set(markets.map(market => market.category)))
+
+  // Calculate total stats
+  const totalLiquidity = markets.reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+  const activeMarkets = markets.filter(market => market.status === 0).length
+  const resolvedMarkets = markets.filter(market => market.status === 1).length
+  const cancelledMarkets = markets.filter(market => market.status === 2).length
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span>Loading markets...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Markets</h2>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Markets</h1>
-        <p className="text-muted-foreground">Browse and bet on prediction markets from social media</p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Prediction Markets</h1>
+            <p className="text-muted-foreground">
+              Bet on the outcome of real-world events and earn rewards for accurate predictions.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            {loading && (
+              <div className="flex items-center gap-2 text-blue-600">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Loading markets...</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="p-4 bg-card border-border">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
+      {/* Showcase Banner */}
+      {markets.length > 0 && (
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 mb-1">
+                🎉 Live Prediction Markets Connected!
+              </h3>
+              <p className="text-blue-700 text-sm">
+                Successfully connected to Arbitrum Sepolia and loaded {markets.length} active markets. 
+                Click on any market to view details and place bets.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Badge className="bg-green-100 text-green-800 border-green-200">
+                ✅ Connected
+              </Badge>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Display */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Error Loading Markets</span>
+          </div>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      )}
+
+
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <Card className="p-4 bg-card border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-5 h-5 text-gold-2" />
+            <span className="font-semibold">Total Liquidity</span>
+          </div>
+          <p className="text-2xl font-bold">${totalLiquidity.toLocaleString()}</p>
+        </Card>
+        
+        <Card className="p-4 bg-card border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-5 h-5 text-blue-500" />
+            <span className="font-semibold">Active Markets</span>
+          </div>
+          <p className="text-2xl font-bold">{activeMarkets}</p>
+        </Card>
+        
+        <Card className="p-4 bg-card border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-5 h-5 text-green-500" />
+            <span className="font-semibold">Resolved</span>
+          </div>
+          <p className="text-2xl font-bold">{resolvedMarkets}</p>
+        </Card>
+        
+        <Card className="p-4 bg-card border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-5 h-5 text-red-500" />
+            <span className="font-semibold">Cancelled</span>
+          </div>
+          <p className="text-2xl font-bold">{cancelledMarkets}</p>
+        </Card>
+        
+        <Card className="p-4 bg-card border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-5 h-5 text-orange-500" />
+            <span className="font-semibold">Total Markets</span>
+          </div>
+          <p className="text-2xl font-bold">{markets.length}</p>
+        </Card>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search markets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-
-          {/* Mobile Filter Button */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="md:hidden bg-transparent">
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <MarketFilters
-                  selectedCategory={selectedCategory}
-                  setSelectedCategory={setSelectedCategory}
-                  selectedPlatform={selectedPlatform}
-                  setSelectedPlatform={setSelectedPlatform}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop Filters */}
-          <div className="hidden md:flex gap-2">
-            <MarketFilters
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedPlatform={selectedPlatform}
-              setSelectedPlatform={setSelectedPlatform}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              compact
-            />
-          </div>
         </div>
-      </Card>
-
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredMarkets.length} of {mockMarkets.length} markets
-        </p>
+        
+        <div className="flex gap-2">
+          <select
+            value={selectedCategory || ""}
+            onChange={(e) => setSelectedCategory(e.target.value || null)}
+            className="px-3 py-2 border border-border rounded-md bg-background"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="px-3 py-2 border border-border rounded-md bg-background"
+          >
+            <option value="newest">Newest</option>
+            <option value="liquidity">Most Liquidity</option>
+            <option value="ending">Ending Soon</option>
+          </select>
+        </div>
       </div>
+
+
 
       {/* Markets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filteredMarkets.map((market) => (
-          <MarketCard key={market.id} market={market} />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredMarkets.length === 0 && (
-        <Card className="p-12 bg-card border-border text-center">
-          <p className="text-muted-foreground mb-4">No markets found matching your filters</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchQuery("")
-              setSelectedCategory("all")
-              setSelectedPlatform("all")
-            }}
-          >
-            Clear Filters
-          </Button>
-        </Card>
+      {filteredMarkets.length === 0 ? (
+        <div className="text-center py-12">
+          <h3 className="text-xl font-semibold mb-2">No markets found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchTerm || selectedCategory 
+              ? "Try adjusting your search or filter criteria."
+              : "No markets have been created yet. Create your first prediction market!"
+            }
+          </p>
+          {!searchTerm && !selectedCategory && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                No markets have been created yet. Create your first prediction market!
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Button asChild>
+                  <a href="/app/create">Create Market</a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMarkets.map((market) => (
+            <MarketCard key={market.address} market={market} />
+          ))}
+        </div>
       )}
     </div>
   )
