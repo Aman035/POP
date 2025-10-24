@@ -151,7 +151,11 @@ export function useNexusSDK(): NexusSDKState & NexusSDKActions & {
   // Set up event listeners
   const setupEventListeners = useCallback((sdk: NexusSDK) => {
     // Clean up existing listeners
-    unsubscribeRefs.current.forEach(unsubscribe => unsubscribe());
+    unsubscribeRefs.current.forEach(unsubscribe => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    });
     unsubscribeRefs.current = [];
 
     // Bridge & Execute Progress
@@ -325,7 +329,11 @@ export function useNexusSDK(): NexusSDKState & NexusSDKActions & {
   const deinit = useCallback(async () => {
     if (sdkRef.current) {
       // Clean up event listeners
-      unsubscribeRefs.current.forEach(unsubscribe => unsubscribe());
+      unsubscribeRefs.current.forEach(unsubscribe => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
       unsubscribeRefs.current = [];
 
       await sdkRef.current.deinit();
@@ -353,7 +361,11 @@ export function useNexusSDK(): NexusSDKState & NexusSDKActions & {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      unsubscribeRefs.current.forEach(unsubscribe => unsubscribe());
+      unsubscribeRefs.current.forEach(unsubscribe => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
       if (sdkRef.current) {
         sdkRef.current.deinit();
       }
