@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: indexer
+networks:
+  - id: 421614
+    start_block: 0
+    contracts:
+      - name: MarketFactory
+        address:
+          - 0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643
+        handler: src/EventHandlers.ts
+        events:
+          - event: MarketCreated(address indexed creator, address indexed market, (address,uint64,string,uint64,uint96) params, (string,string,string,uint8,string,string[]) metadata)
+      - name: Market
+        handler: src/EventHandlers.ts
+        events:
+          - event: BetExited(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool)
+          - event: BetPlaced(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool)
+          - event: MarketResolved(address indexed resolver, uint8 indexed option, uint256 creatorFee)
+          - event: ParticipantCountUpdated(uint256 newCount)
+          - event: PayoutClaimed(address indexed user, uint256 amount)
+          - event: ProposedResolution(address indexed proposer, uint8 indexed option, string evidenceURI)
+unordered_multichain_mode: true
+preload_handlers: true

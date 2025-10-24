@@ -1,0 +1,58 @@
+type Market_BetExited {
+  id: ID!
+  user: String!
+  option: BigInt!
+  amount: BigInt!
+  newPool: BigInt!
+}
+
+type Market_BetPlaced {
+  id: ID!
+  user: String!
+  option: BigInt!
+  amount: BigInt!
+  newPool: BigInt!
+}
+
+type Market_MarketResolved {
+  id: ID!
+  resolver: String!
+  option: BigInt!
+  creatorFee: BigInt!
+}
+
+type Market_ParticipantCountUpdated {
+  id: ID!
+  newCount: BigInt!
+}
+
+type Market_PayoutClaimed {
+  id: ID!
+  user: String!
+  amount: BigInt!
+}
+
+type Market_ProposedResolution {
+  id: ID!
+  proposer: String!
+  option: BigInt!
+  evidenceURI: String!
+}
+
+type MarketFactory_MarketCreated {
+  id: ID!
+  creator: String!
+  market: String!
+  params_0: String!
+  params_1: BigInt!
+  params_2: String!
+  params_3: BigInt!
+  params_4: BigInt!
+  metadata_0: String!
+  metadata_1: String!
+  metadata_2: String!
+  metadata_3: BigInt!
+  metadata_4: String!
+  metadata_5: [String!]!
+}
+
