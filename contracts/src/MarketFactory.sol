@@ -16,7 +16,7 @@ contract MarketFactory is Ownable {
     struct MarketParams {
         address collateral;
         uint64 creatorOverrideWindow;
-        uint256 identifier;
+        string identifier;
         uint64 endTime;
         uint96 creatorFeeBps;
     }
@@ -40,7 +40,7 @@ contract MarketFactory is Ownable {
     IERC20 public immutable collateral;
     uint64 public creatorOverrideWindow;
 
-    mapping(uint256 => address) public marketForIdentifier;
+    mapping(string => address) public marketForIdentifier;
     address[] private _markets;
 
     constructor(FactoryConfig memory config, address initialOwner) Ownable(initialOwner) {
@@ -50,7 +50,7 @@ contract MarketFactory is Ownable {
     }
 
     function createMarket(
-        uint256 identifier,
+        string calldata identifier,
         uint64 endTime,
         uint96 creatorFeeBps,
         string calldata question,

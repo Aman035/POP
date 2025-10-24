@@ -35,7 +35,7 @@ contract MarketTest is Test {
     function _createDefaultMarket() internal returns (Market market) {
         vm.prank(pollCreator);
         address deployed = factory.createMarket(
-            123, // identifier
+            "test-market-123", // identifier
             uint64(block.timestamp + 1 days), // endTime
             creatorFeeBps, // creatorFeeBps
             "Will this test pass?", // question
@@ -54,7 +54,7 @@ contract MarketTest is Test {
         assertEq(address(market.collateral()), address(collateral), "collateral mismatch");
         assertEq(market.creator(), pollCreator, "creator mismatch");
         assertEq(market.getOptionCount(), 2, "option count mismatch");
-        assertEq(factory.marketForIdentifier(123), address(market), "factory mapping");
+        assertEq(factory.marketForIdentifier("test-market-123"), address(market), "factory mapping");
     }
 
     function testPlaceBetAndExit() public {
@@ -85,7 +85,7 @@ contract MarketTest is Test {
         vm.expectRevert(bytes("Factory: market exists"));
         vm.prank(pollCreator);
         factory.createMarket(
-            123, // identifier (same as first market)
+            "test-market-123", // identifier (same as first market)
             uint64(block.timestamp + 1 days), // endTime
             creatorFeeBps, // creatorFeeBps
             "Will this test pass?", // question

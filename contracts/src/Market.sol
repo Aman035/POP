@@ -39,7 +39,7 @@ contract Market is ReentrancyGuard {
     IERC20 public immutable collateral;
     uint64 public immutable creatorOverrideWindow;
     address public immutable creator;
-    uint256 public immutable identifier;
+    string public identifier;
     uint64 public immutable createdAt;
     uint64 public immutable endTime;
     uint96 public immutable creatorFeeBps;
@@ -115,7 +115,7 @@ contract Market is ReentrancyGuard {
         IERC20 _collateral,
         uint64 _creatorOverrideWindow,
         address _creator,
-        uint256 _identifier,
+        string memory _identifier,
         uint64 _endTime,
         uint96 _creatorFeeBps,
         string memory _question,
