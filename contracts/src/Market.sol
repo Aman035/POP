@@ -8,49 +8,17 @@ contract Market is ReentrancyGuard {
     uint256 public constant BPS = 10_000;
 
     enum State {
-        Trading,    // Active
-        Proposed,   // Active (post-end, awaiting finalize/override)
-        Resolved,   // Resolved
-        Cancelled   // Cancelled
+        Trading, // Active
+        Proposed, // Active (post-end, awaiting finalize/override)
+        Resolved // Resolved
+
     }
 
     enum Platform {
-        Default,
         Twitter,
         Farcaster,
         Lens,
         Other
-    }
-
-    /// @notice High-level UI status for convenience.
-    /// 0: Active (Trading/Proposed), 1: Resolved, 2: Cancelled
-    function status() public view returns (uint8) {
-        if (state == State.Resolved) return 1;
-        if (state == State.Cancelled) return 2;
-        return 0;
-    }
-
-    struct ConstructorParams {
-        IERC20 collateral;
-        uint64 creatorOverrideWindow;
-        address creator;
-        uint96 creatorFeeBps;
-        uint64 endTime;
-        uint256 identifier;
-        string[] options;
-
-        // metadata
-        string question;
-        string description;
-        string category;
-        string resolutionSource;
-        Platform platform;
-        string postUrl;
-
-        // optional bet limits (0 disables)
-        uint256 minBet;
-        uint256 maxBetPerUser;
-        uint256 maxTotalStake;
     }
 
     // -------- Events --------
@@ -58,63 +26,36 @@ contract Market is ReentrancyGuard {
     event BetPlaced(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool);
     event BetExited(address indexed user, uint8 indexed option, uint256 amount, uint256 newPool);
 
-    event ProposedResolution(uint8 indexed option, address indexed proposer, string evidenceURI);
-    event MarketResolved(uint8 indexed option, address indexed resolver, uint256 creatorFee);
+    event ProposedResolution(address indexed proposer, uint8 indexed option, string evidenceURI);
+    event MarketResolved(address indexed resolver, uint8 indexed option, uint256 creatorFee);
 
     event PayoutClaimed(address indexed user, uint256 amount);
-
-    event MarketMetadataSet(
-        uint256 indexed identifier,
-        string question,
-        string description,
-        string category,
-        string resolutionSource,
-        string[] options,
-        uint64 endTime,
-        uint96 creatorFeeBps,
-        address creator,
-        Platform platform,
-        string postUrl,
-        uint64 createdAt,
-        uint256 minBet,
-        uint256 maxBetPerUser,
-        uint256 maxTotalStake
-    );
-
-    event MarketStatusChanged(uint8 newStatus); // 0 Active, 1 Resolved, 2 Cancelled
     event ParticipantCountUpdated(uint256 newCount);
 
     // -------- Immutables / Config --------
 
-    IERC20 public immutable collateral;
+    // Market Params
     address public immutable factory;
+    IERC20 public immutable collateral;
     uint64 public immutable creatorOverrideWindow;
-    uint256 public immutable identifier;
-
     address public immutable creator;
-    uint96 public immutable creatorFeeBps;
+    uint256 public immutable identifier;
+    uint64 public immutable createdAt;
     uint64 public immutable endTime;
+    uint96 public immutable creatorFeeBps;
 
-    // Metadata
+    // Market Metadata
     string public question;
     string public description;
     string public category;
+    Platform public immutable platform;
     string public resolutionSource;
-    Platform public platform;
-    string public postUrl;
-    uint64 public createdAt;
-
-    // Optional limits
-    uint256 public immutable minBet;
-    uint256 public immutable maxBetPerUser;
-    uint256 public immutable maxTotalStake;
+    string[] public options;
 
     // -------- State --------
 
     State public state;
-
-    uint8 public proposedOutcome;
-    uint8 public finalOutcome;
+    uint8 public outcome;
     address public proposer;
     address public resolver;
     uint256 public proposalTimestamp;
@@ -124,10 +65,7 @@ contract Market is ReentrancyGuard {
     uint256 public finalWinningPool;
     uint256 public resolvedPayoutPool;
     uint256 public creatorFeePaid;
-
     uint256 public activeParticipantsCount;
-
-    string[] private _options;
 
     mapping(uint8 => uint256) public optionLiquidity; // option => pool
     mapping(address => mapping(uint8 => uint256)) public userPositions; // user => option => amount
@@ -137,108 +75,87 @@ contract Market is ReentrancyGuard {
 
     // -------- Errors --------
 
+    error NotCreator();
+    error TradingEnded();
+    error TradingNotEnded();
     error InvalidOption();
-    error TradingClosed();
+    error InvalidState();
+    error OverrideWindowActive();
+    error OverrideWindowExpired();
+
     error InvalidAmount();
-    error Unauthorized();
     error MarketNotResolved();
     error AlreadyClaimed();
     error NothingToClaim();
-    error CancelNotAllowed();
 
     // -------- Modifiers --------
-
-    modifier onlyTrading() {
-        if (state != State.Trading) revert TradingClosed();
+    modifier onlyCreator() {
+        if (msg.sender != creator) revert NotCreator();
         _;
     }
 
     modifier onlyAfterEnd() {
-        if (block.timestamp < endTime) revert TradingClosed();
+        if (block.timestamp < endTime) revert TradingNotEnded();
+        _;
+    }
+
+    modifier onlyBeforeEnd() {
+        if (block.timestamp >= endTime) revert TradingEnded();
         _;
     }
 
     modifier validOption(uint8 option) {
-        if (option >= _options.length) revert InvalidOption();
+        if (option >= options.length) revert InvalidOption();
         _;
     }
 
     // -------- Constructor --------
 
-    constructor(ConstructorParams memory params) {
-        require(address(params.collateral) != address(0), "Market: collateral required");
-        require(params.options.length >= 2, "Market: min two options");
-        require(params.creatorFeeBps <= BPS, "Market: invalid creator fee");
-        require(params.endTime > block.timestamp, "Market: end in past");
-        require(params.creator != address(0), "Market: creator required");
+    constructor(
+        IERC20 _collateral,
+        uint64 _creatorOverrideWindow,
+        address _creator,
+        uint256 _identifier,
+        uint64 _endTime,
+        uint96 _creatorFeeBps,
+        string memory _question,
+        string memory _description,
+        string memory _category,
+        Platform _platform,
+        string memory _resolutionSource,
+        string[] memory _options
+    ) {
+        require(address(_collateral) != address(0), "Market: collateral required");
+        require(_options.length >= 2, "Market: min two options");
+        require(_options.length <= 4, "Market: max four options");
+        require(_creatorFeeBps <= BPS, "Market: invalid creator fee");
+        require(_endTime > block.timestamp, "Market: end in past");
 
-        collateral = params.collateral;
-        creatorOverrideWindow = params.creatorOverrideWindow;
-        creator = params.creator;
-        creatorFeeBps = params.creatorFeeBps;
-        endTime = params.endTime;
-        identifier = params.identifier;
+        collateral = _collateral;
         factory = msg.sender;
+        creatorOverrideWindow = _creatorOverrideWindow;
+        creator = _creator;
+        identifier = _identifier;
+        createdAt = uint64(block.timestamp);
+        endTime = _endTime;
+        creatorFeeBps = _creatorFeeBps;
+
+        question = _question;
+        description = _description;
+        category = _category;
+        platform = _platform;
+        resolutionSource = _resolutionSource;
 
         // Copy options into storage
-        for (uint256 i = 0; i < params.options.length; i++) {
-            _options.push(params.options[i]);
+        uint256 optionsLength = _options.length;
+        for (uint256 i = 0; i < optionsLength;) {
+            options.push(_options[i]);
+            unchecked {
+                ++i;
+            }
         }
-
-        // Store metadata
-        question = params.question;
-        description = params.description;
-        category = params.category;
-        resolutionSource = params.resolutionSource;
-        platform = params.platform;
-        postUrl = params.postUrl;
-        createdAt = uint64(block.timestamp);
-
-        // Limits
-        minBet = params.minBet;
-        maxBetPerUser = params.maxBetPerUser;
-        maxTotalStake = params.maxTotalStake;
 
         state = State.Trading;
-
-        emit MarketMetadataSet(
-            params.identifier,
-            params.question,
-            params.description,
-            params.category,
-            params.resolutionSource,
-            params.options,
-            params.endTime,
-            params.creatorFeeBps,
-            params.creator,
-            params.platform,
-            params.postUrl,
-            createdAt,
-            params.minBet,
-            params.maxBetPerUser,
-            params.maxTotalStake
-        );
-
-        emit MarketStatusChanged(0); // Active
-    }
-
-    // -------- Views --------
-
-    function optionCount() external view returns (uint256) {
-        return _options.length;
-    }
-
-    function optionAt(uint256 index) external view returns (string memory) {
-        if (index >= _options.length) revert InvalidOption();
-        return _options[index];
-    }
-
-    function getOptions() external view returns (string[] memory) {
-        string[] memory optionsCopy = new string[](_options.length);
-        for (uint256 i = 0; i < _options.length; i++) {
-            optionsCopy[i] = _options[i];
-        }
-        return optionsCopy;
     }
 
     // -------- Trading --------
@@ -247,54 +164,37 @@ contract Market is ReentrancyGuard {
         external
         nonReentrant
         validOption(option)
+        onlyBeforeEnd
     {
-        if (state != State.Trading) revert TradingClosed();
-        if (block.timestamp >= endTime) revert TradingClosed();
         if (amount == 0) revert InvalidAmount();
-
-        // Limits
-        if (minBet > 0) {
-            require(amount >= minBet, "Market: below minBet");
-        }
-
-        uint256 newUserTotal = userTotalPosition[msg.sender] + amount;
-        if (maxBetPerUser > 0) {
-            require(newUserTotal <= maxBetPerUser, "Market: exceeds maxBetPerUser");
-        }
-
-        uint256 newTotalStaked = totalStaked + amount;
-        if (maxTotalStake > 0) {
-            require(newTotalStaked <= maxTotalStake, "Market: exceeds maxTotalStake");
-        }
 
         _safeTransferFrom(msg.sender, amount);
 
         userPositions[msg.sender][option] += amount;
         optionLiquidity[option] += amount;
-        totalStaked = newTotalStaked;
+        totalStaked += amount;
 
         // participants tracking
+        uint256 newUserTotal = userTotalPosition[msg.sender] + amount;
         userTotalPosition[msg.sender] = newUserTotal;
         if (!_isActiveParticipant[msg.sender]) {
             _isActiveParticipant[msg.sender] = true;
-            activeParticipantsCount += 1;
+            unchecked {
+                activeParticipantsCount += 1;
+            }
             emit ParticipantCountUpdated(activeParticipantsCount);
         }
 
         emit BetPlaced(msg.sender, option, amount, optionLiquidity[option]);
     }
 
-    /// @notice Exit during Trading (before endTime) or any time if Cancelled.
+    /// @notice Exit during Trading (before endTime).
     function exit(uint8 option, uint256 amount)
         external
         nonReentrant
         validOption(option)
+        onlyBeforeEnd
     {
-        bool canExitNow = (
-            (state == State.Trading && block.timestamp < endTime) ||
-            (state == State.Cancelled)
-        );
-        if (!canExitNow) revert TradingClosed();
         if (amount == 0) revert InvalidAmount();
 
         uint256 position = userPositions[msg.sender][option];
@@ -319,40 +219,91 @@ contract Market is ReentrancyGuard {
         emit BetExited(msg.sender, option, amount, optionLiquidity[option]);
     }
 
+    // -------- Market Data Views --------
+
+    /// @notice Get the current percentage for a specific option
+    /// @param option The option index (0-based)
+    /// @return percentage Percentage (0-100, where 100 = 100%)
+    function getOptionPercentage(uint8 option)
+        external
+        view
+        validOption(option)
+        returns (uint256 percentage)
+    {
+        if (totalStaked == 0) return 0;
+        return (optionLiquidity[option] * 100) / totalStaked;
+    }
+
+    /// @notice Calculate potential winning amount for a bet
+    /// @param option The option to bet on
+    /// @param amount The amount to bet
+    /// @return winning The potential winning amount if this option wins
+    function calculateWinning(uint8 option, uint256 amount)
+        external
+        view
+        validOption(option)
+        returns (uint256 winning)
+    {
+        if (state != State.Trading) return 0;
+
+        uint256 newTotalStaked = totalStaked + amount;
+        uint256 newOptionLiquidity = optionLiquidity[option] + amount;
+
+        // Calculate creator fee from losing pool
+        uint256 losingPool = newTotalStaked - newOptionLiquidity;
+        uint256 creatorFee = (losingPool * creatorFeeBps) / BPS;
+        uint256 payoutPool = newTotalStaked - creatorFee;
+
+        if (newOptionLiquidity > 0) {
+            winning = (amount * payoutPool) / newOptionLiquidity;
+        }
+    }
+
+    /// @notice Get the number of options in this market
+    /// @return count Number of options
+    function getOptionCount() external view returns (uint256 count) {
+        return options.length;
+    }
+
     // -------- Resolution --------
 
     function proposeResolution(uint8 option, string calldata evidenceURI)
         external
         nonReentrant
         onlyAfterEnd
-        // only active markets can be proposed
-        // (Trading->Proposed only)
         validOption(option)
     {
-        if (state != State.Trading) revert Unauthorized();
+        if (state != State.Trading) revert InvalidState();
         state = State.Proposed;
-        proposedOutcome = option;
+        outcome = option;
         proposer = msg.sender;
         proposalTimestamp = block.timestamp;
         resolutionEvidence = evidenceURI;
 
-        emit ProposedResolution(option, msg.sender, evidenceURI);
-        emit MarketStatusChanged(0); // still Active
+        emit ProposedResolution(msg.sender, option, evidenceURI);
     }
 
-    function overrideResolution(uint8 option) external nonReentrant validOption(option) {
-        if (state != State.Proposed) revert Unauthorized();
-        if (msg.sender != creator) revert Unauthorized();
-        if (block.timestamp > proposalTimestamp + creatorOverrideWindow) revert Unauthorized();
+    function overrideResolution(uint8 option)
+        external
+        nonReentrant
+        onlyCreator
+        validOption(option)
+    {
+        if (state != State.Proposed) revert InvalidState();
+        if (block.timestamp > proposalTimestamp + creatorOverrideWindow) {
+            revert OverrideWindowExpired();
+        }
 
         _finalize(option, msg.sender);
     }
 
     function finalizeResolution() external nonReentrant {
-        if (state != State.Proposed) revert Unauthorized();
-        if (block.timestamp < proposalTimestamp + creatorOverrideWindow) revert Unauthorized();
+        if (state != State.Proposed) revert InvalidState();
+        if (block.timestamp < proposalTimestamp + creatorOverrideWindow) {
+            revert OverrideWindowActive();
+        }
 
-        _finalize(proposedOutcome, msg.sender);
+        _finalize(outcome, msg.sender);
     }
 
     function claimPayout() external nonReentrant {
@@ -360,11 +311,11 @@ contract Market is ReentrancyGuard {
         if (hasClaimed[msg.sender]) revert AlreadyClaimed();
         if (finalWinningPool == 0) revert NothingToClaim();
 
-        uint256 stake = userPositions[msg.sender][finalOutcome];
+        uint256 stake = userPositions[msg.sender][outcome];
         if (stake == 0) revert NothingToClaim();
 
         hasClaimed[msg.sender] = true;
-        userPositions[msg.sender][finalOutcome] = 0;
+        userPositions[msg.sender][outcome] = 0;
 
         uint256 payout = (stake * resolvedPayoutPool) / finalWinningPool;
         _safeTransfer(msg.sender, payout);
@@ -378,7 +329,9 @@ contract Market is ReentrancyGuard {
             userTotalPosition[msg.sender] = newTotal;
             if (_isActiveParticipant[msg.sender] && newTotal == 0) {
                 _isActiveParticipant[msg.sender] = false;
-                activeParticipantsCount -= 1;
+                unchecked {
+                    activeParticipantsCount -= 1;
+                }
                 emit ParticipantCountUpdated(activeParticipantsCount);
             }
         }
@@ -386,31 +339,14 @@ contract Market is ReentrancyGuard {
         emit PayoutClaimed(msg.sender, payout);
     }
 
-    // -------- Cancellation --------
-
-    /// @notice Creator can cancel only while Trading (before or after endTime? -> before endTime),
-    ///         to prevent ambiguous results after markets close.
-    ///         Users can then withdraw via `exit()` at any time (since Cancelled allows exit).
-    function cancelMarket() external nonReentrant {
-        if (msg.sender != creator) revert Unauthorized();
-        if (state != State.Trading) revert CancelNotAllowed();
-        // Allow cancel anytime before endTime; after endTime the flow is propose/finalize.
-        if (block.timestamp >= endTime) revert CancelNotAllowed();
-
-        state = State.Cancelled;
-        emit MarketStatusChanged(2);
-    }
-
     // -------- Internal --------
 
-    function _finalize(uint8 outcome, address resolvingAddress) private {
-        if (state == State.Resolved || state == State.Cancelled) revert Unauthorized();
-
+    function _finalize(uint8 winningOption, address resolvingAddress) private {
         state = State.Resolved;
-        finalOutcome = outcome;
+        outcome = winningOption;
         resolver = resolvingAddress;
 
-        uint256 winningPool = optionLiquidity[outcome];
+        uint256 winningPool = optionLiquidity[winningOption];
         uint256 losingPool = totalStaked - winningPool;
 
         uint256 creatorFee;
@@ -427,14 +363,15 @@ contract Market is ReentrancyGuard {
             _safeTransfer(creator, creatorFee);
         }
 
-        emit MarketResolved(outcome, resolvingAddress, creatorFee);
-        emit MarketStatusChanged(1);
+        emit MarketResolved(resolvingAddress, winningOption, creatorFee);
     }
 
     function _recomputeUserTotal(address user) private view returns (uint256 total) {
+        uint256 length = options.length;
         unchecked {
-            for (uint8 i = 0; i < _options.length; i++) {
+            for (uint8 i = 0; i < length;) {
                 total += userPositions[user][i];
+                ++i;
             }
         }
     }
@@ -445,13 +382,16 @@ contract Market is ReentrancyGuard {
         (bool success, bytes memory data) = address(collateral).call(
             abi.encodeWithSelector(IERC20.transferFrom.selector, from, address(this), amount)
         );
-        require(success && (data.length == 0 || abi.decode(data, (bool))), "Market: transferFrom failed");
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))), "Market: transferFrom failed"
+        );
     }
 
     function _safeTransfer(address to, uint256 amount) private {
-        (bool success, bytes memory data) = address(collateral).call(
-            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        (bool success, bytes memory data) =
+            address(collateral).call(abi.encodeWithSelector(IERC20.transfer.selector, to, amount));
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))), "Market: transfer failed"
         );
-        require(success && (data.length == 0 || abi.decode(data, (bool))), "Market: transfer failed");
     }
 }

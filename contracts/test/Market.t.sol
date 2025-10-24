@@ -33,23 +33,18 @@ contract MarketTest is Test {
     }
 
     function _createDefaultMarket() internal returns (Market market) {
-        MarketFactory.MarketCreation memory params;
-        params.identifier = 123;
-        params.options = _defaultOptions();
-        params.creator = pollCreator;
-        params.endTime = uint64(block.timestamp + 1 days);
-        params.creatorFeeBps = creatorFeeBps;
-        params.question = "Will this test pass?";
-        params.description = "A test market for development";
-        params.category = "Test";
-        params.resolutionSource = "Test results";
-        params.platform = Market.Platform.Default;
-        params.postUrl = "";
-        params.minBet = 0;
-        params.maxBetPerUser = 0;
-        params.maxTotalStake = 0;
-
-        address deployed = factory.createMarket(params);
+        vm.prank(pollCreator);
+        address deployed = factory.createMarket(
+            123, // identifier
+            uint64(block.timestamp + 1 days), // endTime
+            creatorFeeBps, // creatorFeeBps
+            "Will this test pass?", // question
+            "A test market for development", // description
+            "Test", // category
+            Market.Platform.Other, // platform
+            "Test results", // resolutionSource
+            _defaultOptions() // options
+        );
         market = Market(deployed);
     }
 
@@ -58,7 +53,7 @@ contract MarketTest is Test {
 
         assertEq(address(market.collateral()), address(collateral), "collateral mismatch");
         assertEq(market.creator(), pollCreator, "creator mismatch");
-        assertEq(market.optionCount(), 2, "option count mismatch");
+        assertEq(market.getOptionCount(), 2, "option count mismatch");
         assertEq(factory.marketForIdentifier(123), address(market), "factory mapping");
     }
 
@@ -87,24 +82,19 @@ contract MarketTest is Test {
     function testCannotCreateDuplicateMarket() public {
         _createDefaultMarket();
 
-        MarketFactory.MarketCreation memory params;
-        params.identifier = 123;
-        params.options = _defaultOptions();
-        params.creator = pollCreator;
-        params.endTime = uint64(block.timestamp + 1 days);
-        params.creatorFeeBps = creatorFeeBps;
-        params.question = "Will this test pass?";
-        params.description = "A test market for development";
-        params.category = "Test";
-        params.resolutionSource = "Test results";
-        params.platform = Market.Platform.Default;
-        params.postUrl = "";
-        params.minBet = 0;
-        params.maxBetPerUser = 0;
-        params.maxTotalStake = 0;
-
         vm.expectRevert(bytes("Factory: market exists"));
-        factory.createMarket(params);
+        vm.prank(pollCreator);
+        factory.createMarket(
+            123, // identifier (same as first market)
+            uint64(block.timestamp + 1 days), // endTime
+            creatorFeeBps, // creatorFeeBps
+            "Will this test pass?", // question
+            "A test market for development", // description
+            "Test", // category
+            Market.Platform.Other, // platform
+            "Test results", // resolutionSource
+            _defaultOptions() // options
+        );
     }
 
     function testPlaceBetRevertsAfterEnd() public {
@@ -118,7 +108,7 @@ contract MarketTest is Test {
 
         vm.warp(uint256(market.endTime()));
 
-        vm.expectRevert(Market.TradingClosed.selector);
+        vm.expectRevert(Market.TradingEnded.selector);
         vm.prank(bettor);
         market.placeBet(0, 100_000_000);
     }
@@ -192,7 +182,7 @@ contract MarketTest is Test {
         market.overrideResolution(0);
 
         assertEq(uint8(market.state()), uint8(Market.State.Resolved), "state resolved");
-        assertEq(market.finalOutcome(), 0, "outcome overridden");
+        assertEq(market.outcome(), 0, "outcome overridden");
         assertEq(market.resolver(), pollCreator, "resolver creator");
         assertEq(market.creatorFeePaid(), 15_000_000, "creator fee skimmed");
 

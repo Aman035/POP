@@ -13,47 +13,29 @@ contract MarketFactory is Ownable {
         uint64 creatorOverrideWindow;
     }
 
-    struct MarketCreation {
+    struct MarketParams {
+        address collateral;
+        uint64 creatorOverrideWindow;
         uint256 identifier;
-        string[] options;
-        address creator;
         uint64 endTime;
         uint96 creatorFeeBps;
+    }
 
-        // metadata
+    struct MarketMetadata {
         string question;
         string description;
         string category;
-        string resolutionSource;
         Market.Platform platform;
-        string postUrl;
-
-        // optional limits
-        uint256 minBet;
-        uint256 maxBetPerUser;
-        uint256 maxTotalStake;
+        string resolutionSource;
+        string[] options;
     }
 
     event MarketCreated(
-        uint256 indexed identifier,
         address indexed creator,
-        address market,
-        string[] options,
-        uint64 endTime,
-        uint96 creatorFeeBps,
-        string question,
-        string description,
-        string category,
-        string resolutionSource,
-        Market.Platform platform,
-        string postUrl,
-        uint64 createdAt,
-        uint256 minBet,
-        uint256 maxBetPerUser,
-        uint256 maxTotalStake
+        address indexed market,
+        MarketParams params,
+        MarketMetadata metadata
     );
-
-    event CreatorOverrideWindowUpdated(uint64 previousWindow, uint64 newWindow);
 
     IERC20 public immutable collateral;
     uint64 public creatorOverrideWindow;
@@ -67,66 +49,60 @@ contract MarketFactory is Ownable {
         creatorOverrideWindow = config.creatorOverrideWindow;
     }
 
-    function createMarket(MarketCreation calldata params) external returns (address market) {
-        if (params.options.length < 2) revert("Factory: min two options");
-        if (params.creator == address(0)) revert("Factory: creator is zero");
-        if (params.endTime <= block.timestamp) revert("Factory: invalid end time");
-        if (params.creatorFeeBps > BPS) revert("Factory: fee exceeds bps");
-        if (marketForIdentifier[params.identifier] != address(0)) revert("Factory: market exists");
+    function createMarket(
+        uint256 identifier,
+        uint64 endTime,
+        uint96 creatorFeeBps,
+        string calldata question,
+        string calldata description,
+        string calldata category,
+        Market.Platform platform,
+        string calldata resolutionSource,
+        string[] calldata options
+    ) external returns (address market) {
+        if (options.length < 2) revert("Factory: min two options");
+        if (options.length > 4) revert("Factory: max four options");
+        if (endTime <= block.timestamp) revert("Factory: invalid end time");
+        if (creatorFeeBps > BPS) revert("Factory: fee exceeds bps");
+        if (marketForIdentifier[identifier] != address(0)) revert("Factory: market exists");
 
-        string[] memory optionsCopy = new string[](params.options.length);
-        for (uint256 i = 0; i < params.options.length; i++) {
-            optionsCopy[i] = params.options[i];
-        }
-
-        Market.ConstructorParams memory constructorParams = Market.ConstructorParams({
-            collateral: collateral,
-            creatorOverrideWindow: creatorOverrideWindow,
-            creator: params.creator,
-            creatorFeeBps: params.creatorFeeBps,
-            endTime: params.endTime,
-            identifier: params.identifier,
-            options: optionsCopy,
-            question: params.question,
-            description: params.description,
-            category: params.category,
-            resolutionSource: params.resolutionSource,
-            platform: params.platform,
-            postUrl: params.postUrl,
-            minBet: params.minBet,
-            maxBetPerUser: params.maxBetPerUser,
-            maxTotalStake: params.maxTotalStake
-        });
-
-        Market deployed = new Market(constructorParams);
+        Market deployed = new Market(
+            collateral,
+            creatorOverrideWindow,
+            msg.sender,
+            identifier,
+            endTime,
+            creatorFeeBps,
+            question,
+            description,
+            category,
+            platform,
+            resolutionSource,
+            options
+        );
 
         market = address(deployed);
-        marketForIdentifier[params.identifier] = market;
+        marketForIdentifier[identifier] = market;
         _markets.push(market);
 
-        emit MarketCreated(
-            params.identifier,
-            params.creator,
-            market,
-            optionsCopy,
-            params.endTime,
-            params.creatorFeeBps,
-            params.question,
-            params.description,
-            params.category,
-            params.resolutionSource,
-            params.platform,
-            params.postUrl,
-            uint64(block.timestamp),
-            params.minBet,
-            params.maxBetPerUser,
-            params.maxTotalStake
-        );
-    }
+        MarketParams memory params = MarketParams({
+            collateral: address(collateral),
+            creatorOverrideWindow: creatorOverrideWindow,
+            identifier: identifier,
+            endTime: endTime,
+            creatorFeeBps: creatorFeeBps
+        });
 
-    function setCreatorOverrideWindow(uint64 newWindow) external onlyOwner {
-        emit CreatorOverrideWindowUpdated(creatorOverrideWindow, newWindow);
-        creatorOverrideWindow = newWindow;
+        MarketMetadata memory metadata = MarketMetadata({
+            question: question,
+            description: description,
+            category: category,
+            platform: platform,
+            resolutionSource: resolutionSource,
+            options: options
+        });
+
+        emit MarketCreated(msg.sender, market, params, metadata);
     }
 
     function totalMarkets() external view returns (uint256) {
