@@ -9,9 +9,9 @@ import {IERC20} from "../src/interfaces/IERC20.sol";
 contract DeployMarketFactory is Script {
     function run() external returns (MarketFactory factory) {
         // Load environment variables
-        address collateral = vm.envAddress("COLLATERAL");
+        address collateral = vm.envAddress("COLLATERAL_ARBITRUM_SEPOLIA");
         uint64 overrideWindow = uint64(vm.envUint("CREATOR_OVERRIDE_WINDOW"));
-        
+
         require(collateral != address(0), "Deploy: collateral not set");
         require(overrideWindow > 0, "Deploy: override window must be > 0");
 
