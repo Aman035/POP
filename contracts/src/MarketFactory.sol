@@ -13,7 +13,29 @@ contract MarketFactory is Ownable {
         uint64 creatorOverrideWindow;
     }
 
-    event MarketCreated(uint256 indexed identifier, address indexed creator, address market);
+    struct MarketParams {
+        address collateral;
+        uint64 creatorOverrideWindow;
+        uint256 identifier;
+        uint64 endTime;
+        uint96 creatorFeeBps;
+    }
+
+    struct MarketMetadata {
+        string question;
+        string description;
+        string category;
+        Market.Platform platform;
+        string resolutionSource;
+        string[] options;
+    }
+
+    event MarketCreated(
+        address indexed creator,
+        address indexed market,
+        MarketParams params,
+        MarketMetadata metadata
+    );
 
     IERC20 public immutable collateral;
     uint64 public creatorOverrideWindow;
@@ -63,7 +85,24 @@ contract MarketFactory is Ownable {
         marketForIdentifier[identifier] = market;
         _markets.push(market);
 
-        emit MarketCreated(identifier, msg.sender, market);
+        MarketParams memory params = MarketParams({
+            collateral: address(collateral),
+            creatorOverrideWindow: creatorOverrideWindow,
+            identifier: identifier,
+            endTime: endTime,
+            creatorFeeBps: creatorFeeBps
+        });
+
+        MarketMetadata memory metadata = MarketMetadata({
+            question: question,
+            description: description,
+            category: category,
+            platform: platform,
+            resolutionSource: resolutionSource,
+            options: options
+        });
+
+        emit MarketCreated(msg.sender, market, params, metadata);
     }
 
     function totalMarkets() external view returns (uint256) {
