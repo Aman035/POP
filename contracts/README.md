@@ -35,8 +35,8 @@ forge script script/DeployMarketFactory.s.sol \
 
 #### Latest Deployment Details
 
-- **Contract Address**: `0xa1C60B50Ab3eF03e1f278C72aA4EAA7EF8e4D3e5`
+- **Contract Address**: `0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643`
 - **Network**: Arbitrum Sepolia (Chain ID: 421614)
 - **Collateral Token**: `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` (Testnet USDC)
 - **Creator Override Window**: 21,600 seconds (6 hours)
-- **Arbiscan**: https://sepolia.arbiscan.io/address/0xa1C60B50Ab3eF03e1f278C72aA4EAA7EF8e4D3e5
+- **Arbiscan**: https://sepolia.arbiscan.io/address/0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643
