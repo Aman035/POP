@@ -7,9 +7,10 @@ export const config = {
     rpcUrl: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc',
   },
   
-  // Contract addresses
+  // Contract addresses - Single source of truth for all contract addresses
   contracts: {
-    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4',
+    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643',
+    collateralToken: process.env.NEXT_PUBLIC_COLLATERAL_TOKEN_ADDRESS || '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
   },
   
   // API configuration

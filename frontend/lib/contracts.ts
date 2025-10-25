@@ -1,9 +1,10 @@
 // Contract addresses and ABIs for POP - Predict on Posts
 // Deployed on Arbitrum Sepolia
+import { config } from './config';
 
-// Contract addresses
-export const MARKET_FACTORY_ADDRESS = "0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4"; // Correct contract address
-export const COLLATERAL_TOKEN_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Testnet USDC
+// Contract addresses - Imported from config.ts (single source of truth)
+export const MARKET_FACTORY_ADDRESS = config.contracts.marketFactory;
+export const COLLATERAL_TOKEN_ADDRESS = config.contracts.collateralToken;
 
 // Network configuration
 export const NETWORK_CONFIG = {

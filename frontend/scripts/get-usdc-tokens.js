@@ -1,7 +1,8 @@
-// Script to get USDC tokens from 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d
+// Script to get USDC tokens from config
 // Run this in your browser console or as a Node.js script
+// Note: This script should be updated to import from config in a real implementation
 
-const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // TODO: Import from config
 const ARBITRUM_SEPOLIA_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
 
 // ABI for common ERC20 functions and potential faucet functions

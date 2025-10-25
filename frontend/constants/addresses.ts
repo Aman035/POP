@@ -1,10 +1,11 @@
 // Contract addresses by network
 // POP - Predict on Posts
+import { config } from '@/lib/config';
 
 export const CONTRACTS = {
   ARBITRUM_SEPOLIA: {
-    MARKET_FACTORY: "0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4", // Correct contract address
-    COLLATERAL_TOKEN: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d", // Testnet USDC
+    MARKET_FACTORY: config.contracts.marketFactory,
+    COLLATERAL_TOKEN: config.contracts.collateralToken,
     RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
     BLOCK_EXPLORER: "https://sepolia.arbiscan.io",
     CHAIN_ID: 421614,

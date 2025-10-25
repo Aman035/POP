@@ -7,6 +7,7 @@ import { ExternalLink, Copy, CheckCircle, AlertCircle, Coins } from 'lucide-reac
 import { useWallet } from '@/hooks/use-wallet';
 import { useCollateralToken } from '@/hooks/use-contracts';
 import { ethers } from 'ethers';
+import { config } from '@/lib/config';
 
 interface USDCAcquisitionProps {
   onUSDCReceived?: () => void;
@@ -19,7 +20,7 @@ export function USDCAcquisition({ onUSDCReceived }: USDCAcquisitionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+  const USDC_ADDRESS = config.contracts.collateralToken;
   const USDC_DECIMALS = 6;
 
   // Check USDC balance
