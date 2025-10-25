@@ -37,14 +37,8 @@ export class PostAnalyzerController {
       properties: {
         content: {
           type: 'string',
-          description: 'The content of the tweet/post to analyze',
+          description: 'The content of the post to analyze',
           example: 'Tesla stock is going to hit $300 by end of year!',
-        },
-        source: {
-          type: 'string',
-          description: 'The source platform',
-          enum: ['twitter', 'farcaster'],
-          example: 'twitter',
         },
         postId: {
           type: 'string',
@@ -52,7 +46,7 @@ export class PostAnalyzerController {
           example: '1234567890',
         },
       },
-      required: ['content', 'source', 'postId'],
+      required: ['content', 'postId'],
     },
   })
   @ApiResponse({
@@ -112,17 +106,11 @@ export class PostAnalyzerController {
   async analyzePost(
     @Body() request: PostAnalysisRequest,
   ): Promise<MarketAnalysis> {
-    const { content, source, postId } = request;
+    const { content, postId } = request;
 
     // Validate input
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Content is required');
-    }
-
-    if (!source || !['twitter', 'farcaster'].includes(source)) {
-      throw new BadRequestException(
-        'Source must be either "twitter" or "farcaster"',
-      );
     }
 
     if (!postId || postId.trim().length === 0) {

@@ -10,14 +10,12 @@ export interface MarketAnalysis {
 
 export interface PostAnalysisRequest {
   content: string;
-  source: string;
   postId: string;
 }
 
 @Injectable()
 export class PostAnalyzerService {
   private readonly logger = new Logger(PostAnalyzerService.name);
-  private openai: OpenAI | null = null;
   private groqOpenai: OpenAI | null = null;
 
   constructor() {
@@ -25,14 +23,6 @@ export class PostAnalyzerService {
   }
 
   private initializeProviders() {
-    // Initialize OpenAI if API key is provided
-    if (process.env.OPENAI_API_KEY) {
-      this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-      this.logger.log('OpenAI provider initialized');
-    }
-
     // Initialize Groq using OpenAI-compatible API if API key is provided
     if (process.env.GROQ_API_KEY) {
       this.groqOpenai = new OpenAI({
@@ -42,7 +32,7 @@ export class PostAnalyzerService {
       this.logger.log('Groq provider initialized (via OpenAI SDK)');
     }
 
-    if (!this.openai && !this.groqOpenai) {
+    if (!this.groqOpenai) {
       this.logger.warn(
         'No LLM providers configured. Set OPENAI_API_KEY or GROQ_API_KEY environment variables.',
       );
@@ -50,16 +40,14 @@ export class PostAnalyzerService {
   }
 
   async analyzePost(request: PostAnalysisRequest): Promise<MarketAnalysis> {
-    const { content, source, postId } = request;
+    const { content, postId } = request;
 
-    this.logger.log(`Analyzing post ${postId} from ${source}`);
+    this.logger.log(`Analyzing post ${postId}`);
 
     try {
       // Try Groq first (faster and cheaper), fallback to OpenAI
       if (this.groqOpenai) {
         return await this.analyzeWithGroq(content);
-      } else if (this.openai) {
-        return await this.analyzeWithOpenAI(content);
       } else {
         throw new Error('No LLM providers available');
       }
@@ -88,46 +76,14 @@ export class PostAnalyzerService {
           content: prompt,
         },
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,
     });
 
     const response = completion.choices[0]?.message?.content;
     if (!response) {
       throw new Error('No response from Groq');
-    }
-
-    return this.parseResponse(response);
-  }
-
-  private async analyzeWithOpenAI(content: string): Promise<MarketAnalysis> {
-    if (!this.openai) {
-      throw new Error('OpenAI provider not initialized');
-    }
-
-    const prompt = this.buildPrompt(content);
-
-    const completion = await this.openai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert at analyzing social media posts and creating prediction markets. Always respond with valid JSON.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'gpt-4o-mini',
-      temperature: 0.7,
-      max_tokens: 500,
-    });
-
-    const response = completion.choices[0]?.message?.content;
-    if (!response) {
-      throw new Error('No response from OpenAI');
     }
 
     return this.parseResponse(response);
@@ -188,8 +144,14 @@ The confidence should be between 0 and 1, representing how suitable this post is
         throw new Error('Invalid response structure');
       }
 
-      if (!Array.isArray(parsed.options) || parsed.options.length < 2 || parsed.options.length > 4) {
-        throw new Error('Options must be an array with between 2 and 4 elements');
+      if (
+        !Array.isArray(parsed.options) ||
+        parsed.options.length < 2 ||
+        parsed.options.length > 4
+      ) {
+        throw new Error(
+          'Options must be an array with between 2 and 4 elements',
+        );
       }
 
       if (
