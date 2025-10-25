@@ -11,18 +11,22 @@ import { useSearchParams, usePathname } from 'next/navigation'
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
-  const isEmbedded = searchParams.get('embed') === 'true'
   const hideUI = searchParams.get('hideUI') === 'true'
-  
+
   // Disable chain check for Nexus page - it handles its own chain management
   const isNexusPage = pathname === '/app/nexus'
 
-  // If embedded and UI should be hidden, render only the content
-  if (isEmbedded && hideUI) {
+  // If UI should be hidden, show header with wallet only and no sidebar
+  if (hideUI) {
     return (
-      <div className="w-full h-full bg-background overflow-hidden">
-        <main className="w-full h-full p-4">{children}</main>
-      </div>
+      <ClientOnly fallback={<div className="min-h-screen bg-background" />}>
+        <WalletGuard requireCorrectChain={!isNexusPage}>
+          <div className="min-h-screen bg-background">
+            <AppHeader minimalMode={true} />
+            <main className="w-full p-6">{children}</main>
+          </div>
+        </WalletGuard>
+      </ClientOnly>
     )
   }
 

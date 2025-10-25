@@ -120,15 +120,6 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
             </div>
             <span>Arb Sepolia</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto p-1 hover:bg-blue-50 dark:hover:bg-blue-950"
-            onClick={() => window.open(arbitrumSepolia.blockExplorers?.default.url, '_blank')}
-            title="View on Arbiscan"
-          >
-            <ExternalLink className="h-3 w-3" />
-          </Button>
         </div>
       )}
       </div>
