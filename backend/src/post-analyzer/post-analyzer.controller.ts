@@ -28,7 +28,7 @@ export class PostAnalyzerController {
 
   @Post('analyze')
   @ApiOperation({
-    summary: 'Analyze a post and generate a prediction market',
+    summary: 'Analyze a post and generate a prediction market with 2-4 options',
   })
   @ApiBody({
     description: 'Post analysis request',
@@ -68,7 +68,11 @@ export class PostAnalyzerController {
         options: {
           type: 'array',
           items: { type: 'string' },
+          minItems: 2,
+          maxItems: 4,
           example: ['Yes', 'No'],
+          description:
+            'Array of 2-4 mutually exclusive options for the prediction market',
         },
         category: {
           type: 'string',

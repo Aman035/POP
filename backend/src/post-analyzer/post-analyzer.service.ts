@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 
 export interface MarketAnalysis {
   question: string;
-  options: [string, string];
+  options: string[];
   category: string;
   confidence: number;
 }
@@ -140,13 +140,15 @@ Analyze this social media post and create a prediction market for it.
 Post content: "${content}"
 
 Create a prediction market with:
-1. A clear, specific question that can be answered with Yes/No or two clear options
-2. Two mutually exclusive options (Yes/No or two specific outcomes)
+1. A clear, specific question that can be answered with multiple options
+2. Between 2-4 mutually exclusive options (Yes/No, multiple choice, or specific outcomes)
 3. A relevant category (e.g., "Technology", "Politics", "Sports", "Entertainment", "Business", "Science", "Social", "Other")
 
 Guidelines:
 - The question should be specific and measurable
 - Options should be mutually exclusive and exhaustive
+- Use 2 options for simple Yes/No questions
+- Use 3-4 options for more complex scenarios with multiple possible outcomes
 - Focus on verifiable outcomes
 - Avoid subjective or opinion-based questions
 - Make it interesting and engaging for prediction
@@ -155,6 +157,14 @@ Respond with ONLY valid JSON in this exact format:
 {
   "question": "Will [specific outcome] happen?",
   "options": ["Yes", "No"],
+  "category": "Technology",
+  "confidence": 0.85
+}
+
+For multiple choice scenarios, use this format:
+{
+  "question": "Which [category] will [outcome]?",
+  "options": ["Option A", "Option B", "Option C"],
   "category": "Technology",
   "confidence": 0.85
 }
@@ -178,8 +188,8 @@ The confidence should be between 0 and 1, representing how suitable this post is
         throw new Error('Invalid response structure');
       }
 
-      if (!Array.isArray(parsed.options) || parsed.options.length !== 2) {
-        throw new Error('Options must be an array with exactly 2 elements');
+      if (!Array.isArray(parsed.options) || parsed.options.length < 2 || parsed.options.length > 4) {
+        throw new Error('Options must be an array with between 2 and 4 elements');
       }
 
       if (
@@ -192,7 +202,7 @@ The confidence should be between 0 and 1, representing how suitable this post is
 
       return {
         question: parsed.question.trim(),
-        options: [parsed.options[0].trim(), parsed.options[1].trim()],
+        options: parsed.options.map((option: string) => option.trim()),
         category: parsed.category.trim(),
         confidence: parsed.confidence,
       };
