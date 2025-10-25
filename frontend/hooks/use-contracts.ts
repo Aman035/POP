@@ -124,27 +124,34 @@ export const useCreateMarket = () => {
       // Write the contract with all required parameters
       const marketCreationParams = {
         identifier: params.identifier,
-        options: params.options,
-        creator: userAddress as `0x${string}`, // Use the validated user address
         endTime: BigInt(params.endTime),
         creatorFeeBps: BigInt(params.creatorFeeBps),
         question: params.question,
         description: params.description,
         category: params.category,
-        resolutionSource: params.resolutionSource,
         platform: params.platform,
-        // Removed postUrl as it's not in the new contract
-        // Removed minBet, maxBetPerUser, maxTotalStake as they're not in the new contract
+        resolutionSource: params.resolutionSource,
+        options: params.options,
+        // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in the new contract
       };
 
-      console.log('Creator in params:', marketCreationParams.creator);
       console.log('Market creation params:', marketCreationParams);
 
       writeContract({
         address: MARKET_FACTORY_ADDRESS as `0x${string}`,
         abi: MARKET_FACTORY_ABI,
         functionName: 'createMarket',
-        args: [marketCreationParams]
+        args: [
+          params.identifier,
+          BigInt(params.endTime),
+          BigInt(params.creatorFeeBps),
+          params.question,
+          params.description,
+          params.category,
+          params.platform,
+          params.resolutionSource,
+          params.options
+        ]
       });
 
       return { hash, isPending, isConfirming, isConfirmed };
@@ -257,7 +264,6 @@ export const useAllMarkets = () => {
         // Liquidity, participants, and per-option info
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'totalStaked' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'activeParticipantsCount' as const },
-        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'optionCount' as const },
       ])
     : [];
 
@@ -509,18 +515,17 @@ export const useMarketDetails = (marketAddress: string) => {
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'description' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'category' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'platform' as const },
-    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'postUrl' as const },
+    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'identifier' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'createdAt' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'endTime' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'creator' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'creatorFeeBps' as const },
-    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'status' as const },
-    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'getOptions' as const },
+    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'state' as const },
+    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'getOptionCount' as const },
     
     // Liquidity, participants, and per-option info
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'totalStaked' as const },
     { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'activeParticipantsCount' as const },
-    { address: marketAddress as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'optionCount' as const },
   ] : [];
 
   const { data: marketData, isLoading: marketDataLoading, error: marketDataError } = useReadContracts({
@@ -554,30 +559,29 @@ export const useMarketDetails = (marketAddress: string) => {
           description,
           category,
           platform,
-          postUrl,
+          identifier,
           createdAt,
           endTime,
           creator,
           creatorFeeBps,
-          status,
-          options,
+          state,
+          optionCount,
           totalStaked,
-          activeParticipantsCount,
-          optionCount
+          activeParticipantsCount
         ] = marketData;
 
         // Check if essential data is available
-        if (question?.result && options?.result && endTime?.result && creator?.result && status?.result) {
+        if (question?.result && endTime?.result && creator?.result && state?.result) {
           
           const marketInfoData: MarketInfo = {
             address: marketAddress,
-            identifier: "", // Not available in read ABI
+            identifier: identifier?.result as string || "",
             creator: creator.result as string,
-            options: options.result as string[],
+            options: [], // Will be populated separately by fetching individual options
             endTime: Number(endTime.result),
             creatorFeeBps: Number(creatorFeeBps?.result || 0),
             totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
-            isResolved: Number(status.result) === 1, // 1 = resolved
+            isResolved: Number(state.result) === 2, // 2 = resolved
             winningOption: undefined, // Not available in read ABI
             question: question.result as string,
             description: description?.result as string || "",
@@ -586,8 +590,8 @@ export const useMarketDetails = (marketAddress: string) => {
             platform: Number(platform?.result || 0),
             createdAt: Number(createdAt?.result || Math.floor(Date.now() / 1000)),
             optionLiquidity: [], // Will be populated separately
-            state: Number(status.result) as any,
-            status: Number(status.result), // 0=active, 1=resolved, 2=cancelled
+            state: Number(state.result) as any,
+            status: Number(state.result) === 2 ? 1 : 0, // Convert state to status: 2=resolved -> 1, others -> 0 (active)
             activeParticipantsCount: Number(activeParticipantsCount?.result || 0),
           };
 
@@ -595,12 +599,12 @@ export const useMarketDetails = (marketAddress: string) => {
             totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
             totalBets: 0, // Would need to count events
             optionLiquidity: [], // Will be populated separately
-            isActive: Number(status.result) === 0 && Number(endTime.result) > Math.floor(Date.now() / 1000),
-            isResolved: Number(status.result) === 1,
+            isActive: Number(state.result) === 0 && Number(endTime.result) > Math.floor(Date.now() / 1000),
+            isResolved: Number(state.result) === 2,
             winningOption: undefined, // Not available in read ABI
             activeParticipantsCount: Number(activeParticipantsCount?.result || 0),
-            state: Number(status.result) as any,
-            status: Number(status.result),
+            state: Number(state.result) as any,
+            status: Number(state.result) === 2 ? 1 : 0,
           };
 
           setMarketInfo(marketInfoData);

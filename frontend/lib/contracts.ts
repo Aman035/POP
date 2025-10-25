@@ -37,9 +37,8 @@ export const CONTRACT_CONFIG = {
 
 // TypeScript interfaces for contract interactions
 export interface MarketCreationParams {
-  identifier: number;
+  identifier: string;
   options: string[];
-  creator: string;
   endTime: number;
   creatorFeeBps: number;
   question: string;
@@ -47,10 +46,7 @@ export interface MarketCreationParams {
   category: string;
   resolutionSource: string;
   platform: number;
-  postUrl: string;
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
+  // Removed creator, postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface MarketFactoryConfig {

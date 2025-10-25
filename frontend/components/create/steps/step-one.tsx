@@ -13,7 +13,7 @@ interface StepOneProps {
 
 export function StepOne({ marketData, updateMarketData }: StepOneProps) {
   const handleUrlChange = (url: string) => {
-    updateMarketData({ pollUrl: url, postUrl: url })
+    updateMarketData({ pollUrl: url })
 
     // Auto-detect platform
     if (url.includes("twitter.com") || url.includes("x.com")) {

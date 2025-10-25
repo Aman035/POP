@@ -23,9 +23,8 @@ export enum MarketStatus {
 }
 
 export interface MarketCreationParams {
-  identifier: string;  // Changed from number to string
+  identifier: string;
   options: string[];
-  creator: string;
   endTime: number;
   creatorFeeBps: number;
   question: string;
@@ -33,7 +32,7 @@ export interface MarketCreationParams {
   category: string;
   resolutionSource: string;
   platform: Platform;
-  // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
+  // Removed creator, postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface MarketFactoryConfig {
@@ -43,7 +42,7 @@ export interface MarketFactoryConfig {
 
 export interface MarketInfo {
   address: string;
-  identifier: string;  // Changed from number to string
+  identifier: string;
   creator: string;
   options: string[];
   endTime: number;
@@ -96,12 +95,7 @@ export interface MarketResolution {
   finalWinningPool: string;
 }
 
-// New interfaces for additional contract functionality
-export interface MarketLimits {
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
-}
+// Removed MarketLimits interface as these fields are no longer in the contract
 
 export interface MarketMetadata {
   question: string;
@@ -141,7 +135,7 @@ export interface ContractAddresses {
 
 // Event types matching contract events
 export interface MarketCreatedEvent {
-  identifier: string;  // Changed from number to string
+  identifier: string;
   creator: string;
   market: string;
   options: string[];
@@ -193,7 +187,7 @@ export interface PayoutClaimedEvent {
 }
 
 export interface MarketMetadataSetEvent {
-  identifier: string;  // Changed from number to string
+  identifier: string;
   question: string;
   description: string;
   category: string;

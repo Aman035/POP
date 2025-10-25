@@ -21,15 +21,14 @@ interface MarketData {
   endDate: Date | null
   creatorFee: number
   resolutionSource: string
-  postUrl: string
-  // Betting limits
+  identifier: string
+  // Betting limit fields (for UI display)
   minBet: number
   maxBetPerUser: number
   maxTotalStake: number
   // Smart contract fields
   marketAddress?: string
   txHash?: string
-  identifier?: number
   endTime?: number
   creatorFeeBps?: number
 }
@@ -50,7 +49,8 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
     endDate: null,
     creatorFee: 2,
     resolutionSource: "",
-    postUrl: "",
+    identifier: "",
+    // Default betting limits
     minBet: 1,
     maxBetPerUser: 1000,
     maxTotalStake: 10000,
@@ -99,7 +99,6 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
     updateMarketData({ 
       marketAddress,
       txHash,
-      identifier: Date.now() + Math.floor(Math.random() * 1000000),
       endTime: marketData.endDate ? Math.floor(marketData.endDate.getTime() / 1000) : undefined,
       creatorFeeBps: Math.floor((marketData.creatorFee || 2) * 100)
     })

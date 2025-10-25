@@ -23,9 +23,7 @@ interface ValidationErrors {
   endDate?: string
   creatorFee?: string
   resolutionSource?: string
-  minBet?: string
-  maxBetPerUser?: string
-  maxTotalStake?: string
+  identifier?: string
 }
 
 export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
@@ -61,17 +59,11 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
         errors.resolutionSource = "Resolution source must be at least 10 characters"
       }
 
-      // Validate betting limits
-      if (marketData.minBet < 0.01) {
-        errors.minBet = "Minimum bet must be at least $0.01"
-      }
-      
-      if (marketData.maxBetPerUser < marketData.minBet) {
-        errors.maxBetPerUser = "Max bet per user must be greater than minimum bet"
-      }
-      
-      if (marketData.maxTotalStake < marketData.maxBetPerUser) {
-        errors.maxTotalStake = "Max total stake must be greater than max bet per user"
+      // Validate identifier
+      if (!marketData.identifier.trim()) {
+        errors.identifier = "Market identifier is required"
+      } else if (marketData.identifier.trim().length < 3) {
+        errors.identifier = "Market identifier must be at least 3 characters"
       }
 
       setValidationErrors(errors)
@@ -80,7 +72,7 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
 
     const timeoutId = setTimeout(validateForm, 300) // Debounce validation
     return () => clearTimeout(timeoutId)
-  }, [marketData.endDate, marketData.creatorFee, marketData.resolutionSource, marketData.minBet, marketData.maxBetPerUser, marketData.maxTotalStake])
+  }, [marketData.endDate, marketData.creatorFee, marketData.resolutionSource, marketData.identifier])
 
   const handleDateSelect = (date: Date | undefined) => {
     updateMarketData({ endDate: date })
@@ -102,9 +94,7 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
   const isFormValid = Object.keys(validationErrors).length === 0 && 
     marketData.endDate && 
     marketData.resolutionSource.trim() &&
-    marketData.minBet >= 0.01 &&
-    marketData.maxBetPerUser >= marketData.minBet &&
-    marketData.maxTotalStake >= marketData.maxBetPerUser
+    marketData.identifier.trim()
 
   const getFeeColor = (fee: number) => {
     if (fee <= 2) return "text-green-600"
@@ -332,6 +322,47 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
           </p>
         </div>
 
+        {/* Identifier Section */}
+        <div className="space-y-2">
+          <Label htmlFor="identifier" className="flex items-center gap-2">
+            Market Identifier
+            {marketData.identifier.trim() && !validationErrors.identifier && (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            )}
+            {validationErrors.identifier && (
+              <AlertCircle className="w-4 h-4 text-red-600" />
+            )}
+          </Label>
+          
+          <Input
+            id="identifier"
+            placeholder="e.g., btc-price-2024"
+            value={marketData.identifier}
+            onChange={(e) => updateMarketData({ identifier: e.target.value })}
+            className={`transition-all duration-200 ${
+              validationErrors.identifier 
+                ? "border-red-500 focus:border-red-500" 
+                : marketData.identifier.trim()
+                ? "border-green-500 focus:border-green-500"
+                : ""
+            }`}
+            disabled={isValidating}
+          />
+          
+          {validationErrors.identifier && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {validationErrors.identifier}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <p className="text-xs text-muted-foreground">
+            A unique identifier for this market (used for contract deployment)
+          </p>
+        </div>
+
         {/* Platform Section */}
         <div className="space-y-3">
           <Label htmlFor="platform" className="flex items-center gap-2 text-base">
@@ -362,142 +393,6 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
           </div>
         </div>
 
-        {/* Betting Limits Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-gold-2" />
-            <h3 className="text-lg font-semibold">Betting Limits</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Minimum Bet */}
-            <div className="space-y-2">
-              <Label htmlFor="min-bet" className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Minimum Bet (USDC)
-                {marketData.minBet >= 0.01 && !validationErrors.minBet && (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                )}
-                {validationErrors.minBet && (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                )}
-              </Label>
-              <Input
-                id="min-bet"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="1.00"
-                value={marketData.minBet}
-                onChange={(e) => updateMarketData({ minBet: parseFloat(e.target.value) || 0 })}
-                className={validationErrors.minBet ? "border-red-500" : ""}
-              />
-              {validationErrors.minBet && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    {validationErrors.minBet}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Minimum amount users can bet
-              </p>
-            </div>
-
-            {/* Max Bet Per User */}
-            <div className="space-y-2">
-              <Label htmlFor="max-bet-user" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Max Bet Per User (USDC)
-                {marketData.maxBetPerUser >= marketData.minBet && !validationErrors.maxBetPerUser && (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                )}
-                {validationErrors.maxBetPerUser && (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                )}
-              </Label>
-              <Input
-                id="max-bet-user"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="1000.00"
-                value={marketData.maxBetPerUser}
-                onChange={(e) => updateMarketData({ maxBetPerUser: parseFloat(e.target.value) || 0 })}
-                className={validationErrors.maxBetPerUser ? "border-red-500" : ""}
-              />
-              {validationErrors.maxBetPerUser && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    {validationErrors.maxBetPerUser}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Maximum amount one user can bet
-              </p>
-            </div>
-
-            {/* Max Total Stake */}
-            <div className="space-y-2">
-              <Label htmlFor="max-total-stake" className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Max Total Stake (USDC)
-                {marketData.maxTotalStake >= marketData.maxBetPerUser && !validationErrors.maxTotalStake && (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                )}
-                {validationErrors.maxTotalStake && (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                )}
-              </Label>
-              <Input
-                id="max-total-stake"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="10000.00"
-                value={marketData.maxTotalStake}
-                onChange={(e) => updateMarketData({ maxTotalStake: parseFloat(e.target.value) || 0 })}
-                className={validationErrors.maxTotalStake ? "border-red-500" : ""}
-              />
-              {validationErrors.maxTotalStake && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    {validationErrors.maxTotalStake}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Maximum total liquidity in market
-              </p>
-            </div>
-          </div>
-
-          {/* Betting Limits Summary */}
-          <div className="p-4 rounded-lg bg-muted/30 border border-border">
-            <h4 className="font-medium mb-2 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-gold-2" />
-              Betting Limits Summary
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Min Bet:</span>
-                <span className="font-medium">${marketData.minBet.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Max Per User:</span>
-                <span className="font-medium">${marketData.maxBetPerUser.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Max Total:</span>
-                <span className="font-medium">${marketData.maxTotalStake.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Realistic Earnings Projection */}

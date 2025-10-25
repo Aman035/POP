@@ -64,9 +64,6 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
     try {
       setIsCreating(true)
       
-      // Generate unique identifier
-      const identifier = generateIdentifier()
-      
       // Convert endDate to timestamp
       const endTime = Math.floor(marketData.endDate.getTime() / 1000)
       
@@ -74,20 +71,15 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100) // Convert percentage to basis points
       
       const marketParams = {
-        identifier,
+        identifier: marketData.identifier,
         options: marketData.options.filter((option: string) => option.trim()),
-        creator: "", // Will be filled by the contract with msg.sender
         endTime,
         creatorFeeBps,
         question: marketData.question,
         description: marketData.description,
         category: marketData.category || "other",
+        platform: marketData.platform || 0, // Default to Platform.Twitter
         resolutionSource: marketData.resolutionSource || "",
-        platform: marketData.platform || 0, // Default to Platform.Default
-        postUrl: marketData.postUrl || marketData.pollUrl || "",
-        minBet: marketData.minBet || 1,
-        maxBetPerUser: marketData.maxBetPerUser || 1000,
-        maxTotalStake: marketData.maxTotalStake || 10000
       }
 
       toast({
@@ -277,21 +269,21 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               <Target className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Min Bet</p>
-                <p className="text-sm font-medium">${marketData.minBet.toFixed(2)}</p>
+                <p className="text-sm font-medium">${(marketData.minBet || 1).toFixed(2)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Max Per User</p>
-                <p className="text-sm font-medium">${marketData.maxBetPerUser.toFixed(2)}</p>
+                <p className="text-sm font-medium">${(marketData.maxBetPerUser || 1000).toFixed(2)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Max Total</p>
-                <p className="text-sm font-medium">${marketData.maxTotalStake.toFixed(2)}</p>
+                <p className="text-sm font-medium">${(marketData.maxTotalStake || 10000).toFixed(2)}</p>
               </div>
             </div>
           </div>
