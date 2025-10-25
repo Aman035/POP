@@ -1,6 +1,8 @@
 // Configuration - Change these to your production URLs
 const POP_SITE_URL = 'http://localhost:3000'
-const POP_API_URL = 'http://localhost:3001' // Backend API URL
+const POP_API_URL = 'http://13.213.208.119:3001' // Backend API URL (for AI analysis only)
+const ENVIO_INDEXER_URL =
+  'https://indexer.dev.hyperindex.xyz/a5b2576/v1/graphql' // Envio indexer for market data
 
 // Function to create and show the Pop Market modal
 function showPopModal(iframeUrl) {
@@ -102,7 +104,17 @@ function showPopModal(iframeUrl) {
 }
 
 // Function to create and show the Market Widget modal with tweet ID
-function showMarketWidgetModal(tweetId) {
+async function showMarketWidgetModal(tweetId) {
+  // Get market data from cache or fetch it
+  let marketData = null
+  if (marketStatusCache.has(tweetId)) {
+    const status = marketStatusCache.get(tweetId)
+    marketData = status.market
+  } else {
+    const status = await fetchMarketStatus(tweetId)
+    marketData = status.market
+  }
+
   // Create the modal container
   const modal = document.createElement('div')
   modal.style = `
@@ -118,9 +130,10 @@ function showMarketWidgetModal(tweetId) {
       z-index: 1000;
     `
 
-  // Create the iframe with tweet-specific market URL
+  // Create the iframe with market address URL
+  const marketAddress = marketData?.address || tweetId
   const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/markets/${tweetId}?embed=true&hideUI=true`
+  iframe.src = `${POP_SITE_URL}/app/markets/${marketAddress}?embed=true&hideUI=true`
   iframe.style = `
       width: 500px; 
       height: 600px; 
@@ -455,29 +468,53 @@ async function fetchMarketStatus(tweetId) {
     return marketStatusRequests.get(tweetId)
   }
 
-  const url = new URL('/api/markets/exists', POP_API_URL)
-  url.searchParams.set('postId', tweetId)
-  url.searchParams.set('source', 'twitter')
-
   console.log(`[Pop] Checking market existence for tweet: ${tweetId}`)
 
-  const requestPromise = fetch(url.toString(), {
-    method: 'GET',
-    credentials: 'include',
+  // GraphQL query to check if a market exists for this tweet
+  const query = `
+    query CheckMarketExists($identifier: String!) {
+      MarketFactory_MarketCreated(where: { params_2: { _eq: $identifier } }) {
+        market
+      }
+    }
+  `
+
+  const requestPromise = fetch(ENVIO_INDEXER_URL, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      query: query,
+      variables: {
+        identifier: tweetId,
+      },
+    }),
   })
     .then(async (response) => {
       if (!response.ok) {
-        throw new Error(`Market existence check failed with ${response.status}`)
+        throw new Error(`GraphQL query failed with ${response.status}`)
       }
-      const data = await response.json().catch(() => ({}))
+      const data = await response.json()
+
+      if (data.errors) {
+        console.warn('[Pop] GraphQL errors:', data.errors)
+        return { exists: false, error: true }
+      }
+
+      const markets = data.data?.MarketFactory_MarketCreated || []
       const result = {
-        exists: Boolean(data?.exists),
+        exists: markets.length > 0,
+        market: markets.length > 0 ? { address: markets[0].market } : null,
       }
+
       console.log(`[Pop] Market status for ${tweetId}:`, result)
-      marketStatusCache.set(tweetId, result)
+
+      // Only cache if market exists - so we don't repeatedly query for tweets without markets
+      if (result.exists) {
+        marketStatusCache.set(tweetId, result)
+      }
+
       return result
     })
     .catch((error) => {
