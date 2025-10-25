@@ -22,11 +22,16 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# Start with PM2
-echo "🚀 Starting with PM2..."
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
+# Check if PM2 process exists
+if pm2 list | grep -q "pop-backend"; then
+    echo "🔄 Reloading existing PM2 process..."
+    pm2 reload pop-backend
+else
+    echo "🚀 Starting new PM2 process..."
+    pm2 start ecosystem.config.js
+    pm2 save
+    pm2 startup
+fi
 
 echo "✅ Deployment complete!"
 echo "📊 Check status: pm2 status"

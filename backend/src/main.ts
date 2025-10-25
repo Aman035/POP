@@ -9,10 +9,33 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
+  // Enable CORS - More permissive for browser extensions
   app.enableCors({
-    origin: true,
-    credentials: true,
+    origin: '*',
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+    allowedHeaders: ['*'],
+    exposedHeaders: ['*'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
+  // Additional CORS headers for browser extensions
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH',
+    );
+    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Allow-Credentials', 'false');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    next();
   });
 
   // Swagger configuration
