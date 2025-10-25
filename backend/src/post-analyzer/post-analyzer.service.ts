@@ -8,15 +8,15 @@ export interface MarketAnalysis {
   confidence: number;
 }
 
-export interface TweetAnalysisRequest {
+export interface PostAnalysisRequest {
   content: string;
   source: string;
   postId: string;
 }
 
 @Injectable()
-export class TweetAnalyzerService {
-  private readonly logger = new Logger(TweetAnalyzerService.name);
+export class PostAnalyzerService {
+  private readonly logger = new Logger(PostAnalyzerService.name);
   private openai: OpenAI | null = null;
   private groqOpenai: OpenAI | null = null;
 
@@ -49,10 +49,10 @@ export class TweetAnalyzerService {
     }
   }
 
-  async analyzeTweet(request: TweetAnalysisRequest): Promise<MarketAnalysis> {
+  async analyzePost(request: PostAnalysisRequest): Promise<MarketAnalysis> {
     const { content, source, postId } = request;
 
-    this.logger.log(`Analyzing tweet ${postId} from ${source}`);
+    this.logger.log(`Analyzing post ${postId} from ${source}`);
 
     try {
       // Try Groq first (faster and cheaper), fallback to OpenAI
@@ -64,7 +64,7 @@ export class TweetAnalyzerService {
         throw new Error('No LLM providers available');
       }
     } catch (error) {
-      this.logger.error(`Failed to analyze tweet ${postId}:`, error);
+      this.logger.error(`Failed to analyze post ${postId}:`, error);
       throw error;
     }
   }

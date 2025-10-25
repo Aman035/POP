@@ -17,13 +17,11 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Pop Prediction Markets API')
-    .setDescription('API for managing prediction markets and posts')
+    .setTitle('Pop Post Analyzer API')
+    .setDescription('AI-powered post analysis for market generation')
     .setVersion('1.0')
     .addTag('health', 'Health check endpoints')
-    .addTag('markets', 'Prediction market operations')
-    .addTag('posts', 'Post management')
-    .addTag('tweet-analyzer', 'AI-powered tweet analysis for market generation')
+    .addTag('post-analyzer', 'AI-powered post analysis for market generation')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

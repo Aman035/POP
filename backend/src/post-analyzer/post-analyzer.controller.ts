@@ -16,22 +16,22 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import {
-  TweetAnalyzerService,
-  TweetAnalysisRequest,
+  PostAnalyzerService,
+  PostAnalysisRequest,
   MarketAnalysis,
-} from './tweet-analyzer.service';
+} from './post-analyzer.service';
 
-@ApiTags('tweet-analyzer')
-@Controller('api/tweet-analyzer')
-export class TweetAnalyzerController {
-  constructor(private readonly tweetAnalyzerService: TweetAnalyzerService) {}
+@ApiTags('post-analyzer')
+@Controller('api/post-analyzer')
+export class PostAnalyzerController {
+  constructor(private readonly postAnalyzerService: PostAnalyzerService) {}
 
   @Post('analyze')
   @ApiOperation({
-    summary: 'Analyze a tweet/post and generate a prediction market',
+    summary: 'Analyze a post and generate a prediction market',
   })
   @ApiBody({
-    description: 'Tweet analysis request',
+    description: 'Post analysis request',
     schema: {
       type: 'object',
       properties: {
@@ -57,7 +57,7 @@ export class TweetAnalyzerController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Tweet analysis completed successfully',
+    description: 'Post analysis completed successfully',
     schema: {
       type: 'object',
       properties: {
@@ -100,13 +100,13 @@ export class TweetAnalyzerController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 500 },
-        message: { type: 'string', example: 'Failed to analyze tweet' },
+        message: { type: 'string', example: 'Failed to analyze post' },
         error: { type: 'string', example: 'Internal Server Error' },
       },
     },
   })
-  async analyzeTweet(
-    @Body() request: TweetAnalysisRequest,
+  async analyzePost(
+    @Body() request: PostAnalysisRequest,
   ): Promise<MarketAnalysis> {
     const { content, source, postId } = request;
 
@@ -132,10 +132,10 @@ export class TweetAnalyzerController {
     }
 
     try {
-      return await this.tweetAnalyzerService.analyzeTweet(request);
+      return await this.postAnalyzerService.analyzePost(request);
     } catch (error) {
       throw new HttpException(
-        `Failed to analyze tweet: ${error.message}`,
+        `Failed to analyze post: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
