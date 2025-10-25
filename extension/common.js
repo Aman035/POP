@@ -1,4 +1,5 @@
 // Configuration - Change these to your production URLs
+// const POP_SITE_URL = 'https://predict-on-posts.vercel.app'
 const POP_SITE_URL = 'http://localhost:3000'
 const POP_API_URL = 'https://13.213.208.119.sslip.io' // Backend API URL (for AI analysis only)
 const ENVIO_INDEXER_URL =
@@ -25,12 +26,13 @@ function showPopModal(iframeUrl) {
   const iframe = document.createElement('iframe')
   iframe.src = iframeUrl || `${POP_SITE_URL}/app/create?embed=true&hideUI=true`
   iframe.style = `
-      width: 450px; 
-      height: 750px; 
+      width: 600px; 
+      height: 700px; 
       border: none; 
-      border-radius: 40px; 
-      background-color: transparent; 
-      padding: 20px;`
+      border-radius: 20px; 
+      background-color: white; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `
 
   // Create a close button that follows the cursor
   const floatingCloseButton = document.createElement('button')
@@ -133,107 +135,7 @@ async function showMarketWidgetModal(tweetId) {
   // Create the iframe with market address URL
   const marketAddress = marketData?.address || tweetId
   const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/markets/${marketAddress}?embed=true&hideUI=true`
-  iframe.style = `
-      width: 500px; 
-      height: 600px; 
-      border: none; 
-      border-radius: 20px; 
-      background-color: white; 
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    `
-
-  // Create a close button that follows the cursor
-  const floatingCloseButton = document.createElement('button')
-  floatingCloseButton.innerText = 'X'
-  floatingCloseButton.style = `
-      position: absolute;
-      padding: 11px 20px;
-      font-size: 22px;
-      font-weight: 700;
-      background-color: #FF605C;
-      color: black;
-      border: none;
-      border-radius: 50px;
-      font-family: sans-serif;
-      z-index: 1001;
-      cursor: pointer;
-      transform: translate(-50%, -50%);
-    `
-
-  // Append elements to modal
-  modal.appendChild(iframe)
-  document.body.appendChild(modal)
-  document.body.appendChild(floatingCloseButton)
-
-  // Function to close modal
-  const closeModal = () => {
-    document.body.removeChild(modal)
-    document.body.removeChild(floatingCloseButton)
-    document.removeEventListener('mousemove', handleMouseMove)
-    document.removeEventListener('click', handleOutsideClick)
-  }
-
-  // Update floating button position based on mouse position
-  const handleMouseMove = (event) => {
-    const iframeRect = iframe.getBoundingClientRect()
-    const isOutsideIframe =
-      event.clientX < iframeRect.left ||
-      event.clientX > iframeRect.right ||
-      event.clientY < iframeRect.top ||
-      event.clientY > iframeRect.bottom
-
-    if (isOutsideIframe) {
-      floatingCloseButton.style.display = 'block'
-      floatingCloseButton.style.left = `${event.pageX}px`
-      floatingCloseButton.style.top = `${event.pageY}px`
-    } else {
-      floatingCloseButton.style.display = 'none'
-    }
-  }
-
-  // Close modal when the floating button is clicked
-  floatingCloseButton.onclick = closeModal
-
-  // Close modal when clicking outside the iframe
-  const handleOutsideClick = (event) => {
-    const iframeRect = iframe.getBoundingClientRect()
-    const isOutsideIframe =
-      event.clientX < iframeRect.left ||
-      event.clientX > iframeRect.right ||
-      event.clientY < iframeRect.top ||
-      event.clientY > iframeRect.bottom
-
-    if (isOutsideIframe) {
-      closeModal()
-    }
-  }
-
-  // Add event listeners
-  document.addEventListener('mousemove', handleMouseMove)
-  document.addEventListener('click', handleOutsideClick)
-}
-
-// Function to create and show Prediction History modal
-function showPredictionHistoryModal() {
-  // Create the modal container
-  const modal = document.createElement('div')
-  modal.style = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    `
-
-  // Create the iframe
-  const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/history?embed=true&hideUI=true`
+  iframe.src = `${POP_SITE_URL}/app/markets/${marketAddress}?hideUI=true`
   iframe.style = `
       width: 600px; 
       height: 700px; 
@@ -314,8 +216,8 @@ function showPredictionHistoryModal() {
   document.addEventListener('click', handleOutsideClick)
 }
 
-// Function to create and show Market Bookmarks modal
-function showMarketBookmarksModal() {
+// Function to create and show My Predictions modal
+function showMyPredictionsModal() {
   // Create the modal container
   const modal = document.createElement('div')
   modal.style = `
@@ -333,7 +235,107 @@ function showMarketBookmarksModal() {
 
   // Create the iframe
   const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/bookmarks?embed=true&hideUI=true`
+  iframe.src = `${POP_SITE_URL}/app/my-predictions?embed=true&hideUI=true`
+  iframe.style = `
+      width: 600px; 
+      height: 700px; 
+      border: none; 
+      border-radius: 20px; 
+      background-color: white; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `
+
+  // Create a close button that follows the cursor
+  const floatingCloseButton = document.createElement('button')
+  floatingCloseButton.innerText = 'X'
+  floatingCloseButton.style = `
+      position: absolute;
+      padding: 11px 20px;
+      font-size: 22px;
+      font-weight: 700;
+      background-color: #FF605C;
+      color: black;
+      border: none;
+      border-radius: 50px;
+      font-family: sans-serif;
+      z-index: 1001;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+    `
+
+  // Append elements to modal
+  modal.appendChild(iframe)
+  document.body.appendChild(modal)
+  document.body.appendChild(floatingCloseButton)
+
+  // Function to close modal
+  const closeModal = () => {
+    document.body.removeChild(modal)
+    document.body.removeChild(floatingCloseButton)
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('click', handleOutsideClick)
+  }
+
+  // Update floating button position based on mouse position
+  const handleMouseMove = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      floatingCloseButton.style.display = 'block'
+      floatingCloseButton.style.left = `${event.pageX}px`
+      floatingCloseButton.style.top = `${event.pageY}px`
+    } else {
+      floatingCloseButton.style.display = 'none'
+    }
+  }
+
+  // Close modal when the floating button is clicked
+  floatingCloseButton.onclick = closeModal
+
+  // Close modal when clicking outside the iframe
+  const handleOutsideClick = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      closeModal()
+    }
+  }
+
+  // Add event listeners
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('click', handleOutsideClick)
+}
+
+// Function to create and show My Markets modal
+function showMyMarketsModal() {
+  // Create the modal container
+  const modal = document.createElement('div')
+  modal.style = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    `
+
+  // Create the iframe
+  const iframe = document.createElement('iframe')
+  iframe.src = `${POP_SITE_URL}/app/my-markets?embed=true&hideUI=true`
   iframe.style = `
       width: 600px; 
       height: 700px; 
@@ -586,19 +588,7 @@ function collectPollDataFromCompose() {
 
 function buildCreateMarketUrl(params = {}) {
   const url = new URL('/app/create', POP_SITE_URL)
-  url.searchParams.set('embed', 'true')
   url.searchParams.set('hideUI', 'true')
-
-  const source = params.source || 'extension'
-  url.searchParams.set('source', source)
-
-  if (params.tweetId) {
-    url.searchParams.set('tweetId', params.tweetId)
-  }
-
-  if (params.tweetUrl) {
-    url.searchParams.set('tweetUrl', params.tweetUrl)
-  }
 
   if (params.question) {
     url.searchParams.set('question', params.question)
@@ -612,15 +602,6 @@ function buildCreateMarketUrl(params = {}) {
     })
   }
 
-  // Handle analysis parameters
-  if (params.category) {
-    url.searchParams.set('category', params.category)
-  }
-
-  if (params.confidence) {
-    url.searchParams.set('confidence', String(params.confidence))
-  }
-
   // Handle options as comma-separated string (from analysis)
   if (params.options && typeof params.options === 'string') {
     const optionsArray = params.options.split(',')
@@ -631,27 +612,12 @@ function buildCreateMarketUrl(params = {}) {
     })
   }
 
-  if (params.duration) {
-    const { days, hours, minutes } = params.duration
-    if (Number.isFinite(params.totalMinutes)) {
-      url.searchParams.set('durationTotalMinutes', String(params.totalMinutes))
-    }
-    if (days) url.searchParams.set('durationDays', String(days))
-    if (hours) url.searchParams.set('durationHours', String(hours))
-    if (minutes) url.searchParams.set('durationMinutes', String(minutes))
-  } else {
-    if (Number.isFinite(params.totalMinutes)) {
-      url.searchParams.set('durationTotalMinutes', String(params.totalMinutes))
-    }
-    if (params.durationDays) {
-      url.searchParams.set('durationDays', String(params.durationDays))
-    }
-    if (params.durationHours) {
-      url.searchParams.set('durationHours', String(params.durationHours))
-    }
-    if (params.durationMinutes) {
-      url.searchParams.set('durationMinutes', String(params.durationMinutes))
-    }
+  if (params.category) {
+    url.searchParams.set('category', params.category)
+  }
+
+  if (params.tweetId) {
+    url.searchParams.set('identifier', params.tweetId) // Use tweetId as identifier
   }
 
   return url.toString()
@@ -1016,20 +982,104 @@ function addSidebarItemsToContainer(container) {
     </div>
   `
 
+  // Create Markets sidebar item - matching X's exact styling
+  const allMarketsItem = document.createElement('div')
+  allMarketsItem.className = 'pop-sidebar-item'
+  allMarketsItem.innerHTML = `
+    <div style="
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 4px;
+      width: fit-content;
+    " onmouseover="this.style.backgroundColor='rgba(231, 233, 234, 0.1)'" onmouseout="this.style.backgroundColor='transparent'">
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26.25px;
+        height: 26.25px;
+        margin-right: 16px;
+      ">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="filter: brightness(0) saturate(100%) invert(89%) sepia(6%) saturate(464%) hue-rotate(169deg) brightness(95%) contrast(89%);">
+          <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="pop-sidebar-text" style="
+        color: rgb(231, 233, 234);
+        font-size: 20px;
+        font-weight: 400;
+        font-family: 'TwitterChirp', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        transition: opacity 0.2s;
+      ">Markets</span>
+    </div>
+  `
+
+  // Create Activity sidebar item - matching X's exact styling
+  const activityItem = document.createElement('div')
+  activityItem.className = 'pop-sidebar-item'
+  activityItem.innerHTML = `
+    <div style="
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 4px;
+      width: fit-content;
+    " onmouseover="this.style.backgroundColor='rgba(231, 233, 234, 0.1)'" onmouseout="this.style.backgroundColor='transparent'">
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26.25px;
+        height: 26.25px;
+        margin-right: 16px;
+      ">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="filter: brightness(0) saturate(100%) invert(89%) sepia(6%) saturate(464%) hue-rotate(169deg) brightness(95%) contrast(89%);">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="pop-sidebar-text" style="
+        color: rgb(231, 233, 234);
+        font-size: 20px;
+        font-weight: 400;
+        font-family: 'TwitterChirp', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        transition: opacity 0.2s;
+      ">Activity</span>
+    </div>
+  `
+
   // Add click event listeners
   predictionsItem.addEventListener('click', function (event) {
     event.stopPropagation()
-    window.showPredictionHistoryModal()
+    window.showMyPredictionsModal()
   })
 
   marketsItem.addEventListener('click', function (event) {
     event.stopPropagation()
-    window.showMarketBookmarksModal()
+    window.showMyMarketsModal()
+  })
+
+  allMarketsItem.addEventListener('click', function (event) {
+    event.stopPropagation()
+    window.showAllMarketsModal()
+  })
+
+  activityItem.addEventListener('click', function (event) {
+    event.stopPropagation()
+    window.showActivityModal()
   })
 
   // Append items to container
-  popSidebarContainer.appendChild(predictionsItem)
+  popSidebarContainer.appendChild(allMarketsItem)
+  popSidebarContainer.appendChild(activityItem)
   popSidebarContainer.appendChild(marketsItem)
+  popSidebarContainer.appendChild(predictionsItem)
 
   // Insert the container into the sidebar
   container.appendChild(popSidebarContainer)
@@ -1283,6 +1333,202 @@ function checkForAllPosts() {
   })
 }
 
+// Function to create and show All Markets modal
+function showAllMarketsModal() {
+  // Create the modal container
+  const modal = document.createElement('div')
+  modal.style = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    `
+
+  // Create the iframe
+  const iframe = document.createElement('iframe')
+  iframe.src = `${POP_SITE_URL}/app/markets?embed=true&hideUI=true`
+  iframe.style = `
+      width: 600px; 
+      height: 700px; 
+      border: none; 
+      border-radius: 20px; 
+      background-color: white; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `
+
+  // Create a close button that follows the cursor
+  const floatingCloseButton = document.createElement('button')
+  floatingCloseButton.innerText = 'X'
+  floatingCloseButton.style = `
+      position: absolute;
+      padding: 11px 20px;
+      font-size: 22px;
+      font-weight: 700;
+      background-color: #FF605C;
+      color: black;
+      border: none;
+      border-radius: 50px;
+      font-family: sans-serif;
+      z-index: 1001;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+    `
+
+  // Append elements to modal
+  modal.appendChild(iframe)
+  modal.appendChild(floatingCloseButton)
+  document.body.appendChild(modal)
+
+  // Show/hide close button based on cursor position
+  const handleMouseMove = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      floatingCloseButton.style.display = 'block'
+      floatingCloseButton.style.left = `${event.pageX}px`
+      floatingCloseButton.style.top = `${event.pageY}px`
+    } else {
+      floatingCloseButton.style.display = 'none'
+    }
+  }
+
+  // Close modal when the floating button is clicked
+  floatingCloseButton.onclick = closeModal
+
+  // Close modal when clicking outside the iframe
+  const handleOutsideClick = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      closeModal()
+    }
+  }
+
+  function closeModal() {
+    modal.remove()
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('click', handleOutsideClick)
+  }
+
+  // Add event listeners
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('click', handleOutsideClick)
+}
+
+// Function to create and show Activity modal
+function showActivityModal() {
+  // Create the modal container
+  const modal = document.createElement('div')
+  modal.style = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    `
+
+  // Create the iframe
+  const iframe = document.createElement('iframe')
+  iframe.src = `${POP_SITE_URL}/app/activity?embed=true&hideUI=true`
+  iframe.style = `
+      width: 600px; 
+      height: 700px; 
+      border: none; 
+      border-radius: 20px; 
+      background-color: white; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `
+
+  // Create a close button that follows the cursor
+  const floatingCloseButton = document.createElement('button')
+  floatingCloseButton.innerText = 'X'
+  floatingCloseButton.style = `
+      position: absolute;
+      padding: 11px 20px;
+      font-size: 22px;
+      font-weight: 700;
+      background-color: #FF605C;
+      color: black;
+      border: none;
+      border-radius: 50px;
+      font-family: sans-serif;
+      z-index: 1001;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+    `
+
+  // Append elements to modal
+  modal.appendChild(iframe)
+  modal.appendChild(floatingCloseButton)
+  document.body.appendChild(modal)
+
+  // Show/hide close button based on cursor position
+  const handleMouseMove = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      floatingCloseButton.style.display = 'block'
+      floatingCloseButton.style.left = `${event.pageX}px`
+      floatingCloseButton.style.top = `${event.pageY}px`
+    } else {
+      floatingCloseButton.style.display = 'none'
+    }
+  }
+
+  // Close modal when the floating button is clicked
+  floatingCloseButton.onclick = closeModal
+
+  // Close modal when clicking outside the iframe
+  const handleOutsideClick = (event) => {
+    const iframeRect = iframe.getBoundingClientRect()
+    const isOutsideIframe =
+      event.clientX < iframeRect.left ||
+      event.clientX > iframeRect.right ||
+      event.clientY < iframeRect.top ||
+      event.clientY > iframeRect.bottom
+
+    if (isOutsideIframe) {
+      closeModal()
+    }
+  }
+
+  function closeModal() {
+    modal.remove()
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('click', handleOutsideClick)
+  }
+
+  // Add event listeners
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('click', handleOutsideClick)
+}
+
 // Function to check for sidebar and add Pop items
 function checkForSidebar() {
   addSidebarItems()
@@ -1291,8 +1537,10 @@ function checkForSidebar() {
 // Expose functions globally
 window.showPopModal = showPopModal
 window.showMarketWidgetModal = showMarketWidgetModal
-window.showPredictionHistoryModal = showPredictionHistoryModal
-window.showMarketBookmarksModal = showMarketBookmarksModal
+window.showMyPredictionsModal = showMyPredictionsModal
+window.showMyMarketsModal = showMyMarketsModal
+window.showAllMarketsModal = showAllMarketsModal
+window.showActivityModal = showActivityModal
 window.createPopButton = createPopButton
 window.createMarketButton = createMarketButton
 window.checkForComposePage = checkForComposePage
