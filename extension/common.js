@@ -1,6 +1,6 @@
 // Configuration - Change these to your production URLs
 const POP_SITE_URL = 'http://localhost:3000'
-const POP_API_URL = 'http://13.213.208.119:3001' // Backend API URL (for AI analysis only)
+const POP_API_URL = 'https://13.213.208.119.sslip.io' // Backend API URL (for AI analysis only)
 const ENVIO_INDEXER_URL =
   'https://indexer.dev.hyperindex.xyz/a5b2576/v1/graphql' // Envio indexer for market data
 
@@ -418,41 +418,40 @@ const marketStatusCache = new Map()
 const marketStatusRequests = new Map()
 const tweetAnalysisCache = new Map()
 
-async function analyzeTweetContent(content, tweetId) {
-  if (!content || !tweetId) return null
+async function analyzePostContent(content, postId) {
+  if (!content || !postId) return null
 
   // Check cache first
-  if (tweetAnalysisCache.has(tweetId)) {
-    return tweetAnalysisCache.get(tweetId)
+  if (tweetAnalysisCache.has(postId)) {
+    return tweetAnalysisCache.get(postId)
   }
 
-  console.log(`[Pop] Analyzing tweet content for ${tweetId}`)
+  console.log(`[Pop] Analyzing post content for ${postId}`)
 
   try {
-    const response = await fetch(`${POP_API_URL}/api/tweet-analyzer/analyze`, {
+    const response = await fetch(`${POP_API_URL}/api/post-analyzer/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         content: content.trim(),
-        source: 'twitter',
-        postId: tweetId,
+        postId: postId,
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`Tweet analysis failed with ${response.status}`)
+      throw new Error(`Post analysis failed with ${response.status}`)
     }
 
     const analysis = await response.json()
-    console.log(`[Pop] Tweet analysis result for ${tweetId}:`, analysis)
+    console.log(`[Pop] Post analysis result for ${postId}:`, analysis)
 
     // Cache the result
-    tweetAnalysisCache.set(tweetId, analysis)
+    tweetAnalysisCache.set(postId, analysis)
     return analysis
   } catch (error) {
-    console.warn('[Pop] Tweet analysis failed:', error)
+    console.warn('[Pop] Post analysis failed:', error)
     return null
   }
 }
@@ -834,10 +833,10 @@ function createInlineCreateButton(tweetElement, tweetId) {
       const tweetContent = extractTweetText(tweetElement)
       const tweetUrl = extractTweetUrl(tweetElement, tweetId)
 
-      console.log(`[Pop] Analyzing tweet content: "${tweetContent}"`)
+      console.log(`[Pop] Analyzing post content: "${tweetContent}"`)
 
       // Analyze tweet content with backend
-      const analysis = await analyzeTweetContent(tweetContent, tweetId)
+      const analysis = await analyzePostContent(tweetContent, tweetId)
 
       if (analysis && analysis.question && analysis.options) {
         // Use analyzed data to create market
@@ -871,7 +870,7 @@ function createInlineCreateButton(tweetElement, tweetId) {
     } catch (error) {
       console.error('[Pop] Error creating market:', error)
       // Show error or fallback
-      alert('Failed to analyze tweet. Please try again.')
+      alert('Failed to analyze post. Please try again.')
     } finally {
       // Re-enable button
       button.disabled = false
