@@ -12,11 +12,14 @@ const marketAbi = parseAbi([
   "function question() view returns (string)",
   "function category() view returns (string)",
   "function platform() view returns (uint8)",
+  "function identifier() view returns (string)",
   "function createdAt() view returns (uint64)",
   "function endTime() view returns (uint64)",
-  "function status() view returns (uint8)",
+  "function state() view returns (uint8)",
   "function totalStaked() view returns (uint256)",
   "function activeParticipantsCount() view returns (uint256)",
+  "function getOptionCount() view returns (uint256)",
+  "function optionLiquidity(uint8) view returns (uint256)",
 ]);
 
 // === CLIENT ===

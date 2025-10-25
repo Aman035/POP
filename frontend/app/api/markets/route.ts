@@ -13,14 +13,16 @@ const marketAbi = parseAbi([
   "function description() view returns (string)",
   "function category() view returns (string)",
   "function platform() view returns (uint8)",
-  "function postUrl() view returns (string)",
+  "function identifier() view returns (string)",     // Changed from postUrl to identifier
   "function creator() view returns (address)",
   "function createdAt() view returns (uint64)",
   "function endTime() view returns (uint64)",
-  "function status() view returns (uint8)",           // 0,1,2
+  "function state() view returns (uint8)",            // Changed from status to state
   "function totalStaked() view returns (uint256)",
   "function activeParticipantsCount() view returns (uint256)",
-  "function getOptions() view returns (string[])",
+  "function getOptionCount() view returns (uint256)",
+  "function options(uint256) view returns (string)",
+  "function optionLiquidity(uint8) view returns (uint256)",
 ]);
 
 // === CLIENT ===
@@ -31,10 +33,10 @@ const client = createPublicClient({
 
 // === helpers ===
 const platformLabel = (n: number) =>
-  (["default", "twitter", "farcaster", "lens", "other"][n]) ?? "default";
+  (["twitter", "farcaster", "lens", "other"][n]) ?? "other";
 
-const statusLabel = (n: number) =>
-  n === 1 ? "resolved" : n === 2 ? "cancelled" : "active";
+const stateLabel = (n: number) =>
+  (["trading", "proposed", "resolved"][n]) ?? "trading";
 
 const toNum = (x: bigint | number) => Number(x);
 
@@ -44,14 +46,14 @@ async function readMarket(addr: `0x${string}`) {
     { address: addr, abi: marketAbi, functionName: "description" as const },
     { address: addr, abi: marketAbi, functionName: "category" as const },
     { address: addr, abi: marketAbi, functionName: "platform" as const },
-    { address: addr, abi: marketAbi, functionName: "postUrl" as const },
+    { address: addr, abi: marketAbi, functionName: "identifier" as const },
     { address: addr, abi: marketAbi, functionName: "creator" as const },
     { address: addr, abi: marketAbi, functionName: "createdAt" as const },
     { address: addr, abi: marketAbi, functionName: "endTime" as const },
-    { address: addr, abi: marketAbi, functionName: "status" as const },
+    { address: addr, abi: marketAbi, functionName: "state" as const },
     { address: addr, abi: marketAbi, functionName: "totalStaked" as const },
     { address: addr, abi: marketAbi, functionName: "activeParticipantsCount" as const },
-    { address: addr, abi: marketAbi, functionName: "getOptions" as const },
+    { address: addr, abi: marketAbi, functionName: "getOptionCount" as const },
   ];
 
   // Use allowFailure: true to handle individual call failures gracefully
@@ -62,38 +64,34 @@ async function readMarket(addr: `0x${string}`) {
   const description              = out[1].result;
   const category                 = out[2].result;
   const platformNum              = out[3].result ? Number(out[3].result) : 0;
-  const postUrl                  = out[4].result;
+  const identifier               = out[4].result;
   const creator                  = out[5].result;
   const createdAt                = out[6].result ? toNum(out[6].result as bigint) : 0;
   const endTime                  = out[7].result ? toNum(out[7].result as bigint) : 0;
-  const statusNum                = out[8].result ? Number(out[8].result) : 0;
+  const stateNum                 = out[8].result ? Number(out[8].result) : 0;
   const totalStaked              = out[9].result;
   const activeParticipantsCount  = out[10].result;
-  const options                  = out[11].result || [];
+  const optionCount              = out[11].result ? Number(out[11].result) : 0;
 
   return {
     address: addr,
-    identifier: 0, // Not available in read ABI
+    identifier: identifier as string,
     creator: creator as string,
-    options: options as string[],
+    options: [], // Will be populated separately by fetching individual options
     endTime: endTime,
     creatorFeeBps: 0, // Not available in read ABI
     totalLiquidity: totalStaked ? (Number(totalStaked) / 1e6).toString() : "0", // Convert from wei to USDC (6 decimals)
-    isResolved: statusNum === 1, // 1 = resolved
+    isResolved: stateNum === 2, // 2 = resolved
     winningOption: undefined, // Not available in read ABI
     question: question as string,
     description: description as string || "",
     category: category as string || "General",
     resolutionSource: "", // Not available in read ABI
     platform: platformNum,
-    postUrl: postUrl as string || "",
     createdAt: createdAt,
-    minBet: 0, // Not available in read ABI
-    maxBetPerUser: 0, // Not available in read ABI
-    maxTotalStake: 0, // Not available in read ABI
     optionLiquidity: [], // Will be populated separately
-    state: statusNum as any,
-    status: statusNum, // 0=active, 1=resolved, 2=cancelled
+    state: stateNum as any,
+    status: stateNum === 2 ? 1 : 0, // Convert state to status: 2=resolved -> 1, others -> 0 (active)
     activeParticipantsCount: Number(activeParticipantsCount || 0),
   };
 }

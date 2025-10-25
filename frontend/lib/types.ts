@@ -2,19 +2,17 @@
 
 // Platform enum matching the contract
 export enum Platform {
-  Default = 0,
-  Twitter = 1,
-  Farcaster = 2,
-  Lens = 3,
-  Other = 4
+  Twitter = 0,
+  Farcaster = 1,
+  Lens = 2,
+  Other = 3
 }
 
 // Market state enum matching the contract
 export enum MarketState {
   Trading = 0,
   Proposed = 1,
-  Resolved = 2,
-  Cancelled = 3
+  Resolved = 2
 }
 
 // Market status enum for UI convenience
@@ -25,7 +23,7 @@ export enum MarketStatus {
 }
 
 export interface MarketCreationParams {
-  identifier: number;
+  identifier: string;  // Changed from number to string
   options: string[];
   creator: string;
   endTime: number;
@@ -35,10 +33,7 @@ export interface MarketCreationParams {
   category: string;
   resolutionSource: string;
   platform: Platform;
-  postUrl: string;
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
+  // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface MarketFactoryConfig {
@@ -48,7 +43,7 @@ export interface MarketFactoryConfig {
 
 export interface MarketInfo {
   address: string;
-  identifier: number;
+  identifier: string;  // Changed from number to string
   creator: string;
   options: string[];
   endTime: number;
@@ -61,15 +56,12 @@ export interface MarketInfo {
   category: string;
   resolutionSource: string;
   platform: Platform;
-  postUrl: string;
   createdAt: number;
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
   optionLiquidity: string[];
   state: MarketState;
   status: MarketStatus;
   activeParticipantsCount: number;
+  // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface BetInfo {
@@ -104,13 +96,7 @@ export interface MarketResolution {
   finalWinningPool: string;
 }
 
-export interface UserPosition {
-  option: number;
-  amount: string;
-  hasClaimed: boolean;
-  totalPosition: string;
-}
-
+// New interfaces for additional contract functionality
 export interface MarketLimits {
   minBet: number;
   maxBetPerUser: number;
@@ -123,8 +109,14 @@ export interface MarketMetadata {
   category: string;
   resolutionSource: string;
   platform: Platform;
-  postUrl: string;
   createdAt: number;
+}
+
+export interface UserPosition {
+  option: number;
+  amount: string;
+  hasClaimed: boolean;
+  totalPosition: string;
 }
 
 export interface NetworkConfig {
@@ -149,7 +141,7 @@ export interface ContractAddresses {
 
 // Event types matching contract events
 export interface MarketCreatedEvent {
-  identifier: number;
+  identifier: string;  // Changed from number to string
   creator: string;
   market: string;
   options: string[];
@@ -160,11 +152,8 @@ export interface MarketCreatedEvent {
   category: string;
   resolutionSource: string;
   platform: Platform;
-  postUrl: string;
   createdAt: number;
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
+  // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface BetPlacedEvent {
@@ -204,7 +193,7 @@ export interface PayoutClaimedEvent {
 }
 
 export interface MarketMetadataSetEvent {
-  identifier: number;
+  identifier: string;  // Changed from number to string
   question: string;
   description: string;
   category: string;
@@ -214,11 +203,8 @@ export interface MarketMetadataSetEvent {
   creatorFeeBps: number;
   creator: string;
   platform: Platform;
-  postUrl: string;
   createdAt: number;
-  minBet: number;
-  maxBetPerUser: number;
-  maxTotalStake: number;
+  // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in new contract
 }
 
 export interface MarketStatusChangedEvent {
@@ -284,20 +270,20 @@ export interface UseContractMethodsReturn {
 }
 
 // Utility types and helper functions
-export type PlatformString = 'Default' | 'Twitter' | 'Farcaster' | 'Lens' | 'Other';
+export type PlatformString = 'Twitter' | 'Farcaster' | 'Lens' | 'Other';
 
-export type MarketStateString = 'Trading' | 'Proposed' | 'Resolved' | 'Cancelled';
+export type MarketStateString = 'Trading' | 'Proposed' | 'Resolved';
 
 export type MarketStatusString = 'Active' | 'Resolved' | 'Cancelled';
 
 // Helper functions for enum conversions
 export const getPlatformString = (platform: Platform): PlatformString => {
-  const platforms: PlatformString[] = ['Default', 'Twitter', 'Farcaster', 'Lens', 'Other'];
+  const platforms: PlatformString[] = ['Twitter', 'Farcaster', 'Lens', 'Other'];
   return platforms[platform] || 'Other';
 };
 
 export const getMarketStateString = (state: MarketState): MarketStateString => {
-  const states: MarketStateString[] = ['Trading', 'Proposed', 'Resolved', 'Cancelled'];
+  const states: MarketStateString[] = ['Trading', 'Proposed', 'Resolved'];
   return states[state] || 'Trading';
 };
 
@@ -316,7 +302,7 @@ export const isResolvedMarket = (state: MarketState): boolean => {
 };
 
 export const isCancelledMarket = (state: MarketState): boolean => {
-  return state === MarketState.Cancelled;
+  return false; // Cancelled state doesn't exist in new contract
 };
 
 // Constants

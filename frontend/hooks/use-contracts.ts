@@ -123,7 +123,7 @@ export const useCreateMarket = () => {
 
       // Write the contract with all required parameters
       const marketCreationParams = {
-        identifier: BigInt(params.identifier),
+        identifier: params.identifier,
         options: params.options,
         creator: userAddress as `0x${string}`, // Use the validated user address
         endTime: BigInt(params.endTime),
@@ -133,10 +133,8 @@ export const useCreateMarket = () => {
         category: params.category,
         resolutionSource: params.resolutionSource,
         platform: params.platform,
-        postUrl: params.postUrl,
-        minBet: BigInt(params.minBet),
-        maxBetPerUser: BigInt(params.maxBetPerUser),
-        maxTotalStake: BigInt(params.maxTotalStake),
+        // Removed postUrl as it's not in the new contract
+        // Removed minBet, maxBetPerUser, maxTotalStake as they're not in the new contract
       };
 
       console.log('Creator in params:', marketCreationParams.creator);
@@ -248,13 +246,13 @@ export const useAllMarkets = () => {
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'description' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'category' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'platform' as const },
-        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'postUrl' as const },
+        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'identifier' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'createdAt' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'endTime' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'creator' as const },
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'creatorFeeBps' as const },
-        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'status' as const },
-        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'getOptions' as const },
+        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'state' as const },
+        { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'getOptionCount' as const },
         
         // Liquidity, participants, and per-option info
         { address: address as `0x${string}`, abi: MarketReadAbi as Abi, functionName: 'totalStaked' as const },
@@ -347,16 +345,16 @@ export const useAllMarkets = () => {
               description,
               category,
               platform,
-              postUrl,
+              identifier,
               createdAt,
               endTime,
               creator,
               creatorFeeBps,
-              status,
-              options,
+              state,
+              optionCount,
               totalStaked,
               activeParticipantsCount,
-              optionCount
+              optionCount2
             ] = marketDataSlice;
 
             if (process.env.NODE_ENV === 'development') {
@@ -365,45 +363,40 @@ export const useAllMarkets = () => {
                 description: description?.result,
                 category: category?.result,
                 platform: platform?.result,
-                postUrl: postUrl?.result,
+                identifier: identifier?.result,
                 createdAt: createdAt?.result,
                 endTime: endTime?.result,
                 creator: creator?.result,
                 creatorFeeBps: creatorFeeBps?.result,
-                status: status?.result,
-                options: options?.result,
+                state: state?.result,
+                optionCount: optionCount?.result,
                 totalStaked: totalStaked?.result,
                 activeParticipantsCount: activeParticipantsCount?.result,
-                optionCount: optionCount?.result,
               });
             }
 
             // Check if essential data is available (with proper null checks)
-            if (question?.result && options?.result && endTime?.result && creator?.result && status?.result) {
+            if (question?.result && endTime?.result && creator?.result && state?.result) {
               
               const marketInfo: MarketInfo = {
                 address,
-                identifier: 0, // Not available in read ABI
+                identifier: identifier?.result as string || "",
                 creator: creator.result as string,
-                options: options.result as string[],
+                options: [], // Will be populated separately by fetching individual options
                 endTime: Number(endTime.result),
                 creatorFeeBps: Number(creatorFeeBps?.result || 0),
                 totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
-                isResolved: Number(status.result) === 1, // 1 = resolved
+                isResolved: Number(state.result) === 2, // 2 = resolved
                 winningOption: undefined, // Not available in read ABI
                 question: question.result as string,
                 description: description?.result as string || "",
                 category: category?.result as string || "General",
                 resolutionSource: "", // Not available in read ABI
                 platform: Number(platform?.result || 0),
-                postUrl: postUrl?.result as string || "",
                 createdAt: Number(createdAt?.result || Math.floor(Date.now() / 1000)),
-                minBet: 0, // Not available in read ABI
-                maxBetPerUser: 0, // Not available in read ABI
-                maxTotalStake: 0, // Not available in read ABI
                 optionLiquidity: [], // Will be populated separately
-                state: Number(status.result) as any,
-                status: Number(status.result), // 0=active, 1=resolved, 2=cancelled
+                state: Number(state.result) as any,
+                status: Number(state.result) === 2 ? 1 : 0, // Convert state to status: 2=resolved -> 1, others -> 0 (active)
                 activeParticipantsCount: Number(activeParticipantsCount?.result || 0),
               };
 
@@ -415,10 +408,9 @@ export const useAllMarkets = () => {
                 if (process.env.NODE_ENV === 'development') {
                   console.log(`❌ Skipping market ${address} - missing essential data:`, {
                     question: !!question?.result,
-                    options: !!options?.result,
                     endTime: !!endTime?.result,
                     creator: !!creator?.result,
-                    status: !!status?.result
+                    state: !!state?.result
                   });
                 }
               }
@@ -579,7 +571,7 @@ export const useMarketDetails = (marketAddress: string) => {
           
           const marketInfoData: MarketInfo = {
             address: marketAddress,
-            identifier: 0, // Not available in read ABI
+            identifier: "", // Not available in read ABI
             creator: creator.result as string,
             options: options.result as string[],
             endTime: Number(endTime.result),
@@ -592,11 +584,7 @@ export const useMarketDetails = (marketAddress: string) => {
             category: category?.result as string || "General",
             resolutionSource: "", // Not available in read ABI
             platform: Number(platform?.result || 0),
-            postUrl: postUrl?.result as string || "",
             createdAt: Number(createdAt?.result || Math.floor(Date.now() / 1000)),
-            minBet: 0, // Not available in read ABI
-            maxBetPerUser: 0, // Not available in read ABI
-            maxTotalStake: 0, // Not available in read ABI
             optionLiquidity: [], // Will be populated separately
             state: Number(status.result) as any,
             status: Number(status.result), // 0=active, 1=resolved, 2=cancelled
