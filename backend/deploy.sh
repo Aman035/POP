@@ -7,7 +7,7 @@ mkdir -p logs
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-pnpm install --production
+pnpm install
 
 # Build the application
 echo "🔨 Building application..."
