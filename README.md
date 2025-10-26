@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/POP-logo.png" alt="POP Logo" width="200" height="200" />
+  <img src="frontend/public/POP-logo.png" alt="POP Logo" width="200" height="200" />
 </div>
 
 <div align="center">
