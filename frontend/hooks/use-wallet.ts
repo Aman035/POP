@@ -41,7 +41,8 @@ export function useWallet(): WalletState & WalletActions {
   
   const [error, setError] = useState<string | null>(null);
 
-  const isCorrectChain = chainId === arbitrumSepolia.id;
+  // Whitelist Ethereum mainnet (1) and Arbitrum Sepolia (421614)
+  const isCorrectChain = chainId === 1 || chainId === arbitrumSepolia.id;
 
   // Clear error when connection state changes
   useEffect(() => {

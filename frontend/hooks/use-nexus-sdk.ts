@@ -139,11 +139,20 @@ export function useNexusSDK(): NexusSDKState & NexusSDKActions & {
         provider: !!provider,
         network: 'testnet'
       });
+      
+      // Check if it's a chunk loading error
+      const isChunkError = error instanceof Error && 
+        (error.message.includes('ChunkLoadError') || 
+         error.message.includes('Loading chunk') ||
+         error.message.includes('Loading CSS chunk'));
+      
       setState(prev => ({
         ...prev,
         isLoading: false,
         isInitialized: false,
-        error: error instanceof Error ? error.message : 'Failed to initialize SDK',
+        error: isChunkError 
+          ? 'SDK loading failed. Please refresh the page and try again.'
+          : error instanceof Error ? error.message : 'Failed to initialize SDK',
       }));
     }
   }, []);

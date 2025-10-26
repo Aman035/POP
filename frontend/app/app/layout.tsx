@@ -4,7 +4,7 @@ import type React from 'react'
 import { Suspense } from 'react'
 import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
-import { WalletGuard } from '@/components/wallet/wallet-guard'
+import { ClientOnlyBridgeGuard } from '@/components/wallet/client-only-bridge-guard'
 import { ClientOnly } from '@/components/providers/client-only'
 import { useSearchParams, usePathname } from 'next/navigation'
 
@@ -20,12 +20,12 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   if (hideUI) {
     return (
       <ClientOnly fallback={<div className="min-h-screen bg-background" />}>
-        <WalletGuard requireCorrectChain={!isNexusPage}>
+        <ClientOnlyBridgeGuard requireCorrectChain={!isNexusPage}>
           <div className="min-h-screen bg-background">
             <AppHeader minimalMode={true} />
             <main className="w-full p-6">{children}</main>
           </div>
-        </WalletGuard>
+        </ClientOnlyBridgeGuard>
       </ClientOnly>
     )
   }
@@ -33,7 +33,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   // Normal layout with header and sidebar - protected by wallet guard
   return (
     <ClientOnly fallback={<div className="min-h-screen bg-background" />}>
-      <WalletGuard requireCorrectChain={!isNexusPage}>
+      <ClientOnlyBridgeGuard requireCorrectChain={!isNexusPage}>
         <div className="min-h-screen bg-background">
           <AppHeader />
           <div className="flex">
@@ -41,7 +41,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
             <main className="flex-1 p-6">{children}</main>
           </div>
         </div>
-      </WalletGuard>
+      </ClientOnlyBridgeGuard>
     </ClientOnly>
   )
 }

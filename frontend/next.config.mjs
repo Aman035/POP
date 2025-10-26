@@ -21,6 +21,15 @@ const nextConfig = {
         net: false,
         tls: false,
         crypto: false,
+        stream: false,
+        util: false,
+        url: false,
+        assert: false,
+        http: false,
+        https: false,
+        zlib: false,
+        path: false,
+        os: false,
       };
     }
 
@@ -37,6 +46,23 @@ const nextConfig = {
         fullySpecified: false,
       },
     });
+
+    // Handle Nexus SDK and other dynamic imports
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks?.cacheGroups,
+          nexus: {
+            test: /[\\/]node_modules[\\/]@avail-project[\\/]/,
+            name: 'nexus',
+            chunks: 'all',
+            priority: 10,
+          },
+        },
+      },
+    };
 
     return config;
   },

@@ -124,8 +124,8 @@ export const useCreateMarket = () => {
       // Write the contract with all required parameters
       const marketCreationParams = {
         identifier: params.identifier,
-        endTime: BigInt(params.endTime),
-        creatorFeeBps: BigInt(params.creatorFeeBps),
+        endTime: params.endTime,
+        creatorFeeBps: params.creatorFeeBps,
         question: params.question,
         description: params.description,
         category: params.category,
@@ -137,20 +137,20 @@ export const useCreateMarket = () => {
 
       console.log('Market creation params:', marketCreationParams);
 
-      writeContract({
+      await writeContract({
         address: MARKET_FACTORY_ADDRESS as `0x${string}`,
         abi: MARKET_FACTORY_ABI,
         functionName: 'createMarket',
         args: [
-          params.identifier,
-          BigInt(params.endTime),
-          BigInt(params.creatorFeeBps),
-          params.question,
-          params.description,
-          params.category,
-          params.platform,
-          params.resolutionSource,
-          params.options
+          params.identifier, // string
+          params.endTime, // uint64 (number)
+          params.creatorFeeBps, // uint96 (number)
+          params.question, // string
+          params.description, // string
+          params.category, // string
+          params.platform, // uint8 (number)
+          params.resolutionSource, // string
+          params.options // string[]
         ]
       });
 

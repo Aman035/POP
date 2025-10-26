@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Wifi, WifiOff } from 'lucide-react';
 import { arbitrumSepolia } from 'wagmi/chains';
+import { useAccount } from 'wagmi';
 
 interface NetworkIndicatorProps {
   isConnected: boolean;
@@ -17,12 +18,41 @@ export function NetworkIndicator({
   className = '',
   compact = false 
 }: NetworkIndicatorProps) {
+  const { chainId } = useAccount();
+  
   if (!isConnected) {
     return null;
   }
 
+  // Get network info based on chain ID
+  const getNetworkInfo = () => {
+    if (chainId === 1) {
+      return {
+        name: 'Ethereum',
+        shortName: 'ETH',
+        explorerUrl: 'https://etherscan.io',
+        color: 'from-blue-400 to-blue-600'
+      };
+    } else if (chainId === arbitrumSepolia.id) {
+      return {
+        name: 'Arbitrum Sepolia',
+        shortName: 'Arb Sepolia',
+        explorerUrl: arbitrumSepolia.blockExplorers?.default.url || 'https://sepolia.arbiscan.io',
+        color: 'from-blue-400 to-blue-600'
+      };
+    }
+    return {
+      name: 'Unknown Network',
+      shortName: 'Unknown',
+      explorerUrl: '#',
+      color: 'from-gray-400 to-gray-600'
+    };
+  };
+
+  const networkInfo = getNetworkInfo();
+
   const handleExplorerClick = () => {
-    window.open(arbitrumSepolia.blockExplorers?.default.url, '_blank');
+    window.open(networkInfo.explorerUrl, '_blank');
   };
 
   if (!isCorrectChain) {
@@ -38,19 +68,19 @@ export function NetworkIndicator({
   return (
     <div className={`flex items-center gap-1 text-xs text-muted-foreground ${className}`}>
       <div className="flex items-center gap-1">
-        {/* Arbitrum-style indicator */}
+        {/* Network indicator */}
         <div className="relative">
-          <div className="w-3 h-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+          <div className={`w-3 h-3 bg-gradient-to-br ${networkInfo.color} rounded-full flex items-center justify-center shadow-sm`}>
             <div className="w-1.5 h-1.5 bg-white rounded-full opacity-90"></div>
           </div>
           <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full border border-white"></div>
         </div>
         
         <span className={compact ? 'hidden sm:inline' : 'hidden sm:inline'}>
-          Arbitrum Sepolia
+          {networkInfo.name}
         </span>
         <span className={compact ? 'sm:hidden' : 'sm:hidden'}>
-          Arb Sepolia
+          {networkInfo.shortName}
         </span>
       </div>
       
@@ -59,7 +89,7 @@ export function NetworkIndicator({
         size="sm"
         className="h-auto p-1 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
         onClick={handleExplorerClick}
-        title="View on Arbiscan Sepolia"
+        title={`View on ${networkInfo.name} Explorer`}
       >
         <ExternalLink className="h-3 w-3" />
       </Button>

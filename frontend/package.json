@@ -1,12 +1,13 @@
 {
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@avail-project/nexus-core": "^0.0.1",
+    "@avail-project/nexus-widgets": "^0.0.6",
     "@emotion/is-prop-valid": "latest",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -69,5 +70,5 @@
     "tailwindcss": "^3.4.0",
     "typescript": "^5"
   },
-  "packageManager": "yarn@4.2.2+sha512.c44e283c54e02de9d1da8687025b030078c1b9648d2895a65aab8e64225bfb7becba87e1809fc0b4b6778bbd47a1e2ab6ac647de4c5e383a53a7c17db6c3ff4b"
+  "packageManager": "yarn@4.2.2"
 }

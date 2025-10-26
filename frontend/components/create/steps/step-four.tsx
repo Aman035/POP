@@ -1,12 +1,15 @@
+import { useState, useEffect } from "react"
+import { format } from "date-fns"
+import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle, Shield, Target, Users, Zap, Loader2, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle, Shield, Target, Users } from "lucide-react"
-import { format } from "date-fns"
 import { useCreateMarket } from "@/hooks/use-contracts"
-import { useState, useEffect } from "react"
 import { toast } from "@/hooks/use-toast"
 import { Platform } from "@/lib/types"
+import { useEthBalance } from "@/hooks/use-eth-balance"
+import { BridgeButton, BridgeAndExecuteButton, TOKEN_CONTRACT_ADDRESSES, TOKEN_METADATA, SUPPORTED_CHAINS, type SUPPORTED_TOKENS, type SUPPORTED_CHAINS_IDS } from '@avail-project/nexus-widgets'
+import { parseUnits } from 'viem'
 
 interface StepFourProps {
   marketData: any
@@ -20,19 +23,140 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
   const [marketAddress, setMarketAddress] = useState<string | null>(null)
   const [contractAddress, setContractAddress] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showManualBridge, setShowManualBridge] = useState(false)
+  const [showBridgePopup, setShowBridgePopup] = useState(false)
+  const [availableFunds, setAvailableFunds] = useState<any[]>([])
+  const [selectedChain, setSelectedChain] = useState<string>('')
+  
+  // Note: Bridge state management removed - Nexus widgets handle their own state
+  
+  // ETH balance and Nexus SDK hooks
+  const {
+    balance,
+    balanceFormatted,
+    hasInsufficientBalance,
+    isLoading: balanceLoading,
+    error: balanceError,
+    isBridging,
+    bridgeError,
+    bridgeSuccess,
+    availableChains,
+    bridgeEthFromOtherChain,
+    getAvailableChains,
+    refreshBalance,
+  } = useEthBalance();
+
+  // Note: Nexus widgets handle their own SDK internally
+  
+  // const nexusWidget = useNexusWidget();
   
   const PlatformIcon = marketData.platform === Platform.Twitter ? Twitter : 
                        marketData.platform === Platform.Farcaster ? MessageSquare : 
                        MessageSquare // Default fallback
 
-  const generateIdentifier = () => {
-    // Generate a numeric identifier that can be converted to BigInt
-    const timestamp = Date.now()
-    const random = Math.floor(Math.random() * 1000000) // 6-digit random number
-    return timestamp * 1000000 + random // Combine timestamp and random to create unique numeric ID
-  }
 
-  const handleCreateMarket = async () => {
+  // Check for available funds on other chains
+  const checkForAvailableFunds = async () => {
+    try {
+      console.log('Checking for available funds on other chains...');
+      
+      // For now, just show manual bridge options
+      // The Nexus widgets will handle their own balance checking
+      console.log('Showing manual bridge options');
+      setShowManualBridge(true);
+      
+      toast({
+        title: "Bridge Options Available",
+        description: "Use the Nexus widgets below to bridge funds from other chains.",
+      });
+      
+    } catch (error) {
+      console.error('Error checking for funds:', error);
+      // Fallback to manual bridge options
+      setShowManualBridge(true);
+      
+      toast({
+        title: "Error Checking Funds",
+        description: "Failed to check balances on other chains. Using manual bridge options.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Helper function to get chain name from chain ID (Nexus Testnet supported chains)
+  const getChainName = (chainId: number): string => {
+    const chainNames: { [key: number]: string } = {
+      // Nexus Testnet supported chains
+      11155420: 'Optimism Sepolia',
+      80002: 'Polygon Amoy',
+      421614: 'Arbitrum Sepolia',
+      84532: 'Base Sepolia',
+      11155111: 'Sepolia',
+      10143: 'Monad Testnet',
+      // Additional chains for reference
+      1: 'Ethereum Mainnet',
+      42161: 'Arbitrum One',
+      8453: 'Base Mainnet',
+      137: 'Polygon Mainnet',
+      80001: 'Polygon Mumbai',
+    };
+    return chainNames[chainId] || `Chain ${chainId}`;
+  };
+
+  // Handle bridge confirmation using real Nexus SDK
+  const handleBridgeConfirm = async () => {
+    if (!selectedChain) {
+      toast({
+        title: "Please select a chain",
+        description: "Choose which chain to bridge from",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Note: Nexus widgets handle their own initialization
+
+    try {
+      // Find the selected asset from available funds
+      const selectedAsset = availableFunds.find(fund => fund.chain === selectedChain);
+      if (!selectedAsset) {
+        toast({
+          title: "Asset Not Found",
+          description: "Selected asset not found. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log(`Bridge requested for ${selectedAsset.balance} from ${selectedChain}`);
+      
+      toast({
+        title: "🔄 Bridge Requested",
+        description: `Please use the Nexus widgets below to bridge ${selectedAsset.balance} to Arbitrum Sepolia.`,
+      });
+      
+      // Close the popup and let user use the widgets
+      setShowBridgePopup(false);
+      
+    } catch (error) {
+      console.error('Bridge failed:', error);
+      toast({
+        title: "❌ Bridge Failed",
+        description: `Could not bridge funds: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or use manual options.`,
+        variant: "destructive"
+      });
+    }
+  };
+
+
+  const handleCreateMarket = async (forceContinue = false) => {
+    console.log('Launch Prediction Market button clicked!');
+    console.log('Market data:', marketData);
+    console.log('hasInsufficientBalance:', hasInsufficientBalance);
+    console.log('balanceFormatted:', balanceFormatted);
+    console.log('forceContinue:', forceContinue);
+    
+    
     if (!marketData.question || !marketData.description || marketData.options.length < 2) {
       toast({
         title: "Missing Information",
@@ -62,6 +186,28 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       return
     }
 
+    // If user has insufficient balance, check for funds on other chains
+    if (hasInsufficientBalance && !forceContinue) {
+      console.log('Insufficient balance detected, checking for funds on other chains...');
+      
+      // Show manual bridge options directly
+      setShowManualBridge(true);
+      
+      // Also try to check for available funds
+      checkForAvailableFunds();
+      
+      return;
+    }
+
+    // Show warning if proceeding without sufficient balance
+    if (hasInsufficientBalance && forceContinue) {
+      toast({
+        title: "⚠️ Insufficient ETH Balance",
+        description: "You're proceeding without sufficient ETH. You'll need to get ETH before the transaction can be confirmed.",
+        variant: "destructive"
+      });
+    }
+
     try {
       setIsCreating(true)
       
@@ -71,8 +217,11 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       // Convert creator fee percentage to basis points
       const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100) // Convert percentage to basis points
       
+      // Generate a unique identifier string if not provided
+      const identifier = marketData.identifier || `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const marketParams = {
-        identifier: marketData.identifier,
+        identifier,
         options: marketData.options.filter((option: string) => option.trim()),
         endTime,
         creatorFeeBps,
@@ -88,7 +237,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         description: "Please confirm the transaction in your wallet...",
       })
 
+      console.log('Calling createMarket with params:', marketParams);
       const result = await createMarket(marketParams)
+      console.log('createMarket result:', result);
       
       if (result) {
         // Set the transaction hash immediately
@@ -183,6 +334,8 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       }
     }
   }, [isConfirmed, hash, marketAddress, onCreateMarket])
+
+  // Note: Bridge in progress screen removed - Nexus widgets handle their own UI
 
   return (
     <div className="space-y-6">
@@ -304,6 +457,49 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           </div>
         </Card>
 
+        {/* Current Balance Status */}
+        <Card className="p-4 bg-background border-border">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                hasInsufficientBalance ? 'bg-red-500/10' : 'bg-green-500/10'
+              }`}>
+                {balanceLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : hasInsufficientBalance ? (
+                  <Clock className="w-4 h-4 text-red-500" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium">ETH Balance</p>
+                <p className="text-lg font-bold">{balanceFormatted} ETH</p>
+              </div>
+            </div>
+            {hasInsufficientBalance && (
+              <Badge variant="destructive" className="text-xs">
+                Insufficient Balance
+              </Badge>
+            )}
+          </div>
+          
+          {hasInsufficientBalance && (
+            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-blue-500" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Auto-Bridge Available
+                </span>
+              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                We'll automatically bridge ETH from another chain when you launch your market.
+              </p>
+            </div>
+          )}
+        </Card>
+
+
         {/* Smart Contract Creation */}
         {!isMarketCreated ? (
           <Card className="p-6 bg-background border-border">
@@ -314,15 +510,24 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               <div>
                 <h3 className="text-lg font-semibold mb-2">Launch Your Prediction Market</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Deploy your market to the blockchain and start accepting predictions. No upfront costs required.
+                  Deploy your market to the blockchain and start accepting predictions. {hasInsufficientBalance ? 'Bridge ETH from another chain first.' : 'No upfront costs required.'}
                 </p>
+                <div className="text-xs text-gray-500 mb-2">
+                  Debug: isCreating={isCreating.toString()}, creatingMarket={creatingMarket.toString()}, hasInsufficientBalance={hasInsufficientBalance.toString()}
+                </div>
+                
+                
               </div>
               
               <Button 
-                onClick={handleCreateMarket}
+                onClick={() => handleCreateMarket()}
                 disabled={isCreating || creatingMarket}
                 className="w-full gold-gradient text-background font-semibold"
                 size="lg"
+                style={{ 
+                  opacity: (isCreating || creatingMarket) ? 0.5 : 1,
+                  cursor: (isCreating || creatingMarket) ? 'not-allowed' : 'pointer'
+                }}
               >
                 {isCreating || creatingMarket ? (
                   <>
@@ -333,25 +538,6 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                   "Launch Prediction Market"
                 )}
               </Button>
-              
-              {createError && (
-                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                  <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-destructive text-xs font-bold">!</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-destructive mb-1">Launch Failed</p>
-                      <p className="text-sm text-destructive/80">
-                        {createError}
-                      </p>
-                      <p className="text-xs text-destructive/60 mt-2">
-                        Please check your wallet connection and try again. If the problem persists, try refreshing the page.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
         ) : (
@@ -507,6 +693,241 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Nexus Bridge Section - shown when user has insufficient balance */}
+        {showManualBridge && (
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
+                <Zap className="w-6 h-6 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Bridge to Arbitrum Sepolia</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Use Nexus to bridge native currency from supported chains to Arbitrum Sepolia.
+                </p>
+              </div>
+
+              {/* Nexus Bridge Widget */}
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {/* Simple Bridge */}
+                  <BridgeButton prefill={{ chainId: 421614, token: 'ETH', amount: '0.01' }}>
+                    {({ onClick, isLoading }) => (
+                      <Button
+                        onClick={onClick}
+                        disabled={isLoading}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                            Bridging ETH...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Bridge 0.01 ETH to Arbitrum Sepolia
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </BridgeButton>
+
+                  {/* Bridge and Create Market in One Transaction */}
+                  <BridgeAndExecuteButton
+                    contractAddress={process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}` || '0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`}
+                    contractAbi={[
+                      {
+                        name: 'createMarket',
+                        type: 'function',
+                        stateMutability: 'nonpayable',
+                        inputs: [
+                          { name: 'identifier', type: 'string' },
+                          { name: 'endTime', type: 'uint64' },
+                          { name: 'creatorFeeBps', type: 'uint96' },
+                          { name: 'question', type: 'string' },
+                          { name: 'description', type: 'string' },
+                          { name: 'category', type: 'string' },
+                          { name: 'platform', type: 'uint8' },
+                          { name: 'resolutionSource', type: 'string' },
+                          { name: 'options', type: 'string[]' }
+                        ],
+                        outputs: [{ name: 'market', type: 'address' }],
+                      },
+                    ] as const}
+                    functionName="createMarket"
+                    buildFunctionParams={(token, amount, chainId, user) => {
+                      // Generate a unique identifier string
+                      const identifier = marketData.identifier || `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                      
+                      // Convert endDate to timestamp
+                      const endTime = Math.floor(marketData.endDate.getTime() / 1000);
+                      
+                      // Convert creator fee percentage to basis points
+                      const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100);
+                      
+                      console.log('BridgeAndExecuteButton params:', {
+                        identifier,
+                        endTime,
+                        creatorFeeBps,
+                        question: marketData.question,
+                        description: marketData.description,
+                        category: marketData.category || "other",
+                        platform: marketData.platform || 0,
+                        resolutionSource: marketData.resolutionSource || "",
+                        options: marketData.options.filter((option: string) => option.trim())
+                      });
+                      
+                      return {
+                        functionParams: [
+                          identifier, // string
+                          endTime, // uint64
+                          creatorFeeBps, // uint96
+                          marketData.question,
+                          marketData.description,
+                          marketData.category || "other",
+                          marketData.platform || 0,
+                          marketData.resolutionSource || "",
+                          marketData.options.filter((option: string) => option.trim())
+                        ]
+                      };
+                    }}
+                    prefill={{
+                      toChainId: 421614, // Arbitrum Sepolia
+                      token: 'ETH',
+                    }}
+                  >
+                    {({ onClick, isLoading }) => (
+                      <Button
+                        onClick={onClick}
+                        disabled={isLoading}
+                        className="w-full gold-gradient text-background font-semibold"
+                        size="lg"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                            Bridge & Create Market...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Bridge ETH & Create Market (One Transaction)
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </BridgeAndExecuteButton>
+                </div>
+              </div>
+
+              {/* Alternative Options */}
+              <div className="text-xs text-muted-foreground">
+                <p>💡 Alternative: Get testnet ETH from faucets:</p>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open('https://faucet.quicknode.com/arbitrum/sepolia', '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Arbitrum Faucet
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshBalance}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Balance
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowManualBridge(false);
+                      handleCreateMarket(true);
+                    }}
+                    className="bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Continue Anyway
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Simple Bridge Popup */}
+        {showBridgePopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="p-6 bg-background border-border max-w-md w-full mx-4">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                  <Zap className="w-6 h-6 text-green-500" />
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">💰 Funds Found!</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    We found native currency on other chains. Bridge it to Arbitrum Sepolia?
+                  </p>
+                </div>
+
+                {/* Chain Selection */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Select chain to bridge from:</label>
+                  <div className="space-y-2">
+                    {availableFunds.map((fund, index) => (
+                      <label key={index} className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50">
+                        <input
+                          type="radio"
+                          name="chain"
+                          value={fund.chain}
+                          checked={selectedChain === fund.chain}
+                          onChange={(e) => setSelectedChain(e.target.value)}
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{fund.chain}</div>
+                          <div className="text-sm text-muted-foreground">{fund.balance}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowBridgePopup(false);
+                      setShowManualBridge(true);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  
+                  <Button
+                    onClick={handleBridgeConfirm}
+                    disabled={!selectedChain}
+                    className="flex-1 gold-gradient text-background font-semibold"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Bridge & Create Market
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
       </div>
     </div>
