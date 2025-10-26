@@ -1,93 +1,128 @@
-"use client"
+'use client'
 
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { TrendingUp, DollarSign, ArrowRight, BarChart3, CircleStop } from "lucide-react"
-import Link from "next/link"
-import { useTrendingMarketsGraphQL } from "@/hooks/graphql/use-trending-markets-graphql"
-import { useMarketStatsGraphQL } from "@/hooks/graphql/use-market-stats-graphql"
-import { useAnalytics } from "@/hooks/graphql/use-analytics"
-import { useMarketsGraphQL } from "@/hooks/graphql/use-markets-graphql"
-import { CategoryChart } from "@/components/analytics/category-chart"
-import { PlatformChart } from "@/components/analytics/platform-chart"
-import { MarketInsights } from "@/components/analytics/market-insights"
-import { TrendingCreators } from "@/components/analytics/trending-creators"
-import { EnhancedMarketCard } from "@/components/markets/enhanced-market-card"
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  TrendingUp,
+  DollarSign,
+  ArrowRight,
+  BarChart3,
+  CircleStop,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useTrendingMarketsGraphQL } from '@/hooks/graphql/use-trending-markets-graphql'
+import { useMarketStatsGraphQL } from '@/hooks/graphql/use-market-stats-graphql'
+import { useAnalytics } from '@/hooks/graphql/use-analytics'
+import { useMarketsGraphQL } from '@/hooks/graphql/use-markets-graphql'
+import { CategoryChart } from '@/components/analytics/category-chart'
+import { PlatformChart } from '@/components/analytics/platform-chart'
+import { MarketInsights } from '@/components/analytics/market-insights'
+import { TrendingCreators } from '@/components/analytics/trending-creators'
+import { EnhancedMarketCard } from '@/components/markets/enhanced-market-card'
 
 export default function AppHomePage() {
-  const { markets: trendingMarkets, loading: trendingLoading, error: trendingError } = useTrendingMarketsGraphQL()
-  const { stats, loading: statsLoading, error: statsError } = useMarketStatsGraphQL()
-  const { categoryData, platformData, topCreators, loading: analyticsLoading, error: analyticsError } = useAnalytics()
-  const { markets: allMarkets, loading: marketsLoading, error: marketsError } = useMarketsGraphQL()
+  const {
+    markets: trendingMarkets,
+    loading: trendingLoading,
+    error: trendingError,
+  } = useTrendingMarketsGraphQL()
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+  } = useMarketStatsGraphQL()
+  const {
+    categoryData,
+    platformData,
+    topCreators,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useAnalytics()
+  const {
+    markets: allMarkets,
+    loading: marketsLoading,
+    error: marketsError,
+  } = useMarketsGraphQL()
 
   // Use stats from API or fallback to 0
   const totalLiquidityAmount = allMarkets.reduce((sum, market) => {
-    const numericLiquidity = typeof market.totalLiquidity === "string"
-      ? parseFloat(market.totalLiquidity)
-      : Number(market.totalLiquidity ?? 0)
+    const numericLiquidity =
+      typeof market.totalLiquidity === 'string'
+        ? parseFloat(market.totalLiquidity)
+        : Number(market.totalLiquidity ?? 0)
     return sum + (Number.isFinite(numericLiquidity) ? numericLiquidity : 0)
   }, 0)
   const activeMarkets = stats?.activeMarkets ?? 0
   const totalMarkets = stats?.totalMarkets ?? 0
-  const endedMarkets = stats ? Math.max(stats.totalMarkets - stats.activeMarkets, 0) : 0
-  const trendingActive = trendingMarkets.filter((market) => market.timeRemaining > 0).length
+  const endedMarkets = stats
+    ? Math.max(stats.totalMarkets - stats.activeMarkets, 0)
+    : 0
+  const trendingActive = trendingMarkets.filter(
+    (market) => market.timeRemaining > 0
+  ).length
   const trendingEnded = trendingMarkets.length - trendingActive
-  const formattedTotalLiquidity = `$${totalLiquidityAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+  const formattedTotalLiquidity = `$${totalLiquidityAmount.toLocaleString(
+    undefined,
+    { maximumFractionDigits: 2 }
+  )}`
 
   const quickStats = [
     {
-      title: "Total Markets",
+      title: 'Total Markets',
       value: totalMarkets.toLocaleString(),
       icon: BarChart3,
-      iconClasses: "text-blue-500",
-      iconBg: "bg-blue-500/10",
-      skeletonWidth: "w-20",
-      loading: statsLoading
+      iconClasses: 'text-blue-500',
+      iconBg: 'bg-blue-500/10',
+      skeletonWidth: 'w-20',
+      loading: statsLoading,
     },
     {
-      title: "Total Liquidity",
+      title: 'Total Liquidity',
       value: formattedTotalLiquidity,
       icon: DollarSign,
-      iconClasses: "text-teal-500",
-      iconBg: "bg-teal-500/10",
-      skeletonWidth: "w-24",
-      loading: marketsLoading
+      iconClasses: 'text-teal-500',
+      iconBg: 'bg-teal-500/10',
+      skeletonWidth: 'w-24',
+      loading: marketsLoading,
     },
     {
-      title: "Active Markets",
+      title: 'Active Markets',
       value: activeMarkets.toLocaleString(),
       icon: TrendingUp,
-      iconClasses: "text-gold-2",
-      iconBg: "bg-gold-2/20",
-      skeletonWidth: "w-16",
-      loading: statsLoading
+      iconClasses: 'text-gold-2',
+      iconBg: 'bg-gold-2/20',
+      skeletonWidth: 'w-16',
+      loading: statsLoading,
     },
     {
-      title: "Ended Markets",
+      title: 'Ended Markets',
       value: endedMarkets.toLocaleString(),
       icon: CircleStop,
-      iconClasses: "text-rose-500",
-      iconBg: "bg-rose-500/10",
-      skeletonWidth: "w-16",
-      loading: statsLoading
-    }
+      iconClasses: 'text-rose-500',
+      iconBg: 'bg-rose-500/10',
+      skeletonWidth: 'w-16',
+      loading: statsLoading,
+    },
   ]
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {quickStats.map((stat) => (
           <Card key={stat.title} className="p-4 bg-card border-border">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
+              <div
+                className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.iconBg}`}
+              >
                 <stat.icon className={`w-5 h-5 ${stat.iconClasses}`} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{stat.title}</p>
                 {stat.loading ? (
-                  <div className={`h-7 rounded bg-muted/40 animate-pulse ${stat.skeletonWidth}`} />
+                  <div
+                    className={`h-7 rounded bg-muted/40 animate-pulse ${stat.skeletonWidth}`}
+                  />
                 ) : (
                   <p className="text-2xl font-bold">{stat.value}</p>
                 )}
@@ -98,10 +133,14 @@ export default function AppHomePage() {
       </div>
 
       {statsError && (
-        <p className="text-sm text-red-500">Unable to load the latest stats. Showing fallback values.</p>
+        <p className="text-sm text-red-500">
+          Unable to load the latest stats. Showing fallback values.
+        </p>
       )}
       {marketsError && (
-        <p className="text-sm text-red-500">Unable to load liquidity totals. Displaying fallback values.</p>
+        <p className="text-sm text-red-500">
+          Unable to load liquidity totals. Displaying fallback values.
+        </p>
       )}
 
       {/* Market Insights */}
@@ -119,18 +158,6 @@ export default function AppHomePage() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <h2 className="text-xl font-bold">Trending Markets</h2>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            {!trendingLoading && !trendingError && trendingMarkets.length > 0 && (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                  <span>Active: {trendingActive}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
-                  <span>Ended: {trendingEnded}</span>
-                </div>
-              </>
-            )}
             <Link href="/app/markets">
               <Button variant="ghost" size="sm">
                 View All
@@ -141,10 +168,10 @@ export default function AppHomePage() {
         </div>
         {trendingLoading ? (
           <div className="flex items-center justify-center py-8">
-          <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2"></div>
-            <span>Loading markets...</span>
-          </div>
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2"></div>
+              <span>Loading markets...</span>
+            </div>
           </div>
         ) : trendingError ? (
           <div className="text-center py-8">
@@ -191,16 +218,22 @@ export default function AppHomePage() {
           <>
             <Card className="p-6 flex flex-col items-center justify-center min-h-[256px]">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
-              <p className="text-sm text-muted-foreground mt-4">Loading analytics...</p>
+              <p className="text-sm text-muted-foreground mt-4">
+                Loading analytics...
+              </p>
             </Card>
             <Card className="p-6 flex flex-col items-center justify-center min-h-[256px]">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
-              <p className="text-sm text-muted-foreground mt-4">Loading analytics...</p>
+              <p className="text-sm text-muted-foreground mt-4">
+                Loading analytics...
+              </p>
             </Card>
           </>
         ) : analyticsError ? (
           <Card className="p-6 lg:col-span-2">
-            <p className="text-red-600 font-semibold mb-2">Error loading analytics</p>
+            <p className="text-red-600 font-semibold mb-2">
+              Error loading analytics
+            </p>
             <p className="text-sm text-muted-foreground">{analyticsError}</p>
           </Card>
         ) : (
@@ -215,12 +248,16 @@ export default function AppHomePage() {
       {analyticsLoading ? (
         <Card className="p-6 flex flex-col items-center justify-center bg-card border-border">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
-          <p className="text-sm text-muted-foreground mt-4">Loading creator insights...</p>
+          <p className="text-sm text-muted-foreground mt-4">
+            Loading creator insights...
+          </p>
         </Card>
       ) : analyticsError ? (
         <Card className="p-6 bg-card border-border">
           <h2 className="text-xl font-bold mb-2">Top Creators</h2>
-          <p className="text-sm text-red-500">Error loading creator insights.</p>
+          <p className="text-sm text-red-500">
+            Error loading creator insights.
+          </p>
           <p className="text-xs text-muted-foreground mt-1">{analyticsError}</p>
         </Card>
       ) : (
