@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAllMarkets, MarketCreated } from '@/lib/graphql-queries'
-import { Platform } from '@/lib/types'
+import { resolvePlatformMetadata, getPlatformLabel } from '@/lib/platform'
 
 interface MarketStats {
   totalMarkets: number
@@ -40,12 +40,12 @@ export function useMarketStatsGraphQL() {
         // Since GraphQL doesn't have real-time status, we'll estimate based on endTime
         const now = Date.now() / 1000
         const activeMarkets = allMarkets.filter(market => {
-          const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
+          const endTime = parseInt(market.params_3) || 0
           return endTime > now
         }).length
         
         const resolvedMarkets = allMarkets.filter(market => {
-          const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
+          const endTime = parseInt(market.params_3) || 0
           return endTime <= now
         }).length
         
@@ -55,8 +55,8 @@ export function useMarketStatsGraphQL() {
         
         allMarkets.forEach((market: MarketCreated) => {
           const category = market.metadata_2 || 'General'
-          const platform = parseInt(market.metadata_3) || Platform.Other
-          const platformName = ['Twitter', 'Farcaster', 'Lens', 'Other'][platform] || 'Other'
+          const platform = resolvePlatformMetadata(market.metadata_3)
+          const platformName = getPlatformLabel(platform)
           
           categoryBreakdown[category] = (categoryBreakdown[category] || 0) + 1
           platformBreakdown[platformName] = (platformBreakdown[platformName] || 0) + 1
@@ -67,15 +67,15 @@ export function useMarketStatsGraphQL() {
         
         // Calculate average resolution time (estimate based on endTime - createdAt)
         const marketsWithTime = allMarkets.filter(market => {
-          const createdAt = parseInt(market.params_1) || 0 // params_1 is createdAt
-          const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
+          const createdAt = parseInt(market.params_1) || 0
+          const endTime = parseInt(market.params_3) || 0
           return endTime > createdAt
         })
         
         const avgResolutionTime = marketsWithTime.length > 0 
           ? marketsWithTime.reduce((sum, market) => {
-              const createdAt = parseInt(market.params_1) || 0 // params_1 is createdAt
-              const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
+              const createdAt = parseInt(market.params_1) || 0
+              const endTime = parseInt(market.params_3) || 0
               return sum + (endTime - createdAt) / 3600 // Convert to hours
             }, 0) / marketsWithTime.length
           : 0

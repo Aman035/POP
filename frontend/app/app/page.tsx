@@ -2,134 +2,135 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, Clock, DollarSign, Users, ArrowRight, BarChart3, Activity } from "lucide-react"
+import { TrendingUp, DollarSign, ArrowRight, BarChart3, CircleStop } from "lucide-react"
 import Link from "next/link"
 import { useTrendingMarketsGraphQL } from "@/hooks/graphql/use-trending-markets-graphql"
 import { useMarketStatsGraphQL } from "@/hooks/graphql/use-market-stats-graphql"
 import { useAnalytics } from "@/hooks/graphql/use-analytics"
+import { useMarketsGraphQL } from "@/hooks/graphql/use-markets-graphql"
 import { CategoryChart } from "@/components/analytics/category-chart"
 import { PlatformChart } from "@/components/analytics/platform-chart"
 import { MarketInsights } from "@/components/analytics/market-insights"
 import { TrendingCreators } from "@/components/analytics/trending-creators"
 import { EnhancedMarketCard } from "@/components/markets/enhanced-market-card"
 
-function getTimeRemaining(endsAt: Date): string {
-  const now = new Date()
-  const diff = endsAt.getTime() - now.getTime()
-
-  if (diff < 0) return "Ended"
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h`
-  return "< 1h"
-}
-
 export default function AppHomePage() {
   const { markets: trendingMarkets, loading: trendingLoading, error: trendingError } = useTrendingMarketsGraphQL()
   const { stats, loading: statsLoading, error: statsError } = useMarketStatsGraphQL()
   const { categoryData, platformData, topCreators, loading: analyticsLoading, error: analyticsError } = useAnalytics()
+  const { markets: allMarkets, loading: marketsLoading, error: marketsError } = useMarketsGraphQL()
 
   // Use stats from API or fallback to 0
-  const totalLiquidity = stats ? parseFloat(stats.totalLiquidity) : 0
-  const activeMarkets = stats?.activeMarkets || 0
-  const resolvedMarkets = stats?.resolvedMarkets || 0
-  const totalMarkets = stats?.totalMarkets || 0
-  const totalParticipants = stats?.totalParticipants || 0
-  const uniqueCategories = stats?.uniqueCategories || 0
+  const totalLiquidityAmount = allMarkets.reduce((sum, market) => {
+    const numericLiquidity = typeof market.totalLiquidity === "string"
+      ? parseFloat(market.totalLiquidity)
+      : Number(market.totalLiquidity ?? 0)
+    return sum + (Number.isFinite(numericLiquidity) ? numericLiquidity : 0)
+  }, 0)
+  const activeMarkets = stats?.activeMarkets ?? 0
+  const totalMarkets = stats?.totalMarkets ?? 0
+  const endedMarkets = stats ? Math.max(stats.totalMarkets - stats.activeMarkets, 0) : 0
+  const trendingActive = trendingMarkets.filter((market) => market.timeRemaining > 0).length
+  const trendingEnded = trendingMarkets.length - trendingActive
+  const formattedTotalLiquidity = `$${totalLiquidityAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
 
-  const loading = trendingLoading || statsLoading || analyticsLoading
-  const error = trendingError || statsError || analyticsError
+  const quickStats = [
+    {
+      title: "Total Markets",
+      value: totalMarkets.toLocaleString(),
+      icon: BarChart3,
+      iconClasses: "text-blue-500",
+      iconBg: "bg-blue-500/10",
+      skeletonWidth: "w-20",
+      loading: statsLoading
+    },
+    {
+      title: "Total Liquidity",
+      value: formattedTotalLiquidity,
+      icon: DollarSign,
+      iconClasses: "text-teal-500",
+      iconBg: "bg-teal-500/10",
+      skeletonWidth: "w-24",
+      loading: marketsLoading
+    },
+    {
+      title: "Active Markets",
+      value: activeMarkets.toLocaleString(),
+      icon: TrendingUp,
+      iconClasses: "text-gold-2",
+      iconBg: "bg-gold-2/20",
+      skeletonWidth: "w-16",
+      loading: statsLoading
+    },
+    {
+      title: "Ended Markets",
+      value: endedMarkets.toLocaleString(),
+      icon: CircleStop,
+      iconClasses: "text-rose-500",
+      iconBg: "bg-rose-500/10",
+      skeletonWidth: "w-16",
+      loading: statsLoading
+    }
+  ]
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Welcome Banner */}
-      <Card className="p-6 gold-gradient">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-background mb-2">Welcome to POP</h1>
-            <p className="text-background/80">Start predicting on social media polls and earn rewards</p>
-          </div>
-          <Link href="/app/create">
-            <Button size="lg" variant="outline" className="bg-background text-foreground hover:bg-background/90">
-              Create Market
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </Link>
-        </div>
-      </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gold-2/20 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-gold-2" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {quickStats.map((stat) => (
+          <Card key={stat.title} className="p-4 bg-card border-border">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
+                <stat.icon className={`w-5 h-5 ${stat.iconClasses}`} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
+                {stat.loading ? (
+                  <div className={`h-7 rounded bg-muted/40 animate-pulse ${stat.skeletonWidth}`} />
+                ) : (
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Markets</p>
-              <p className="text-2xl font-bold">{activeMarkets}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-1/20 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-teal-1" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Liquidity</p>
-              <p className="text-2xl font-bold">${totalLiquidity.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-rose-1/20 flex items-center justify-center">
-              <Users className="w-5 h-5 text-rose-1" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Participants</p>
-              <p className="text-2xl font-bold">{totalParticipants.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gold-2/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-gold-2" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Resolved</p>
-              <p className="text-2xl font-bold">{resolvedMarkets}</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
+
+      {statsError && (
+        <p className="text-sm text-red-500">Unable to load the latest stats. Showing fallback values.</p>
+      )}
+      {marketsError && (
+        <p className="text-sm text-red-500">Unable to load liquidity totals. Displaying fallback values.</p>
+      )}
 
       {/* Market Insights */}
       {stats && (
         <MarketInsights
           totalMarkets={stats.totalMarkets}
-          activeMarkets={stats.activeMarkets}
           resolvedMarkets={stats.resolvedMarkets}
           categoryBreakdown={stats.categoryBreakdown}
           platformBreakdown={stats.platformBreakdown}
-          avgResolutionTime={stats.avgResolutionTime}
         />
       )}
 
-      {/* Content Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Trending Markets */}
-        <Card className="lg:col-span-2 p-6 bg-card border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Trending Markets</h2>
+      {/* Trending Markets */}
+      <Card className="p-6 bg-card border-border">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <h2 className="text-xl font-bold">Trending Markets</h2>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            {!trendingLoading && !trendingError && trendingMarkets.length > 0 && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  <span>Active: {trendingActive}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+                  <span>Ended: {trendingEnded}</span>
+                </div>
+              </>
+            )}
             <Link href="/app/markets">
               <Button variant="ghost" size="sm">
                 View All
@@ -137,32 +138,33 @@ export default function AppHomePage() {
               </Button>
             </Link>
           </div>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2"></div>
-                <span>Loading markets...</span>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <p className="text-red-600 mb-2">Error loading markets</p>
-              <p className="text-muted-foreground text-sm">{error}</p>
-            </div>
-          ) : trendingMarkets.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No markets available yet</p>
-              <Link href="/app/create">
-                <Button variant="outline" size="sm" className="mt-2">
-                  Create First Market
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {trendingMarkets.slice(0, 3).map((market) => (
+        </div>
+        {trendingLoading ? (
+          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2"></div>
+            <span>Loading markets...</span>
+          </div>
+          </div>
+        ) : trendingError ? (
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-2">Error loading markets</p>
+            <p className="text-muted-foreground text-sm">{trendingError}</p>
+          </div>
+        ) : trendingMarkets.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No markets available yet</p>
+            <Link href="/app/create">
+              <Button variant="outline" size="sm" className="mt-2">
+                Create First Market
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {trendingMarkets.slice(0, 3).map((market) => (
+              <div key={market.address} className="p-1">
                 <EnhancedMarketCard
-                  key={market.address}
                   address={market.address}
                   question={market.question}
                   description={market.description}
@@ -177,76 +179,53 @@ export default function AppHomePage() {
                   isResolved={market.isResolved}
                   timeRemaining={market.timeRemaining}
                 />
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Market Stats */}
-        <Card className="p-6 bg-card border-border">
-          <h2 className="text-xl font-bold mb-4">Market Stats</h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gold-2"></div>
-                <span className="text-sm">Loading stats...</span>
               </div>
-            </div>
-          ) : statsError ? (
-            <div className="text-center py-4">
-              <p className="text-red-600 text-sm">Error loading stats</p>
-            </div>
-          ) : stats ? (
-            <div className="space-y-3">
-              <div className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">Active Markets:</span> {activeMarkets}
-                </p>
-              </div>
-              <div className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">Resolved Markets:</span> {resolvedMarkets}
-                </p>
-              </div>
-              <div className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">Total Liquidity:</span> <span className="text-gold-2">${totalLiquidity.toLocaleString()}</span>
-                </p>
-              </div>
-              <div className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">Total Participants:</span> {totalParticipants.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-sm">
-                <p className="text-foreground">
-                  <span className="font-semibold">Categories:</span> {uniqueCategories}
-                </p>
-              </div>
-              {stats.avgResolutionTime > 0 && (
-                <div className="text-sm">
-                  <p className="text-foreground">
-                    <span className="font-semibold">Avg Resolution:</span> {stats.avgResolutionTime.toFixed(1)}h
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground text-sm">No stats available</p>
-            </div>
-          )}
-        </Card>
-      </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CategoryChart data={categoryData} />
-        <PlatformChart data={platformData} />
+        {analyticsLoading ? (
+          <>
+            <Card className="p-6 flex flex-col items-center justify-center min-h-[256px]">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
+              <p className="text-sm text-muted-foreground mt-4">Loading analytics...</p>
+            </Card>
+            <Card className="p-6 flex flex-col items-center justify-center min-h-[256px]">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
+              <p className="text-sm text-muted-foreground mt-4">Loading analytics...</p>
+            </Card>
+          </>
+        ) : analyticsError ? (
+          <Card className="p-6 lg:col-span-2">
+            <p className="text-red-600 font-semibold mb-2">Error loading analytics</p>
+            <p className="text-sm text-muted-foreground">{analyticsError}</p>
+          </Card>
+        ) : (
+          <>
+            <CategoryChart data={categoryData} />
+            <PlatformChart data={platformData} />
+          </>
+        )}
       </div>
 
       {/* Top Creators */}
-      <TrendingCreators creators={topCreators} />
+      {analyticsLoading ? (
+        <Card className="p-6 flex flex-col items-center justify-center bg-card border-border">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-2" />
+          <p className="text-sm text-muted-foreground mt-4">Loading creator insights...</p>
+        </Card>
+      ) : analyticsError ? (
+        <Card className="p-6 bg-card border-border">
+          <h2 className="text-xl font-bold mb-2">Top Creators</h2>
+          <p className="text-sm text-red-500">Error loading creator insights.</p>
+          <p className="text-xs text-muted-foreground mt-1">{analyticsError}</p>
+        </Card>
+      ) : (
+        <TrendingCreators creators={topCreators} />
+      )}
     </div>
   )
 }

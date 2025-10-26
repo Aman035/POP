@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { getAllMarkets, MarketCreated } from '@/lib/graphql-queries'
-import { MarketInfo, Platform } from '@/lib/types'
+import { Platform } from '@/lib/types'
+import { resolvePlatformMetadata } from '@/lib/platform'
 
 interface TrendingMarket {
   address: string
   question: string
   description: string
   category: string
-  platform: number
+  platform: Platform
   creator: string
   createdAt: number
   endTime: number
@@ -39,7 +40,7 @@ export function useTrendingMarketsGraphQL() {
         
         // Transform GraphQL data to TrendingMarket format
         const transformedMarkets: TrendingMarket[] = allMarkets.map((market: MarketCreated) => {
-          const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
+          const endTime = parseInt(market.params_3) || 0
           const now = Date.now() / 1000
           const timeRemaining = Math.max(0, endTime - now)
           
@@ -48,7 +49,7 @@ export function useTrendingMarketsGraphQL() {
             question: market.metadata_0 || '',
             description: market.metadata_1 || '',
             category: market.metadata_2 || 'General',
-            platform: parseInt(market.metadata_3) || Platform.Other,
+            platform: resolvePlatformMetadata(market.metadata_3),
             creator: market.creator,
             createdAt: parseInt(market.params_1) || 0, // params_1 is createdAt
             endTime: endTime,

@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { useWallet } from '@/hooks/wallet/use-wallet'
 import { useMarketsByCreator } from '@/hooks/graphql/use-markets-by-creator'
 import { MarketCard } from '@/components/markets/market-card'
-import { MarketInfo, Platform } from '@/lib/types'
+import { MarketInfo } from '@/lib/types'
+import { resolvePlatformMetadata } from '@/lib/platform'
 
 export default function MyMarketsPage() {
   const { address } = useWallet()
@@ -29,7 +30,7 @@ export default function MyMarketsPage() {
       description: market.metadata_1 || '',
       category: market.metadata_2 || 'General',
       resolutionSource: market.metadata_4 || '',
-      platform: parseInt(market.metadata_3) || Platform.Other,
+      platform: resolvePlatformMetadata(market.metadata_3),
       postUrl: market.params_0 || '',
       createdAt: parseInt(market.params_1) || 0,
       minBet: 0, // Not available in GraphQL data

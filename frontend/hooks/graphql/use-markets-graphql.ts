@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getAllMarkets, MarketCreated } from '@/lib/graphql-queries'
-import { MarketInfo, Platform, MarketState, MarketStatus } from '@/lib/types'
+import { MarketInfo, MarketState, MarketStatus } from '@/lib/types'
+import { resolvePlatformMetadata } from '@/lib/platform'
 import { useReadContracts } from 'wagmi'
 import { MARKET_ABI } from '@/lib/contracts'
 import { formatUnits } from 'viem'
@@ -26,8 +27,8 @@ export function useMarketsGraphQL() {
         
         // Transform GraphQL data to MarketInfo format
         const transformedMarkets: MarketInfo[] = allMarkets.map((market: MarketCreated) => {
-          const endTime = parseInt(market.params_3) || 0 // params_3 is endTime
-          const createdAt = parseInt(market.params_1) || 0 // params_1 is createdAt
+          const endTime = parseInt(market.params_3) || 0
+          const createdAt = parseInt(market.params_1) || 0
           const creatorFeeBps = parseInt(market.params_2) || 0 // params_2 is creatorFeeBps
           const identifier = market.params_0 || '' // params_0 is identifier
           
@@ -35,8 +36,8 @@ export function useMarketsGraphQL() {
           const question = market.metadata_0 || ''
           const description = market.metadata_1 || ''
           const category = market.metadata_2 || 'General'
-          const resolutionSource = market.metadata_3 || ''
-          const platform = parseInt(market.metadata_4) || Platform.Other
+          const platform = resolvePlatformMetadata(market.metadata_3)
+          const resolutionSource = market.metadata_4 || ''
           const options = market.metadata_5 || []
           
           // Calculate time remaining

@@ -9,7 +9,6 @@ interface Creator {
   marketsCreated: number
   categories: string[]
   platforms: string[]
-  successRate: number
 }
 
 interface TrendingCreatorsProps {
@@ -49,9 +48,6 @@ export function TrendingCreators({ creators }: TrendingCreatorsProps) {
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
                     {creator.marketsCreated} markets
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {creator.successRate.toFixed(0)}% success
                   </Badge>
                 </div>
               </div>

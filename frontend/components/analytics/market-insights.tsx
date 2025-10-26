@@ -1,57 +1,57 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { TrendingUp, Users, Clock, Target, Award, Zap } from "lucide-react"
+import { CheckCircle2, Activity, PieChart, Globe } from "lucide-react"
 
 interface MarketInsightsProps {
   totalMarkets: number
-  activeMarkets: number
   resolvedMarkets: number
   categoryBreakdown: Record<string, number>
   platformBreakdown: Record<string, number>
-  avgResolutionTime: number
 }
 
 export function MarketInsights({
   totalMarkets,
-  activeMarkets,
   resolvedMarkets,
   categoryBreakdown,
-  platformBreakdown,
-  avgResolutionTime
+  platformBreakdown
 }: MarketInsightsProps) {
-  const resolutionRate = totalMarkets > 0 ? (resolvedMarkets / totalMarkets * 100).toFixed(1) : '0'
-  const topCategory = Object.entries(categoryBreakdown).sort(([,a], [,b]) => b - a)[0]
-  const topPlatform = Object.entries(platformBreakdown).sort(([,a], [,b]) => b - a)[0]
+  const resolutionRate = totalMarkets > 0 ? ((resolvedMarkets / totalMarkets) * 100).toFixed(1) : "0.0"
+  const topCategory = Object.entries(categoryBreakdown).sort(([, a], [, b]) => b - a)[0]
+  const topPlatform = Object.entries(platformBreakdown).sort(([, a], [, b]) => b - a)[0]
 
   const insights = [
     {
-      icon: Target,
-      title: "Resolution Rate",
-      value: `${resolutionRate}%`,
-      description: "Markets successfully resolved",
-      color: "text-green-600"
+      icon: CheckCircle2,
+      title: "Resolved Markets",
+      value: resolvedMarkets.toLocaleString(),
+      description: "Final outcomes recorded",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10"
     },
     {
-      icon: TrendingUp,
+      icon: Activity,
+      title: "Resolution Rate",
+      value: `${resolutionRate}%`,
+      description: "of total markets",
+      color: "text-sky-500",
+      bg: "bg-sky-500/10"
+    },
+    {
+      icon: PieChart,
       title: "Top Category",
       value: topCategory?.[0] || "N/A",
       description: `${topCategory?.[1] || 0} markets`,
-      color: "text-blue-600"
+      color: "text-blue-600",
+      bg: "bg-blue-600/10"
     },
     {
-      icon: Users,
+      icon: Globe,
       title: "Top Platform",
-      value: topPlatform?.[0] || "N/A", 
+      value: topPlatform?.[0] || "N/A",
       description: `${topPlatform?.[1] || 0} markets`,
-      color: "text-purple-600"
-    },
-    {
-      icon: Clock,
-      title: "Avg Resolution",
-      value: `${avgResolutionTime.toFixed(1)}h`,
-      description: "Time to resolution",
-      color: "text-orange-600"
+      color: "text-purple-600",
+      bg: "bg-purple-600/10"
     }
   ]
 
@@ -60,7 +60,7 @@ export function MarketInsights({
       {insights.map((insight, index) => (
         <Card key={index} className="p-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${insight.bg}`}>
               <insight.icon className={`w-5 h-5 ${insight.color}`} />
             </div>
             <div className="flex-1">

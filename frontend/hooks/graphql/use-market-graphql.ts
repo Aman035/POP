@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getMarketByAddress, MarketCreated } from '@/lib/graphql-queries'
-import { MarketInfo, Platform, MarketState, MarketStatus } from '@/lib/types'
+import { MarketInfo, MarketState, MarketStatus } from '@/lib/types'
+import { resolvePlatformMetadata } from '@/lib/platform'
 import { useReadContracts } from 'wagmi'
 import { MARKET_ABI } from '@/lib/contracts'
 import { formatUnits } from 'viem'
@@ -77,8 +78,8 @@ export function useMarketGraphQL(marketAddress: string) {
         console.log('🔍 GraphQL Hook: Raw market data:', marketData)
         
         // Transform GraphQL data to MarketInfo format
-        const endTime = parseInt(marketData.params_3) || 0 // params_3 is endTime
-        const createdAt = parseInt(marketData.params_1) || 0 // params_1 is createdAt
+        const endTime = parseInt(marketData.params_3) || 0
+        const createdAt = parseInt(marketData.params_1) || 0
         const creatorFeeBps = parseInt(marketData.params_2) || 0 // params_2 is creatorFeeBps
         const identifier = marketData.params_0 || '' // params_0 is identifier
         
@@ -86,8 +87,8 @@ export function useMarketGraphQL(marketAddress: string) {
         const question = marketData.metadata_0 || ''
         const description = marketData.metadata_1 || ''
         const category = marketData.metadata_2 || 'General'
-        const resolutionSource = marketData.metadata_3 || ''
-        const platform = parseInt(marketData.metadata_4) || Platform.Other
+        const platform = resolvePlatformMetadata(marketData.metadata_3)
+        const resolutionSource = marketData.metadata_4 || ''
         const options = marketData.metadata_5 || []
         
         // Calculate time remaining

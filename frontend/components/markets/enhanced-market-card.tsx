@@ -3,15 +3,17 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Clock, Users, TrendingUp, Twitter, MessageCircle, Eye } from "lucide-react"
+import { Clock, Users, TrendingUp, Twitter, MessageCircle, Eye, LucideIcon } from "lucide-react"
 import Link from "next/link"
+import { Platform } from "@/lib/types"
+import { getPlatformLabel } from "@/lib/platform"
 
 interface EnhancedMarketCardProps {
   address: string
   question: string
   description: string
   category: string
-  platform: number
+  platform: Platform
   creator: string
   createdAt: number
   endTime: number
@@ -22,18 +24,11 @@ interface EnhancedMarketCardProps {
   timeRemaining: number
 }
 
-const PLATFORM_ICONS = {
-  0: Twitter,
-  1: MessageCircle, // Farcaster
-  2: Eye, // Lens
-  3: TrendingUp // Other
-}
-
-const PLATFORM_NAMES = {
-  0: "Twitter",
-  1: "Farcaster", 
-  2: "Lens",
-  3: "Other"
+const PLATFORM_ICONS: Record<Platform, LucideIcon> = {
+  [Platform.Twitter]: Twitter,
+  [Platform.Farcaster]: MessageCircle,
+  [Platform.Lens]: Eye,
+  [Platform.Other]: TrendingUp
 }
 
 const CATEGORY_COLORS = {
@@ -61,8 +56,8 @@ export function EnhancedMarketCard({
   isResolved,
   timeRemaining
 }: EnhancedMarketCardProps) {
-  const PlatformIcon = PLATFORM_ICONS[platform as keyof typeof PLATFORM_ICONS] || TrendingUp
-  const platformName = PLATFORM_NAMES[platform as keyof typeof PLATFORM_NAMES] || "Other"
+  const PlatformIcon = PLATFORM_ICONS[platform] || TrendingUp
+  const platformName = getPlatformLabel(platform)
   
   const getTimeRemaining = () => {
     if (isResolved) return "Resolved"

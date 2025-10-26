@@ -1,7 +1,14 @@
-"use client"
+'use client'
 
-import { Card } from "@/components/ui/card"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
+import { Card } from '@/components/ui/card'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from 'recharts'
 
 interface CategoryData {
   name: string
@@ -13,7 +20,15 @@ interface CategoryChartProps {
   data: CategoryData[]
 }
 
-const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8']
+const COLORS = [
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96CEB4',
+  '#FFEAA7',
+  '#DDA0DD',
+  '#98D8C8',
+]
 
 export function CategoryChart({ data }: CategoryChartProps) {
   if (!data || data.length === 0) {
@@ -30,7 +45,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-4">Market Categories</h3>
-      <div className="h-64">
+      <div className="h-80 px-4">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -38,13 +53,18 @@ export function CategoryChart({ data }: CategoryChartProps) {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) =>
+                `${name} ${(percent * 100).toFixed(0)}%`
+              }
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color || COLORS[index % COLORS.length]}
+                />
               ))}
             </Pie>
             <Tooltip />
