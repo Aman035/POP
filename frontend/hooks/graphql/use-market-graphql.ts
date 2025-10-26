@@ -160,6 +160,18 @@ export function useMarketGraphQL(marketAddress: string) {
     }
   }, [graphqlData])
 
+  // Force UI update when we have market data (with loop prevention)
+  useEffect(() => {
+    if (market && market.question) {
+      console.log('🔄 Market GraphQL Hook: Market data is ready, forcing UI update')
+      // Only force update if we haven't done it recently to prevent loops
+      const now = Date.now()
+      if (now - (market as any)._lastUpdate > 2000) { // Only if more than 2 seconds has passed
+        setMarket({ ...market, _lastUpdate: now } as any)
+      }
+    }
+  }, [market?.question, market?.address])
+
   // Fetch liquidity data from contracts after market is loaded
   const liquidityContracts = useMemo(() => market ? [
     { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' as const },
@@ -304,6 +316,31 @@ export function useMarketGraphQL(marketAddress: string) {
       error: graphqlError || (contractError ? contractError.message : null)
     })
   }, [market, graphqlLoading, contractLoading, liquidityLoading, graphqlError, contractError])
+
+  // Debug the loading states
+  console.log('🔍 Market GraphQL Hook: Loading states:', {
+    graphqlLoading,
+    contractLoading,
+    liquidityLoading,
+    hasMarket: !!market,
+    marketQuestion: market?.question
+  })
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (graphqlLoading && market) {
+      const timeoutId = setTimeout(() => {
+        console.log('🔄 Market GraphQL Hook: Loading timeout, forcing completion')
+        // Force loading to complete if we have data
+        if (market && market.question) {
+          // This will trigger a re-render and hopefully complete the loading
+          setMarket({ ...market })
+        }
+      }, 5000) // 5 second timeout
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [graphqlLoading, market])
 
   return { 
     market, 

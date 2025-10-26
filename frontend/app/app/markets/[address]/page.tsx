@@ -11,9 +11,10 @@ import Link from "next/link"
 import { useMarketGraphQL } from "@/hooks/graphql/use-market-graphql"
 import { useWallet } from "@/hooks/wallet/use-wallet"
 import { usePlaceBet, useExitBet } from "@/hooks/contracts/use-contracts"
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt, useBalance } from "wagmi"
 import { formatUnits, parseUnits } from "viem"
 import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI } from "@/lib/contracts"
+import { AutoBridgePopup } from "@/components/markets/auto-bridge-popup"
 // Note: toast functionality will be implemented with a proper toast library
 
 interface MarketDetailsPageProps {
@@ -87,6 +88,10 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   
+  // Bridge popup state
+  const [showBridgePopup, setShowBridgePopup] = useState(false)
+  const [bridgeError, setBridgeError] = useState<string | null>(null)
+  
   // Contract hooks
   const { placeBet, loading: placeBetLoading, error: placeBetError, isConfirmed: betConfirmed } = usePlaceBet(resolvedParams.address)
   const { exitBet, loading: exitBetLoading, error: exitBetError } = useExitBet(resolvedParams.address)
@@ -101,6 +106,12 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     abi: IERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  })
+  
+  // ETH balance
+  const { data: ethBalance } = useBalance({
+    address: address as `0x${string}`,
     query: { enabled: !!address }
   })
   
@@ -173,8 +184,18 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     }
     
     const usdcBalanceNum = usdcBalance ? Number(formatUnits(usdcBalance as bigint, 6)) : 0
-    if (parseFloat(betAmount) > usdcBalanceNum) {
-      setTransactionStatus("Insufficient USDC balance")
+    const betAmountNum = parseFloat(betAmount)
+    
+    // Check if user has sufficient USDC balance
+    if (betAmountNum > usdcBalanceNum) {
+      // Show bridge popup instead of error
+      console.log("💰 Insufficient USDC balance, showing bridge popup", {
+        betAmount: betAmountNum,
+        balance: usdcBalanceNum,
+        shortfall: betAmountNum - usdcBalanceNum
+      })
+      setShowBridgePopup(true)
+      setTransactionStatus(`Insufficient USDC balance (${usdcBalanceNum.toFixed(2)} USDC available, ${betAmountNum.toFixed(2)} USDC needed)`)
       return
     }
     
@@ -335,8 +356,38 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     }
   }
 
+  // Bridge popup handlers
+  const handleBridgeSuccess = () => {
+    console.log("✅ Bridge successful, refreshing balance and placing bet")
+    setShowBridgePopup(false)
+    setBridgeError(null)
+    setTransactionStatus("Bridge successful! Refreshing balance...")
+    
+    // Refresh USDC balance after successful bridge
+    setTimeout(() => {
+      // The balance will be refreshed automatically by the useReadContract hook
+      setTransactionStatus("Balance refreshed. You can now place your bet.")
+    }, 3000)
+  }
+
+  const handleBridgeError = (error: string) => {
+    console.error("❌ Bridge error:", error)
+    setBridgeError(error)
+    setTransactionStatus(`Bridge failed: ${error}`)
+  }
+
+  const handleCloseBridgePopup = () => {
+    setShowBridgePopup(false)
+    setBridgeError(null)
+    setTransactionStatus("")
+  }
+
   if (loading) {
-    console.log('🔍 Market Page: Loading state - showing loading UI')
+    console.log('🔍 Market Page: Loading state - showing loading UI', {
+      loading,
+      hasMarket: !!marketInfo,
+      marketQuestion: marketInfo?.question
+    })
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
@@ -631,7 +682,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             placeholder="0.00"
                             value={betAmount}
                             onChange={(e) => setBetAmount(e.target.value)}
-                            className="flex-1"
+                            className="flex-1 min-w-0"
                             min="0"
                             step="0.01"
                           />
@@ -639,7 +690,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => setBetAmount(formatUSDCBalance(usdcBalance as bigint | undefined))}
-                            className="px-3"
+                            className="px-3 flex-shrink-0"
                           >
                             Max
                           </Button>
@@ -649,6 +700,51 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             <div className="text-sm text-muted-foreground">
                               Potential winnings: {calculatePotentialWinnings(selectedOption, betAmount)} USDC
                             </div>
+                            
+                            {/* Balance Check */}
+                            {(() => {
+                              const usdcBalanceNum = usdcBalance ? Number(formatUnits(usdcBalance as bigint, 6)) : 0
+                              const betAmountNum = parseFloat(betAmount)
+                              const hasEnoughBalance = betAmountNum <= usdcBalanceNum
+                              
+                              return (
+                                <div className="space-y-2">
+                                  <div className={`text-xs ${hasEnoughBalance ? 'text-muted-foreground' : 'text-red-600'}`}>
+                                    USDC Balance: {usdcBalanceNum.toFixed(2)} USDC
+                                    {!hasEnoughBalance && (
+                                      <span className="ml-2 font-medium">
+                                        ⚠ Insufficient (need {betAmountNum.toFixed(2)} USDC)
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Auto-Bridge Option */}
+                                  {!hasEnoughBalance && betAmountNum > 0 && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                          <Coins className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                          <span className="text-sm font-medium text-blue-800">
+                                            Auto-Bridge Available
+                                          </span>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => setShowBridgePopup(true)}
+                                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-7 w-full sm:w-auto"
+                                        >
+                                          Bridge {betAmount} USDC
+                                        </Button>
+                                      </div>
+                                      <p className="text-xs text-blue-600 mt-1">
+                                        We can automatically bridge USDC from your other chains
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })()}
+                            
                             {usdcAllowance ? (
                               <div className="text-xs text-muted-foreground">
                                 USDC Allowance: {Number(formatUnits(usdcAllowance as bigint, 6)).toFixed(2)} USDC
@@ -987,6 +1083,20 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Auto-Bridge Popup */}
+      <AutoBridgePopup
+        isOpen={showBridgePopup}
+        onClose={handleCloseBridgePopup}
+        onSuccess={handleBridgeSuccess}
+        onError={handleBridgeError}
+        betAmount={betAmount}
+        marketAddress={resolvedParams.address}
+        selectedOption={selectedOption || 0}
+        userAddress={address || ""}
+        userEthBalance={ethBalance ? formatUnits(ethBalance.value, 18) : "0"}
+        userUsdcBalance={usdcBalance ? formatUnits(usdcBalance as bigint, 6) : "0"}
+      />
     </div>
   )
 }

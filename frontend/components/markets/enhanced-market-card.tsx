@@ -79,8 +79,8 @@ export function EnhancedMarketCard({
 
   return (
     <Link href={`/app/markets/${address}`}>
-      <Card className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-gold-2/50">
-        <div className="space-y-3">
+      <Card className="p-3 sm:p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-gold-2/50">
+        <div className="space-y-2 sm:space-y-3">
           {/* Header with platform and category */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -96,9 +96,9 @@ export function EnhancedMarketCard({
 
           {/* Question */}
           <div>
-            <h3 className="font-semibold text-lg leading-tight mb-1">{question}</h3>
+            <h3 className="font-semibold text-base sm:text-lg leading-tight mb-1">{question}</h3>
             {description && (
-              <p className="text-sm text-muted-foreground overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{description}</p>
             )}
           </div>
 
@@ -128,18 +128,19 @@ export function EnhancedMarketCard({
           )}
 
           {/* Stats */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-1">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                <span>${parseFloat(totalLiquidity).toLocaleString()}</span>
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="hidden sm:inline">${parseFloat(totalLiquidity).toLocaleString()}</span>
+                <span className="sm:hidden">${(parseFloat(totalLiquidity) / 1000).toFixed(0)}K</span>
               </div>
               <div className="flex items-center gap-1">
-                <Users className="w-4 h-4 text-muted-foreground" />
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                 <span>{activeParticipantsCount}</span>
               </div>
             </div>
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               by {creator.slice(0, 6)}...{creator.slice(-4)}
             </div>
           </div>

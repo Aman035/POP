@@ -129,61 +129,61 @@ export default function MarketsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-white" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <Card className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-semibold text-blue-900">Total Liquidity</span>
+            <span className="font-semibold text-blue-900 text-sm sm:text-base">Total Liquidity</span>
           </div>
-          <p className="text-2xl font-bold text-blue-900">${stats.totalLiquidity.toLocaleString()}</p>
+          <p className="text-lg sm:text-2xl font-bold text-blue-900">${stats.totalLiquidity.toLocaleString()}</p>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
+        <Card className="p-4 sm:p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-semibold text-green-900">Trading</span>
+            <span className="font-semibold text-green-900 text-sm sm:text-base">Trading</span>
           </div>
-          <p className="text-2xl font-bold text-green-900">{stats.tradingMarkets}</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-900">{stats.tradingMarkets}</p>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
+        <Card className="p-4 sm:p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-semibold text-yellow-900">Proposed</span>
+            <span className="font-semibold text-yellow-900 text-sm sm:text-base">Proposed</span>
           </div>
-          <p className="text-2xl font-bold text-yellow-900">{stats.proposedMarkets}</p>
+          <p className="text-lg sm:text-2xl font-bold text-yellow-900">{stats.proposedMarkets}</p>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
+        <Card className="p-4 sm:p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-semibold text-purple-900">Resolved</span>
+            <span className="font-semibold text-purple-900 text-sm sm:text-base">Resolved</span>
           </div>
-          <p className="text-2xl font-bold text-purple-900">{stats.resolvedMarkets}</p>
+          <p className="text-lg sm:text-2xl font-bold text-purple-900">{stats.resolvedMarkets}</p>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
+        <Card className="p-4 sm:p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-semibold text-orange-900">Total Markets</span>
+            <span className="font-semibold text-orange-900 text-sm sm:text-base">Total Markets</span>
           </div>
-          <p className="text-2xl font-bold text-orange-900">{stats.totalMarkets}</p>
+          <p className="text-lg sm:text-2xl font-bold text-orange-900">{stats.totalMarkets}</p>
         </Card>
       </div>
 
       {/* Filters and Search */}
-      <Card className="p-6 mb-8">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -191,18 +191,18 @@ export default function MarketsPage() {
                 placeholder="Search markets by question or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12"
+                className="pl-10 h-10 sm:h-12"
               />
             </div>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
-                className="pl-10 pr-8 py-3 border border-border rounded-md bg-background h-12 min-w-[160px]"
+                className="pl-10 pr-8 py-2 sm:py-3 border border-border rounded-md bg-background h-10 sm:h-12 min-w-[140px] sm:min-w-[160px]"
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
@@ -216,7 +216,7 @@ export default function MarketsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-3 border border-border rounded-md bg-background h-12 min-w-[140px]"
+              className="px-3 sm:px-4 py-2 sm:py-3 border border-border rounded-md bg-background h-10 sm:h-12 min-w-[120px] sm:min-w-[140px]"
             >
               <option value="newest">Newest First</option>
               <option value="liquidity">Most Liquidity</option>
@@ -269,7 +269,7 @@ export default function MarketsPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredMarkets.map((market) => (
             <MarketCard key={market.address} market={market} />
           ))}

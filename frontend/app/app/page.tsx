@@ -77,19 +77,19 @@ export default function AppHomePage() {
     <div className="max-w-7xl mx-auto space-y-6">
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {quickStats.map((stat) => (
-          <Card key={stat.title} className="p-4 bg-card border-border">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
-                <stat.icon className={`w-5 h-5 ${stat.iconClasses}`} />
+          <Card key={stat.title} className="p-3 sm:p-4 bg-card border-border">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
+                <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.iconClasses}`} />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{stat.title}</p>
                 {stat.loading ? (
-                  <div className={`h-7 rounded bg-muted/40 animate-pulse ${stat.skeletonWidth}`} />
+                  <div className={`h-6 sm:h-7 rounded bg-muted/40 animate-pulse ${stat.skeletonWidth}`} />
                 ) : (
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-lg sm:text-2xl font-bold truncate">{stat.value}</p>
                 )}
               </div>
             </div>

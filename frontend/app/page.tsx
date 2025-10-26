@@ -153,8 +153,8 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -162,10 +162,10 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
             >
-              <Card className="p-6 bg-card border-border card-glow text-center">
-                <stat.icon className="w-8 h-8 mx-auto mb-3 text-gold-2" />
-                <div className="text-3xl font-bold gold-text mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <Card className="p-4 sm:p-6 bg-card border-border card-glow text-center">
+                <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3 text-gold-2" />
+                <div className="text-xl sm:text-3xl font-bold gold-text mb-1">{stat.value}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
               </Card>
             </motion.div>
           ))}
@@ -183,7 +183,7 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
@@ -191,12 +191,12 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
             >
-              <Card className="p-6 bg-card border-border card-glow hover:border-gold-2/50 transition-colors h-full">
-                <div className="w-12 h-12 rounded-lg gold-gradient flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-background" />
+              <Card className="p-4 sm:p-6 bg-card border-border card-glow hover:border-gold-2/50 transition-colors h-full">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg gold-gradient flex items-center justify-center mb-3 sm:mb-4">
+                  <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-background" />
                 </div>
-                <h4 className="text-xl font-semibold mb-2 text-foreground">{feature.title}</h4>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h4 className="text-lg sm:text-xl font-semibold mb-2 text-foreground">{feature.title}</h4>
+                <p className="text-sm sm:text-base text-muted-foreground">{feature.description}</p>
               </Card>
             </motion.div>
           ))}

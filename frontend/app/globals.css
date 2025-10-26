@@ -109,3 +109,50 @@
     box-shadow: 0 0 40px rgba(255, 178, 56, 0.6);
   }
 }
+
+/* Responsive Card Improvements */
+.card-responsive {
+  @apply w-full min-h-0;
+}
+
+/* Ensure cards don't overflow on mobile */
+.card-container {
+  @apply w-full overflow-hidden;
+}
+
+/* Mobile-first responsive text */
+.responsive-text {
+  @apply text-sm sm:text-base;
+}
+
+.responsive-text-lg {
+  @apply text-base sm:text-lg;
+}
+
+.responsive-text-xl {
+  @apply text-lg sm:text-xl;
+}
+
+/* Prevent text overflow issues */
+.text-ellipsis {
+  @apply truncate;
+}
+
+/* Responsive spacing */
+.responsive-padding {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.responsive-gap {
+  @apply gap-2 sm:gap-3 lg:gap-4;
+}
+
+/* Ensure proper mobile grid behavior */
+.mobile-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+/* Fix any potential override issues */
+.card-override-fix {
+  @apply !w-full !min-h-0 !max-w-none;
+}

@@ -31,7 +31,7 @@ export function useGraphQLWithFallback<T>(
     enabled = true,
     retryCount = 3,
     retryDelay = 1000,
-    maxDepth = 5,
+    maxDepth = 3,
     autoRefresh = true,
     refreshInterval = 120000, // 2 minutes default
     onSuccess,
@@ -128,7 +128,7 @@ export function useGraphQLWithFallback<T>(
         console.log('🔄 GraphQL: Data unchanged, skipping update')
         console.log('🔍 GraphQL: Previous data:', lastDataRef.current)
         console.log('🔍 GraphQL: New data:', result)
-        setLoading(false)
+        setLoading(false) // CRITICAL: Set loading to false even when data is unchanged
         isFetchingRef.current = false
         return
       }
@@ -141,6 +141,7 @@ export function useGraphQLWithFallback<T>(
       setCurrentRetryCount(0) // Reset retry count on success
       setDepth(0) // Reset depth on success
       lastFetchTimeRef.current = Date.now() // Track last successful fetch
+      setLoading(false) // CRITICAL: Set loading to false when data is successfully fetched
       
       onSuccess?.(result)
       console.log('✅ GraphQL: Data updated successfully')
@@ -225,6 +226,18 @@ export function useGraphQLWithFallback<T>(
     lastDependenciesRef.current = [...dependencies]
     fetchData()
   }, [enabled, dependencies, fetchData, haveDependenciesChanged])
+
+  // Force data update when we have data but it's not being displayed
+  useEffect(() => {
+    if (data && !loading && !error) {
+      console.log('🔄 GraphQL: Data available, ensuring UI update')
+      // Only force update if we haven't done it recently to prevent loops
+      const now = Date.now()
+      if (now - lastFetchTimeRef.current > 1000) { // Only if more than 1 second has passed
+        setData({ ...data } as T)
+      }
+    }
+  }, [data, loading, error])
 
   // Manual refetch function
   const refetch = useCallback(async () => {

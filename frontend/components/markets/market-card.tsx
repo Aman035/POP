@@ -64,14 +64,14 @@ export function MarketCard({ market }: MarketCardProps) {
         {/* Subtle gradient overlay on hover */}
         <div className="absolute inset-0 bg-gradient-to-br from-gold-2/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        <div className="relative p-6 h-full flex flex-col">
+        <div className="relative p-4 sm:p-6 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg mb-2 group-hover:text-gold-2 transition-colors text-balance overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              <h3 className="font-semibold text-base sm:text-lg mb-2 group-hover:text-gold-2 transition-colors text-balance overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 {market.question}
               </h3>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                 <Badge variant="secondary" className="text-xs">
                   {market.category}
                 </Badge>
@@ -99,13 +99,13 @@ export function MarketCard({ market }: MarketCardProps) {
             {optionsWithOdds.map((option, index) => (
               <div
                 key={index}
-                className={`flex items-center justify-between p-3 rounded-lg bg-background border border-border transition-colors ${
+                className={`flex items-center justify-between p-2 sm:p-3 rounded-lg bg-background border border-border transition-colors ${
                   isResolved && market.winningOption === index ? "border-green-500 bg-green-50" : ""
                 }`}
               >
-                <span className="font-medium text-sm truncate flex-1 mr-2">{option.label}</span>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-muted-foreground">${option.pool.toLocaleString()}</span>
+                <span className="font-medium text-xs sm:text-sm truncate flex-1 mr-2">{option.label}</span>
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <span className="text-xs text-muted-foreground hidden sm:inline">${option.pool.toLocaleString()}</span>
                   <Badge className="gold-gradient text-background font-semibold text-xs">
                     {option.odds}%
                   </Badge>
@@ -115,11 +115,12 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
 
           {/* Stats Row */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-4 mt-auto">
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground border-t border-border pt-3 sm:pt-4 mt-auto gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <div className="flex items-center gap-1">
                 <DollarSign className="w-3 h-3" />
-                <span>${totalLiquidity.toLocaleString()}</span>
+                <span className="hidden sm:inline">${totalLiquidity.toLocaleString()}</span>
+                <span className="sm:hidden">${(totalLiquidity / 1000).toFixed(0)}K</span>
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
@@ -137,10 +138,11 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
 
           {/* Creator Info */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 gap-1 sm:gap-0">
             <div className="flex items-center gap-1">
               <User className="w-3 h-3" />
-              <span>Creator: {formatAddress(market.creator)}</span>
+              <span className="hidden sm:inline">Creator: {formatAddress(market.creator)}</span>
+              <span className="sm:hidden">{formatAddress(market.creator)}</span>
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
