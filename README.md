@@ -112,7 +112,7 @@ flowchart TB
 
 ---
 
-## 🌐 Avail Nexus Integration
+## Avail Nexus Integration
 
 ### Cross-Chain Capabilities
 
@@ -162,7 +162,7 @@ import { BridgeAndExecuteButton } from '@avail-project/nexus-widgets';
 
 ---
 
-## 🎯 User Flow & Experience
+## User Flow & Experience
 
 ### 1. Market Creation Flow
 
@@ -226,13 +226,13 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Smart Contracts
+## Smart Contracts
 
 ### Contract Architecture
 
 | Contract          | Address (Arbitrum Sepolia)                   | Purpose                              |
 | ----------------- | -------------------------------------------- | ------------------------------------ |
-| **MarketFactory** | `0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4` | Deploys individual markets           |
+| **MarketFactory** | `0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643` | Deploys individual markets           |
 | **Market**        | Dynamic deployment                           | Handles betting, resolution, payouts |
 
 ### Key Functions
@@ -265,7 +265,7 @@ function claimPayout() external;
 
 ---
 
-## 📊 Envio HyperIndex
+## Envio HyperIndex
 
 ### Real-Time Blockchain Indexing
 
@@ -317,7 +317,7 @@ type Market_BetPlaced {
 
 ---
 
-## 🔧 Backend API
+## Backend API
 
 ### Post Analyzer Service
 
@@ -363,7 +363,7 @@ GET /api/stats
 
 ---
 
-## 🎨 Frontend & Extension
+## Frontend & Extension
 
 ### Web Dashboard
 
@@ -455,7 +455,7 @@ cd extension
 
 ---
 
-## 🔍 Development Commands
+## Development Commands
 
 ### Frontend
 
@@ -495,7 +495,7 @@ forge verify         # Verify contracts on explorer
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Test Coverage
 
@@ -524,7 +524,7 @@ cd indexer && pnpm test
 
 ---
 
-## 📈 Performance & Monitoring
+## Performance & Monitoring
 
 ### Key Metrics
 
@@ -544,7 +544,7 @@ cd indexer && pnpm test
 
 ---
 
-## 🔮 Roadmap
+## Roadmap
 
 ### Phase 1: Current Implementation ✅
 
@@ -554,7 +554,7 @@ cd indexer && pnpm test
 - [x] Real-time indexing
 - [x] AI-powered post analysis
 
-### Phase 2: Enhanced Features 🚧
+### Phase 2: Enhanced Features
 
 - [ ] Multi-token support (ETH, USDT, etc.)
 - [ ] Advanced analytics dashboard
@@ -562,7 +562,7 @@ cd indexer && pnpm test
 - [ ] Social media platform expansion
 - [ ] Automated resolution systems
 
-### Phase 3: Advanced Integration 🔮
+### Phase 3: Advanced Integration
 
 - [ ] Cross-chain market creation
 - [ ] Multi-chain liquidity aggregation
@@ -572,4 +572,4 @@ cd indexer && pnpm test
 
 ---
 
-**Built with ❤️ for the future of cross-chain prediction markets**
+**Built for the future of cross-chain prediction markets**
