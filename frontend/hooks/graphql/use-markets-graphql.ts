@@ -108,10 +108,10 @@ export function useMarketsGraphQL() {
 
   // Create contract calls for liquidity data
   const contractCalls = baseMarkets.flatMap(market => {
-    const calls = [
-      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' as const },
-      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'activeParticipantsCount' as const },
-      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'state' as const },
+    const calls: any[] = [
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' },
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'activeParticipantsCount' },
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'state' },
     ]
     
     // Add option liquidity calls for each option
@@ -119,8 +119,8 @@ export function useMarketsGraphQL() {
       calls.push({
         address: market.address as `0x${string}`,
         abi: MARKET_ABI,
-        functionName: 'optionLiquidity' as const,
-        args: [i] as const
+        functionName: 'optionLiquidity',
+        args: [i]
       })
     }
     
@@ -153,17 +153,31 @@ export function useMarketsGraphQL() {
           result?.result ? formatUnits(result.result as bigint, 6) : "0"
         )
         
+        // Update market state and status based on contract data
+        const marketState = Number(state || 0)
+        const isResolved = marketState === 2 // Resolved state
+        const isProposed = marketState === 1 // Proposed state
+        const isTrading = marketState === 0 // Trading state
+        
         return {
           ...market,
           totalLiquidity,
           optionLiquidity,
           activeParticipantsCount: Number(activeParticipantsCount || 0),
-          state: Number(state || 0)
+          state: marketState,
+          isResolved,
+          status: isResolved ? MarketStatus.Resolved : MarketStatus.Active
         }
       })
 
       setMarkets(updatedMarkets)
-      console.log('✅ GraphQL Hook: Updated markets with liquidity data')
+      console.log('✅ GraphQL Hook: Updated markets with real contract data:', updatedMarkets.map(m => ({
+        address: m.address,
+        question: m.question,
+        totalLiquidity: m.totalLiquidity,
+        state: m.state,
+        activeParticipantsCount: m.activeParticipantsCount
+      })))
       
     } catch (err) {
       console.error('❌ GraphQL Hook: Error processing liquidity data:', err)

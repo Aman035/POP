@@ -10,26 +10,101 @@ export function useMarketGraphQL(marketAddress: string) {
   const [error, setError] = useState<string | null>(null)
   
   // Contract calls for all market data
-  const contractContracts = useMemo(() => marketAddress ? [
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'question' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'description' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'category' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'platform' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'identifier' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'createdAt' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'endTime' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'creator' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'creatorFeeBps' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'state' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'getOptionCount' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' as const },
-    { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'activeParticipantsCount' as const },
-  ] : [], [marketAddress])
+  const contractContracts = useMemo(() => {
+    if (!marketAddress) return []
+    
+    const baseContracts = [
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'question' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'description' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'category' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'platform' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'identifier' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'createdAt' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'endTime' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'creator' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'creatorFeeBps' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'state' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'getOptionCount' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' as const },
+      { address: marketAddress as `0x${string}`, abi: MARKET_ABI, functionName: 'activeParticipantsCount' as const },
+    ]
+    
+    return baseContracts
+  }, [marketAddress])
 
   const { data: contractData, isLoading: contractLoading, error: contractError } = useReadContracts({
     contracts: contractContracts,
     query: { enabled: !!marketAddress }
   })
+
+  // Get option count from contract data
+  const optionCount = useMemo(() => {
+    if (!contractData || contractLoading) return 0
+    const optionCountResult = contractData[10] // getOptionCount is at index 10
+    return Number(optionCountResult?.result || 0)
+  }, [contractData, contractLoading])
+
+  // Create dynamic contracts for options and liquidity
+  const optionContracts = useMemo(() => {
+    if (!marketAddress || optionCount === 0) return []
+    
+    const contracts = []
+    for (let i = 0; i < optionCount; i++) {
+      contracts.push({
+        address: marketAddress as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'options' as const,
+        args: [i]
+      })
+    }
+    return contracts
+  }, [marketAddress, optionCount])
+
+  const liquidityContracts = useMemo(() => {
+    if (!marketAddress || optionCount === 0) return []
+    
+    const contracts = []
+    for (let i = 0; i < optionCount; i++) {
+      contracts.push({
+        address: marketAddress as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'optionLiquidity' as const,
+        args: [i]
+      })
+    }
+    return contracts
+  }, [marketAddress, optionCount])
+
+  // Fetch options data
+  const { data: optionsData, isLoading: optionsLoading, error: optionsError } = useReadContracts({
+    contracts: optionContracts,
+    query: { enabled: optionCount > 0 }
+  })
+
+  // Fetch liquidity data
+  const { data: liquidityData, isLoading: liquidityLoading, error: liquidityError } = useReadContracts({
+    contracts: liquidityContracts,
+    query: { enabled: optionCount > 0 }
+  })
+
+  // Process options and liquidity data
+  const options = useMemo(() => {
+    if (!optionsData || optionsData.length === 0) return []
+    
+    const fetchedOptions = optionsData.map(result => result.result as string || '')
+    console.log('✅ Market Hook: Fetched options from contract:', fetchedOptions)
+    return fetchedOptions
+  }, [optionsData])
+
+  const optionLiquidity = useMemo(() => {
+    if (!liquidityData || liquidityData.length === 0) return []
+    
+    const fetchedLiquidity = liquidityData.map(result => 
+      result.result ? formatUnits(result.result as bigint, 6) : '0'
+    )
+    console.log('✅ Market Hook: Fetched option liquidity from contract:', fetchedLiquidity)
+    return fetchedLiquidity
+  }, [liquidityData])
 
   // Process contract data when it's available
   useEffect(() => {
@@ -54,26 +129,20 @@ export function useMarketGraphQL(marketAddress: string) {
         activeParticipantsCount
       ] = contractData
 
-      // Get options by calling the contract for each option
-      const optionCountNum = Number(optionCount?.result || 0)
-      const options: string[] = []
-      
-      // For now, we'll use default options since we can't easily fetch them all
-      // This is a limitation of the current approach, but it prevents infinite recursion
-      if (optionCountNum > 0) {
-        // Use default options for now - this could be enhanced later
-        options.push('Yes', 'No')
-      }
+      const marketState = Number(state?.result || 0)
+      const isResolved = marketState === 2
+      const isProposed = marketState === 1
+      const isTrading = marketState === 0
 
       const marketInfo: MarketInfo = {
         address: marketAddress,
         identifier: identifier?.result as string || "",
         creator: creator?.result as string || "",
-        options: options,
+        options: options, // Use the fetched options
         endTime: Number(endTime?.result || 0),
         creatorFeeBps: Number(creatorFeeBps?.result || 0),
         totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
-        isResolved: Number(state?.result) === 2,
+        isResolved,
         winningOption: undefined,
         question: question?.result as string || "",
         description: description?.result as string || "",
@@ -81,13 +150,21 @@ export function useMarketGraphQL(marketAddress: string) {
         resolutionSource: "",
         platform: Number(platform?.result || 0),
         createdAt: Number(createdAt?.result || 0),
-        optionLiquidity: new Array(options.length).fill("0"),
-        state: Number(state?.result) as any,
-        status: Number(state?.result) === 2 ? MarketStatus.Resolved : MarketStatus.Active,
+        optionLiquidity: optionLiquidity, // Use the fetched option liquidity
+        state: marketState as any,
+        status: isResolved ? MarketStatus.Resolved : MarketStatus.Active,
         activeParticipantsCount: Number(activeParticipantsCount?.result || 0),
       }
 
-      console.log('✅ Market Hook: Market data loaded:', marketInfo)
+      console.log('✅ Market Hook: Market data loaded with real contract data:', {
+        address: marketInfo.address,
+        question: marketInfo.question,
+        options: marketInfo.options,
+        totalLiquidity: marketInfo.totalLiquidity,
+        state: marketInfo.state,
+        activeParticipantsCount: marketInfo.activeParticipantsCount,
+        isResolved: marketInfo.isResolved
+      })
       setMarket(marketInfo)
       setLoading(false)
       setError(null)
@@ -97,7 +174,7 @@ export function useMarketGraphQL(marketAddress: string) {
       setError('Failed to process market data')
       setLoading(false)
     }
-  }, [contractData, contractLoading, marketAddress])
+  }, [contractData, contractLoading, marketAddress, options, optionLiquidity])
 
   // Handle contract errors
   useEffect(() => {
@@ -132,8 +209,8 @@ export function useMarketGraphQL(marketAddress: string) {
 
   return { 
     market, 
-    loading: contractLoading, 
-    error: contractError?.message || error,
+    loading: contractLoading || optionsLoading || liquidityLoading, 
+    error: contractError?.message || error || optionsError?.message || liquidityError?.message,
     refetch: handleRefetch
   }
 }

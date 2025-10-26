@@ -416,45 +416,14 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     )
   }
 
-  console.log('🔍 Market Page: Rendering market content with data:', {
+  console.log('🔍 Market Page: Rendering market content with real contract data:', {
     question: marketInfo.question,
     options: marketInfo.options,
     totalLiquidity: marketInfo.totalLiquidity,
-    state: marketInfo.state
+    state: marketInfo.state,
+    activeParticipantsCount: marketInfo.activeParticipantsCount,
+    isResolved: marketInfo.isResolved
   })
-  
-  // Test if the data is actually being passed to the UI
-  if (!marketInfo.question) {
-    console.error('❌ Market Page: No question found in market data!')
-    console.error('❌ Market Page: Full market data:', marketInfo)
-    
-    // Try to use fallback data if available
-    const fallbackQuestion = marketInfo.address ? `Market ${marketInfo.address.slice(0, 8)}...` : 'Unknown Market'
-    const fallbackOptions = marketInfo.options?.length > 0 ? marketInfo.options : ['Yes', 'No']
-    
-    console.log('🔄 Market Page: Using fallback data:', { fallbackQuestion, fallbackOptions })
-    
-    // Create a minimal market object for rendering
-    const fallbackMarket = {
-      ...marketInfo,
-      question: fallbackQuestion,
-      options: fallbackOptions,
-      description: marketInfo.description || 'No description available',
-      category: marketInfo.category || 'General',
-      totalLiquidity: marketInfo.totalLiquidity || '0',
-      state: marketInfo.state || 0,
-      activeParticipantsCount: marketInfo.activeParticipantsCount || 0,
-      endTime: marketInfo.endTime || 0,
-      createdAt: marketInfo.createdAt || 0,
-      creator: marketInfo.creator || 'Unknown',
-      platform: marketInfo.platform || 3
-    }
-    
-    // Update the marketInfo reference to use fallback data
-    Object.assign(marketInfo, fallbackMarket)
-    
-    console.log('✅ Market Page: Using fallback market data for rendering')
-  }
   
   const timeRemaining = getTimeRemaining(new Date(marketInfo.endTime * 1000))
   const totalLiquidity = parseFloat(marketInfo.totalLiquidity)
@@ -472,11 +441,12 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   
   const statusInfo = getStatusInfo()
 
-  // Calculate odds for each option
+  // Calculate odds for each option using real contract data
   const optionsWithOdds = marketInfo.options.map((option, index) => {
     const optionLiquidity = marketInfo.optionLiquidity && marketInfo.optionLiquidity[index] 
       ? parseFloat(marketInfo.optionLiquidity[index]) 
       : 0
+    // Calculate real odds based on actual liquidity data from contracts
     const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50
     return {
       label: option,

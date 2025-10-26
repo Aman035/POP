@@ -27,12 +27,13 @@ export function MarketCard({ market }: MarketCardProps) {
   
   const statusInfo = getStatusInfo()
 
-  // Calculate odds for each option (handle case when optionLiquidity is empty)
+  // Calculate odds for each option using real contract data
   const optionsWithOdds = market.options.map((option, index) => {
     const optionLiquidity = market.optionLiquidity && market.optionLiquidity[index] 
       ? parseFloat(market.optionLiquidity[index]) 
       : 0
-    const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50 // Default to 50% if no liquidity
+    // Calculate real odds based on actual liquidity data
+    const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50
     return {
       label: option,
       odds: Math.round(odds * 100) / 100,
