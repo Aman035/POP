@@ -698,7 +698,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                         )}
                       </div>
 
-                      {/* Approval and Place Bet Buttons */}
+                      {/* Smart Betting Flow - Automatically handles the entire process */}
                       {hasInsufficientUSDC ? (
                         /* Bridge and Bet Button - shown when insufficient USDC */
                         <div className="space-y-3">
@@ -739,39 +739,95 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             {showBridgeOption ? 'Hide' : 'Show'} Alternative Bridge Options
                           </Button>
                         </div>
-                      ) : !hasSufficientAllowance() ? (
-                        <Button
-                          onClick={handleApproveUSDC}
-                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isApproving || isApprovingUSDC || isApprovalConfirming}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isApproving || isApprovingUSDC || isApprovalConfirming ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              {isApprovalConfirming ? "Confirming..." : "Approving USDC..."}
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-5 h-5 mr-2" />
-                              Approve USDC
-                            </>
-                          )}
-                        </Button>
                       ) : (
+                        /* Smart Betting Button - Automatically handles approval + bet */
                         <Button
-                          onClick={handlePlaceBet}
-                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || placeBetLoading}
+                          onClick={async () => {
+                            if (!hasSufficientAllowance()) {
+                              // Auto-approve first, then place bet
+                              try {
+                                setIsApproving(true)
+                                setTransactionStatus("Auto-approving USDC...")
+                                const amountWei = parseUnits(betAmount, 6)
+                                
+                                await writeContractUSDC({
+                                  address: COLLATERAL_TOKEN_ADDRESS as `0x${string}`,
+                                  abi: IERC20_ABI,
+                                  functionName: 'approve',
+                                  args: [resolvedParams.address as `0x${string}`, amountWei]
+                                })
+                                
+                                setTransactionStatus("USDC approved! Now placing bet...")
+                                // Wait for approval confirmation, then auto-place bet
+                                setTimeout(async () => {
+                                  try {
+                                    setIsPlacingBet(true)
+                                    setTransactionStatus("Placing your bet...")
+                                    const result = await placeBet(selectedOption, betAmount)
+                                    
+                                    if (result && result.hash) {
+                                      setTransactionStatus("Bet placed successfully!")
+                                      setTransactionHash(result.hash)
+                                      setShowSuccess(true)
+                                      setTimeout(() => {
+                                        setShowSuccess(false)
+                                        setBetAmount("")
+                                        setSelectedOption(null)
+                                        refetch()
+                                      }, 3000)
+                                    }
+                                  } catch (error) {
+                                    console.error("Bet placement failed:", error)
+                                    setTransactionStatus(`Bet failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                                  } finally {
+                                    setIsPlacingBet(false)
+                                  }
+                                }, 3000) // Wait 3 seconds for approval to confirm
+                                
+                              } catch (error) {
+                                console.error("Approval failed:", error)
+                                setTransactionStatus(`Approval failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              } finally {
+                                setIsApproving(false)
+                              }
+                            } else {
+                              // Direct bet placement
+                              try {
+                                setIsPlacingBet(true)
+                                setTransactionStatus("Placing your bet...")
+                                const result = await placeBet(selectedOption, betAmount)
+                                
+                                if (result && result.hash) {
+                                  setTransactionStatus("Bet placed successfully!")
+                                  setTransactionHash(result.hash)
+                                  setShowSuccess(true)
+                                  setTimeout(() => {
+                                    setShowSuccess(false)
+                                    setBetAmount("")
+                                    setSelectedOption(null)
+                                    refetch()
+                                  }, 3000)
+                                }
+                              } catch (error) {
+                                console.error("Bet placement failed:", error)
+                                setTransactionStatus(`Bet failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              } finally {
+                                setIsPlacingBet(false)
+                              }
+                            }
+                          }}
+                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || isApproving || placeBetLoading}
                           className="w-full gold-gradient text-background font-semibold py-3 text-lg hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-gold-2/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isPlacingBet || placeBetLoading ? (
+                          {isPlacingBet || isApproving || placeBetLoading ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2"></div>
-                              Placing Bet...
+                              {isApproving ? "Auto-approving..." : "Placing Bet..."}
                             </>
                           ) : (
                             <>
                               <TrendingUp className="w-5 h-5 mr-2" />
-                              Place Bet
+                              {!hasSufficientAllowance() ? "Auto-approve & Place Bet" : "Place Bet"}
                             </>
                           )}
                         </Button>
