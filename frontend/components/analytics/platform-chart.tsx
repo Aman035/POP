@@ -1,7 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
 interface PlatformData {
   platform: string
@@ -11,13 +11,6 @@ interface PlatformData {
 
 interface PlatformChartProps {
   data: PlatformData[]
-}
-
-const PLATFORM_COLORS = {
-  'Twitter': '#1DA1F2',
-  'Farcaster': '#8A63D2', 
-  'Lens': '#00D4AA',
-  'Other': '#6B7280'
 }
 
 export function PlatformChart({ data }: PlatformChartProps) {
@@ -42,9 +35,9 @@ export function PlatformChart({ data }: PlatformChartProps) {
             <XAxis dataKey="platform" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="count" fill="#8884d8">
+            <Bar dataKey="count">
               {data.map((entry, index) => (
-                <Bar key={`bar-${index}`} fill={entry.color} />
+                <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Bar>
           </BarChart>
