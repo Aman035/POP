@@ -38,6 +38,8 @@ Prediction markets today are broken:
 - Only viral questions get enough volume - niche topics die
 - Creators can't monetize their own engagement
 
+(Contract used for all deployments)[https://sepolia.arbiscan.io/address/0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643]
+
 **POP changes this.** Anyone can create markets for any post. Betting happens right where the conversation does.
 
 ---
