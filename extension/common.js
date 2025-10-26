@@ -1452,7 +1452,7 @@ function showActivityModal() {
 
   // Create the iframe
   const iframe = document.createElement('iframe')
-  iframe.src = `${POP_SITE_URL}/app/activity?embed=true&hideUI=true`
+  iframe.src = `${POP_SITE_URL}/app?embed=true&hideUI=true`
   iframe.style = `
       width: 600px; 
       height: 700px; 
