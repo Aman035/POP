@@ -3,7 +3,7 @@ const POP_SITE_URL = 'https://predict-on-posts.vercel.app'
 // const POP_SITE_URL = 'http://localhost:3000'
 const POP_API_URL = 'https://13.213.208.119.sslip.io' // Backend API URL (for AI analysis only)
 const ENVIO_INDEXER_URL =
-  'https://indexer.dev.hyperindex.xyz/a5b2576/v1/graphql' // Envio indexer for market data
+  'https://indexer.dev.hyperindex.xyz/0d2b34a/v1/graphql' // Envio indexer for market data
 
 // Function to create and show the Pop Market modal
 function showPopModal(iframeUrl) {

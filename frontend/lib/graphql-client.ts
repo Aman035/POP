@@ -2,7 +2,7 @@ import { GraphQLClient } from 'graphql-request'
 
 const GRAPHQL_ENDPOINT =
   process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
-  'https://indexer.dev.hyperindex.xyz/a5b2576/v1/graphql' // Try local endpoint first
+  'https://indexer.dev.hyperindex.xyz/0d2b34a/v1/graphql' // Try local endpoint first
 
 // Check if running on localhost
 const isLocalhost =
