@@ -26,8 +26,8 @@ function showPopModal(iframeUrl) {
   const iframe = document.createElement('iframe')
   iframe.src = iframeUrl || `${POP_SITE_URL}/app/create?embed=true&hideUI=true`
   iframe.style = `
-      width: 600px; 
-      height: 700px; 
+      width: 1000px; 
+      height: 1000px; 
       border: none; 
       border-radius: 20px; 
       background-color: white; 
