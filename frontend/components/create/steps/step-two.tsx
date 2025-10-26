@@ -1,11 +1,17 @@
-"use client"
+'use client'
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, X } from "lucide-react"
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus, X } from 'lucide-react'
 
 interface StepTwoProps {
   marketData: any
@@ -14,12 +20,14 @@ interface StepTwoProps {
 
 export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
   const addOption = () => {
-    updateMarketData({ options: [...marketData.options, ""] })
+    updateMarketData({ options: [...marketData.options, ''] })
   }
 
   const removeOption = (index: number) => {
     if (marketData.options.length > 2) {
-      const newOptions = marketData.options.filter((_: any, i: number) => i !== index)
+      const newOptions = marketData.options.filter(
+        (_: any, i: number) => i !== index
+      )
       updateMarketData({ options: newOptions })
     }
   }
@@ -34,7 +42,9 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-2">Market Details</h2>
-        <p className="text-muted-foreground">Configure your prediction market question and options</p>
+        <p className="text-muted-foreground">
+          Configure your prediction market question and options
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -65,19 +75,73 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
 
         <div>
           <Label htmlFor="category">Category</Label>
-          <Select value={marketData.category} onValueChange={(value) => updateMarketData({ category: value })}>
+          <Select
+            value={marketData.category}
+            onValueChange={(value) => updateMarketData({ category: value })}
+          >
             <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent className="z-[999999] bg-background border border-border shadow-2xl backdrop-blur-sm" side="bottom" align="start" sideOffset={4}>
-              <SelectItem value="crypto" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Crypto</SelectItem>
-              <SelectItem value="tech" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Tech</SelectItem>
-              <SelectItem value="finance" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Finance</SelectItem>
-              <SelectItem value="science" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Science</SelectItem>
-              <SelectItem value="health" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Health</SelectItem>
-              <SelectItem value="sports" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Sports</SelectItem>
-              <SelectItem value="politics" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Politics</SelectItem>
-              <SelectItem value="other" className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">Other</SelectItem>
+            <SelectContent
+              className="z-[999999] bg-background border border-border shadow-2xl backdrop-blur-sm"
+              side="bottom"
+              align="start"
+              sideOffset={4}
+            >
+              <SelectItem
+                value="crypto"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Crypto
+              </SelectItem>
+              <SelectItem
+                value="tech"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Tech
+              </SelectItem>
+              <SelectItem
+                value="finance"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Finance
+              </SelectItem>
+              <SelectItem
+                value="science"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Science
+              </SelectItem>
+              <SelectItem
+                value="health"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Health
+              </SelectItem>
+              <SelectItem
+                value="sports"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Sports
+              </SelectItem>
+              <SelectItem
+                value="politics"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Politics
+              </SelectItem>
+              <SelectItem
+                value="entertainment"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Entertainment
+              </SelectItem>
+              <SelectItem
+                value="other"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                Other
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -94,15 +158,25 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
                   className="flex-1"
                 />
                 {marketData.options.length > 2 && (
-                  <Button variant="ghost" size="icon" onClick={() => removeOption(index)} className="shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeOption(index)}
+                    className="shrink-0"
+                  >
                     <X className="w-4 h-4" />
                   </Button>
                 )}
               </div>
             ))}
           </div>
-          {marketData.options.length < 5 && (
-            <Button variant="outline" size="sm" onClick={addOption} className="mt-2 bg-transparent w-full sm:w-auto">
+          {marketData.options.length < 4 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addOption}
+              className="mt-2 bg-transparent w-full sm:w-auto"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Option
             </Button>

@@ -2,10 +2,12 @@ import { GraphQLClient } from 'graphql-request'
 
 const GRAPHQL_ENDPOINT =
   process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
-  'http://localhost:8080/v1/graphql' // Try local endpoint first
+  'https://indexer.dev.hyperindex.xyz/a5b2576/v1/graphql' // Try local endpoint first
 
 // Check if running on localhost
-const isLocalhost = GRAPHQL_ENDPOINT.includes('localhost') || GRAPHQL_ENDPOINT.includes('127.0.0.1')
+const isLocalhost =
+  GRAPHQL_ENDPOINT.includes('localhost') ||
+  GRAPHQL_ENDPOINT.includes('127.0.0.1')
 
 // Configure headers based on environment
 const headers: Record<string, string> = {
@@ -22,11 +24,10 @@ if (isLocalhost) {
 console.log('GraphQL Client Config:', {
   endpoint: GRAPHQL_ENDPOINT,
   isLocalhost,
-  hasAdminSecret: !!headers['x-hasura-admin-secret']
+  hasAdminSecret: !!headers['x-hasura-admin-secret'],
 })
 
 export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers,
 })
-
 export default graphqlClient

@@ -1,14 +1,39 @@
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, Clock, ExternalLink, Copy, CheckCircle, Shield, Target, Users, Zap, Loader2, RefreshCw } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { useCreateMarket } from "@/hooks/contracts/use-contracts"
-import { toast } from "@/hooks/utils/use-toast"
-import { Platform } from "@/lib/types"
-import { useEthBalance } from "@/hooks/wallet/use-eth-balance"
-import { BridgeButton, BridgeAndExecuteButton, TOKEN_CONTRACT_ADDRESSES, TOKEN_METADATA, SUPPORTED_CHAINS, type SUPPORTED_TOKENS, type SUPPORTED_CHAINS_IDS } from '@avail-project/nexus-widgets'
+import { useState, useEffect } from 'react'
+import { format } from 'date-fns'
+import {
+  CheckCircle2,
+  Twitter,
+  MessageSquare,
+  Calendar,
+  DollarSign,
+  FileText,
+  Clock,
+  ExternalLink,
+  Copy,
+  CheckCircle,
+  Shield,
+  Target,
+  Users,
+  Zap,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { useCreateMarket } from '@/hooks/contracts/use-contracts'
+import { toast } from '@/hooks/utils/use-toast'
+import { Platform } from '@/lib/types'
+import { useEthBalance } from '@/hooks/wallet/use-eth-balance'
+import {
+  BridgeButton,
+  BridgeAndExecuteButton,
+  TOKEN_CONTRACT_ADDRESSES,
+  TOKEN_METADATA,
+  SUPPORTED_CHAINS,
+  type SUPPORTED_TOKENS,
+  type SUPPORTED_CHAINS_IDS,
+} from '@avail-project/nexus-widgets'
 import { parseUnits } from 'viem'
 
 interface StepFourProps {
@@ -17,7 +42,13 @@ interface StepFourProps {
 }
 
 export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
-  const { createMarket, loading: creatingMarket, error: createError, hash, isConfirmed } = useCreateMarket()
+  const {
+    createMarket,
+    loading: creatingMarket,
+    error: createError,
+    hash,
+    isConfirmed,
+  } = useCreateMarket()
   const [isCreating, setIsCreating] = useState(false)
   const [txHash, setTxHash] = useState<string | null>(null)
   const [marketAddress, setMarketAddress] = useState<string | null>(null)
@@ -27,9 +58,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
   const [showBridgePopup, setShowBridgePopup] = useState(false)
   const [availableFunds, setAvailableFunds] = useState<any[]>([])
   const [selectedChain, setSelectedChain] = useState<string>('')
-  
+
   // Note: Bridge state management removed - Nexus widgets handle their own state
-  
+
   // ETH balance and Nexus SDK hooks
   const {
     balance,
@@ -44,44 +75,47 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
     bridgeEthFromOtherChain,
     getAvailableChains,
     refreshBalance,
-  } = useEthBalance();
+  } = useEthBalance()
 
   // Note: Nexus widgets handle their own SDK internally
-  
-  // const nexusWidget = useNexusWidget();
-  
-  const PlatformIcon = marketData.platform === Platform.Twitter ? Twitter : 
-                       marketData.platform === Platform.Farcaster ? MessageSquare : 
-                       MessageSquare // Default fallback
 
+  // const nexusWidget = useNexusWidget();
+
+  const PlatformIcon =
+    marketData.platform === Platform.Twitter
+      ? Twitter
+      : marketData.platform === Platform.Farcaster
+      ? MessageSquare
+      : MessageSquare // Default fallback
 
   // Check for available funds on other chains
   const checkForAvailableFunds = async () => {
     try {
-      console.log('Checking for available funds on other chains...');
-      
+      console.log('Checking for available funds on other chains...')
+
       // For now, just show manual bridge options
       // The Nexus widgets will handle their own balance checking
-      console.log('Showing manual bridge options');
-      setShowManualBridge(true);
-      
+      console.log('Showing manual bridge options')
+      setShowManualBridge(true)
+
       toast({
-        title: "Bridge Options Available",
-        description: "Use the Nexus widgets below to bridge funds from other chains.",
-      });
-      
+        title: 'Bridge Options Available',
+        description:
+          'Use the Nexus widgets below to bridge funds from other chains.',
+      })
     } catch (error) {
-      console.error('Error checking for funds:', error);
+      console.error('Error checking for funds:', error)
       // Fallback to manual bridge options
-      setShowManualBridge(true);
-      
+      setShowManualBridge(true)
+
       toast({
-        title: "Error Checking Funds",
-        description: "Failed to check balances on other chains. Using manual bridge options.",
-        variant: "destructive"
-      });
+        title: 'Error Checking Funds',
+        description:
+          'Failed to check balances on other chains. Using manual bridge options.',
+        variant: 'destructive',
+      })
     }
-  };
+  }
 
   // Helper function to get chain name from chain ID (Nexus Testnet supported chains)
   const getChainName = (chainId: number): string => {
@@ -99,127 +133,141 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       8453: 'Base Mainnet',
       137: 'Polygon Mainnet',
       80001: 'Polygon Mumbai',
-    };
-    return chainNames[chainId] || `Chain ${chainId}`;
-  };
+    }
+    return chainNames[chainId] || `Chain ${chainId}`
+  }
 
   // Handle bridge confirmation using real Nexus SDK
   const handleBridgeConfirm = async () => {
     if (!selectedChain) {
       toast({
-        title: "Please select a chain",
-        description: "Choose which chain to bridge from",
-        variant: "destructive"
-      });
-      return;
+        title: 'Please select a chain',
+        description: 'Choose which chain to bridge from',
+        variant: 'destructive',
+      })
+      return
     }
 
     // Note: Nexus widgets handle their own initialization
 
     try {
       // Find the selected asset from available funds
-      const selectedAsset = availableFunds.find(fund => fund.chain === selectedChain);
+      const selectedAsset = availableFunds.find(
+        (fund) => fund.chain === selectedChain
+      )
       if (!selectedAsset) {
         toast({
-          title: "Asset Not Found",
-          description: "Selected asset not found. Please try again.",
-          variant: "destructive"
-        });
-        return;
+          title: 'Asset Not Found',
+          description: 'Selected asset not found. Please try again.',
+          variant: 'destructive',
+        })
+        return
       }
 
-      console.log(`Bridge requested for ${selectedAsset.balance} from ${selectedChain}`);
-      
-      toast({
-        title: "🔄 Bridge Requested",
-        description: `Please use the Nexus widgets below to bridge ${selectedAsset.balance} to Arbitrum Sepolia.`,
-      });
-      
-      // Close the popup and let user use the widgets
-      setShowBridgePopup(false);
-      
-    } catch (error) {
-      console.error('Bridge failed:', error);
-      toast({
-        title: "❌ Bridge Failed",
-        description: `Could not bridge funds: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or use manual options.`,
-        variant: "destructive"
-      });
-    }
-  };
+      console.log(
+        `Bridge requested for ${selectedAsset.balance} from ${selectedChain}`
+      )
 
+      toast({
+        title: '🔄 Bridge Requested',
+        description: `Please use the Nexus widgets below to bridge ${selectedAsset.balance} to Arbitrum Sepolia.`,
+      })
+
+      // Close the popup and let user use the widgets
+      setShowBridgePopup(false)
+    } catch (error) {
+      console.error('Bridge failed:', error)
+      toast({
+        title: '❌ Bridge Failed',
+        description: `Could not bridge funds: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Please try again or use manual options.`,
+        variant: 'destructive',
+      })
+    }
+  }
 
   const handleCreateMarket = async (forceContinue = false) => {
-    console.log('Launch Prediction Market button clicked!');
-    console.log('Market data:', marketData);
-    console.log('hasInsufficientBalance:', hasInsufficientBalance);
-    console.log('balanceFormatted:', balanceFormatted);
-    console.log('forceContinue:', forceContinue);
-    
-    
-    if (!marketData.question || !marketData.description || marketData.options.length < 2) {
+    console.log('Launch Prediction Market button clicked!')
+    console.log('Market data:', marketData)
+    console.log('hasInsufficientBalance:', hasInsufficientBalance)
+    console.log('balanceFormatted:', balanceFormatted)
+    console.log('forceContinue:', forceContinue)
+
+    if (
+      !marketData.question ||
+      !marketData.description ||
+      marketData.options.length < 2
+    ) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
+        title: 'Missing Information',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
       })
       return
     }
 
     // Check if all options are filled
-    const emptyOptions = marketData.options.some((option: string) => !option.trim())
+    const emptyOptions = marketData.options.some(
+      (option: string) => !option.trim()
+    )
     if (emptyOptions) {
       toast({
-        title: "Empty Options",
-        description: "Please fill in all market options",
-        variant: "destructive"
+        title: 'Empty Options',
+        description: 'Please fill in all market options',
+        variant: 'destructive',
       })
       return
     }
 
     if (!marketData.endDate) {
       toast({
-        title: "Missing End Date",
-        description: "Please set an end date for your market",
-        variant: "destructive"
+        title: 'Missing End Date',
+        description: 'Please set an end date for your market',
+        variant: 'destructive',
       })
       return
     }
 
     // If user has insufficient balance, check for funds on other chains
     if (hasInsufficientBalance && !forceContinue) {
-      console.log('Insufficient balance detected, checking for funds on other chains...');
-      
+      console.log(
+        'Insufficient balance detected, checking for funds on other chains...'
+      )
+
       // Show manual bridge options directly
-      setShowManualBridge(true);
-      
+      setShowManualBridge(true)
+
       // Also try to check for available funds
-      checkForAvailableFunds();
-      
-      return;
+      checkForAvailableFunds()
+
+      return
     }
 
     // Show warning if proceeding without sufficient balance
     if (hasInsufficientBalance && forceContinue) {
       toast({
-        title: "⚠️ Insufficient ETH Balance",
-        description: "You're proceeding without sufficient ETH. You'll need to get ETH before the transaction can be confirmed.",
-        variant: "destructive"
-      });
+        title: '⚠️ Insufficient ETH Balance',
+        description:
+          "You're proceeding without sufficient ETH. You'll need to get ETH before the transaction can be confirmed.",
+        variant: 'destructive',
+      })
     }
 
     try {
       setIsCreating(true)
-      
+
       // Convert endDate to timestamp
       const endTime = Math.floor(marketData.endDate.getTime() / 1000)
-      
+
       // Convert creator fee percentage to basis points
       const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100) // Convert percentage to basis points
-      
+
       // Generate a unique identifier string if not provided
-      const identifier = marketData.identifier || `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+      const identifier =
+        marketData.identifier ||
+        `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
       const marketParams = {
         identifier,
         options: marketData.options.filter((option: string) => option.trim()),
@@ -227,77 +275,88 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         creatorFeeBps,
         question: marketData.question,
         description: marketData.description,
-        category: marketData.category || "other",
+        category: marketData.category || 'other',
         platform: marketData.platform || 0, // Default to Platform.Twitter
-        resolutionSource: marketData.resolutionSource || "",
+        resolutionSource: marketData.resolutionSource || '',
       }
 
       toast({
-        title: "Creating Market",
-        description: "Please confirm the transaction in your wallet...",
+        title: 'Creating Market',
+        description: 'Please confirm the transaction in your wallet...',
       })
 
-      console.log('🔄 Calling createMarket with params:', marketParams);
-      console.log('🔄 createMarket function reference:', createMarket);
-      console.log('🔄 createMarket type:', typeof createMarket);
-      
+      console.log('🔄 Calling createMarket with params:', marketParams)
+      console.log('🔄 createMarket function reference:', createMarket)
+      console.log('🔄 createMarket type:', typeof createMarket)
+
       const result = await createMarket(marketParams)
-      console.log('✅ createMarket result:', result);
-      
+      console.log('✅ createMarket result:', result)
+
       if (result) {
         // Set the transaction hash immediately
-        setTxHash(hash || "")
-        
+        setTxHash(hash || '')
+
         toast({
-          title: "Transaction Submitted",
-          description: "Your market creation transaction has been submitted to the blockchain",
+          title: 'Transaction Submitted',
+          description:
+            'Your market creation transaction has been submitted to the blockchain',
         })
-        
+
         // Wait for confirmation
         if (isConfirmed && hash) {
           // For now, we'll use the transaction hash as a placeholder
           // In a real implementation, you'd get the contract address from the transaction receipt
           setContractAddress(hash) // This should be the actual contract address
           setMarketAddress(hash) // This should be the actual market contract address
-          
+
           toast({
-            title: "Market Created Successfully!",
+            title: 'Market Created Successfully!',
             description: `Your market has been deployed to the blockchain`,
           })
-          
+
           // Call the callback if provided
           if (onCreateMarket) {
             onCreateMarket(hash, hash)
           }
         }
       } else {
-        throw new Error("Failed to create market")
+        throw new Error('Failed to create market')
       }
     } catch (error) {
-      console.error("Error creating market:", error)
-      
-      let errorMessage = "An unknown error occurred"
+      console.error('Error creating market:', error)
+
+      let errorMessage = 'An unknown error occurred'
       if (error instanceof Error) {
         errorMessage = error.message
       }
-      
+
       // Handle specific MetaMask errors
-      if (errorMessage.includes("External transactions to internal accounts cannot include data")) {
-        errorMessage = "Wallet connection issue. Please disconnect and reconnect your wallet, then try again."
-      } else if (errorMessage.includes("wallet_sendTransaction")) {
-        errorMessage = "MetaMask connection issue. Please refresh the page and try again."
-      } else if (errorMessage.includes("User rejected")) {
-        errorMessage = "Transaction was cancelled by user."
-      } else if (errorMessage.includes("insufficient funds")) {
-        errorMessage = "Insufficient funds for transaction. Please add ETH to your wallet."
-      } else if (errorMessage.includes("Wallet address is the same as contract address")) {
-        errorMessage = "Wallet connection error detected. Please follow these steps:\n1. Disconnect your wallet from the app\n2. Refresh the page\n3. Reconnect your wallet\n4. Try creating the market again"
+      if (
+        errorMessage.includes(
+          'External transactions to internal accounts cannot include data'
+        )
+      ) {
+        errorMessage =
+          'Wallet connection issue. Please disconnect and reconnect your wallet, then try again.'
+      } else if (errorMessage.includes('wallet_sendTransaction')) {
+        errorMessage =
+          'MetaMask connection issue. Please refresh the page and try again.'
+      } else if (errorMessage.includes('User rejected')) {
+        errorMessage = 'Transaction was cancelled by user.'
+      } else if (errorMessage.includes('insufficient funds')) {
+        errorMessage =
+          'Insufficient funds for transaction. Please add ETH to your wallet.'
+      } else if (
+        errorMessage.includes('Wallet address is the same as contract address')
+      ) {
+        errorMessage =
+          'Wallet connection error detected. Please follow these steps:\n1. Disconnect your wallet from the app\n2. Refresh the page\n3. Reconnect your wallet\n4. Try creating the market again'
       }
-      
+
       toast({
-        title: "Error Creating Market",
+        title: 'Error Creating Market',
         description: errorMessage,
-        variant: "destructive"
+        variant: 'destructive',
       })
     } finally {
       setIsCreating(false)
@@ -310,8 +369,8 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       toast({
-        title: "Copied!",
-        description: "Address copied to clipboard",
+        title: 'Copied!',
+        description: 'Address copied to clipboard',
       })
     } catch (err) {
       console.error('Failed to copy: ', err)
@@ -325,12 +384,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
     if (isConfirmed && hash && !marketAddress) {
       setMarketAddress(hash) // Using hash as placeholder for market address
       setTxHash(hash)
-      
+
       toast({
-        title: "Market Created Successfully!",
+        title: 'Market Created Successfully!',
         description: `Your market has been deployed to the blockchain`,
       })
-      
+
       // Call the callback if provided
       if (onCreateMarket) {
         onCreateMarket(hash, hash)
@@ -347,7 +406,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           <CheckCircle2 className="w-8 h-8 text-background" />
         </div>
         <h2 className="text-2xl font-bold mb-2">Review Your Market</h2>
-        <p className="text-muted-foreground">Double-check everything before creating your market</p>
+        <p className="text-muted-foreground">
+          Double-check everything before creating your market
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -358,8 +419,11 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
             <div>
               <p className="text-sm text-muted-foreground">Platform</p>
               <p className="font-medium">
-                {marketData.platform === Platform.Twitter ? "Twitter/X" : 
-                 marketData.platform === Platform.Farcaster ? "Farcaster" : "Other"}
+                {marketData.platform === Platform.Twitter
+                  ? 'Twitter/X'
+                  : marketData.platform === Platform.Farcaster
+                  ? 'Farcaster'
+                  : 'Other'}
               </p>
             </div>
           </div>
@@ -372,7 +436,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">Question</p>
               <p className="font-medium mb-2">{marketData.question}</p>
-              <p className="text-sm text-muted-foreground">{marketData.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {marketData.description}
+              </p>
             </div>
           </div>
         </Card>
@@ -383,7 +449,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           <div className="space-y-2">
             {marketData.options.map((option: string, index: number) => (
               <div key={index} className="flex items-center gap-2">
-                <Badge variant="secondary">{option || `Option ${index + 1}`}</Badge>
+                <Badge variant="secondary">
+                  {option || `Option ${index + 1}`}
+                </Badge>
               </div>
             ))}
           </div>
@@ -396,7 +464,11 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               <Calendar className="w-5 h-5 text-gold-2" />
               <div>
                 <p className="text-sm text-muted-foreground">End Date</p>
-                <p className="font-medium">{marketData.endDate ? format(marketData.endDate, "PPP") : "Not set"}</p>
+                <p className="font-medium">
+                  {marketData.endDate
+                    ? format(marketData.endDate, "PPP 'at' p")
+                    : 'Not set'}
+                </p>
               </div>
             </div>
           </Card>
@@ -414,18 +486,21 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
 
         {/* Resolution Source */}
         <Card className="p-4 bg-background border-border">
-          <p className="text-sm text-muted-foreground mb-2">Resolution Source</p>
+          <p className="text-sm text-muted-foreground mb-2">
+            Resolution Source
+          </p>
           <p className="text-sm">{marketData.resolutionSource}</p>
         </Card>
-
 
         {/* Current Balance Status */}
         <Card className="p-4 bg-background border-border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                hasInsufficientBalance ? 'bg-red-500/10' : 'bg-green-500/10'
-              }`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  hasInsufficientBalance ? 'bg-red-500/10' : 'bg-green-500/10'
+                }`}
+              >
                 {balanceLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 ) : hasInsufficientBalance ? (
@@ -445,7 +520,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               </Badge>
             )}
           </div>
-          
+
           {hasInsufficientBalance && (
             <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-2 mb-2">
@@ -455,12 +530,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 </span>
               </div>
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                We'll automatically bridge ETH from another chain when you launch your market.
+                We'll automatically bridge ETH from another chain when you
+                launch your market.
               </p>
             </div>
           )}
         </Card>
-
 
         {/* Smart Contract Creation */}
         {!isMarketCreated ? (
@@ -470,22 +545,27 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 <Clock className="w-6 h-6 text-gold-2" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">Launch Your Prediction Market</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Launch Your Prediction Market
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Deploy your market to the blockchain and start accepting predictions. {hasInsufficientBalance ? 'Bridge ETH from another chain first.' : 'No upfront costs required.'}
+                  Deploy your market to the blockchain and start accepting
+                  predictions.{' '}
+                  {hasInsufficientBalance
+                    ? 'Bridge ETH from another chain first.'
+                    : 'No upfront costs required.'}
                 </p>
-                
-                
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={() => handleCreateMarket()}
                 disabled={isCreating || creatingMarket}
                 className="w-full gold-gradient text-background font-semibold"
                 size="lg"
-                style={{ 
-                  opacity: (isCreating || creatingMarket) ? 0.5 : 1,
-                  cursor: (isCreating || creatingMarket) ? 'not-allowed' : 'pointer'
+                style={{
+                  opacity: isCreating || creatingMarket ? 0.5 : 1,
+                  cursor:
+                    isCreating || creatingMarket ? 'not-allowed' : 'pointer',
                 }}
               >
                 {isCreating || creatingMarket ? (
@@ -494,7 +574,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                     Launching Market...
                   </>
                 ) : (
-                  "Launch Prediction Market"
+                  'Launch Prediction Market'
                 )}
               </Button>
             </div>
@@ -506,12 +586,15 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2 text-green-600">🎉 Market Launched Successfully!</h3>
+                <h3 className="text-2xl font-bold mb-2 text-green-600">
+                  🎉 Market Launched Successfully!
+                </h3>
                 <p className="text-muted-foreground mb-6">
-                  Your prediction market is now live on the blockchain and ready to accept predictions
+                  Your prediction market is now live on the blockchain and ready
+                  to accept predictions
                 </p>
               </div>
-              
+
               {/* Enhanced Stats Display */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-lg bg-background/80 border border-border">
@@ -520,12 +603,16 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                       <Target className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="text-left">
-                      <p className="text-xs text-muted-foreground">Creator Fee</p>
-                      <p className="text-lg font-bold text-foreground">{marketData.creatorFee}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        Creator Fee
+                      </p>
+                      <p className="text-lg font-bold text-foreground">
+                        {marketData.creatorFee}%
+                      </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 rounded-lg bg-background/80 border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
@@ -534,12 +621,14 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                     <div className="text-left">
                       <p className="text-xs text-muted-foreground">End Date</p>
                       <p className="text-sm font-semibold text-foreground">
-                        {marketData.endDate ? format(marketData.endDate, "MMM dd, yyyy") : "Not set"}
+                        {marketData.endDate
+                          ? format(marketData.endDate, "MMM dd, yyyy 'at' p")
+                          : 'Not set'}
                       </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 rounded-lg bg-background/80 border border-border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gold-2/10 flex items-center justify-center">
@@ -548,33 +637,57 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                     <div className="text-left">
                       <p className="text-xs text-muted-foreground">Platform</p>
                       <p className="text-sm font-semibold text-foreground">
-                        {marketData.platform === 0 ? "Twitter/X" : 
-                         marketData.platform === 1 ? "Farcaster" : "Other"}
+                        {marketData.platform === 0
+                          ? 'Twitter/X'
+                          : marketData.platform === 1
+                          ? 'Farcaster'
+                          : 'Other'}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Market Details */}
               <div className="space-y-4">
                 {/* Contract Address */}
                 <div className="p-4 rounded-lg bg-background/80 border border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-foreground">Market Contract Address</p>
+                    <p className="text-sm font-medium text-foreground">
+                      Market Contract Address
+                    </p>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(contractAddress || marketAddress || marketData.marketAddress)}
+                        onClick={() =>
+                          copyToClipboard(
+                            contractAddress ||
+                              marketAddress ||
+                              marketData.marketAddress
+                          )
+                        }
                         className="h-6 px-2"
                       >
-                        {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copied ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.open(`https://sepolia.arbiscan.io/address/${contractAddress || marketAddress || marketData.marketAddress}`, '_blank')}
+                        onClick={() =>
+                          window.open(
+                            `https://sepolia.arbiscan.io/address/${
+                              contractAddress ||
+                              marketAddress ||
+                              marketData.marketAddress
+                            }`,
+                            '_blank'
+                          )
+                        }
                         className="h-6 px-2"
                         title="View Contract on Arbiscan"
                       >
@@ -583,13 +696,24 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                     </div>
                   </div>
                   <code className="text-xs font-mono text-muted-foreground break-all">
-                    {contractAddress || marketAddress || marketData.marketAddress}
+                    {contractAddress ||
+                      marketAddress ||
+                      marketData.marketAddress}
                   </code>
                   <div className="mt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(`https://sepolia.arbiscan.io/address/${contractAddress || marketAddress || marketData.marketAddress}`, '_blank')}
+                      onClick={() =>
+                        window.open(
+                          `https://sepolia.arbiscan.io/address/${
+                            contractAddress ||
+                            marketAddress ||
+                            marketData.marketAddress
+                          }`,
+                          '_blank'
+                        )
+                      }
                       className="w-full"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
@@ -597,12 +721,14 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Transaction Hash */}
                 {txHash && (
                   <div className="p-4 rounded-lg bg-background/80 border border-border">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-foreground">Transaction Hash</p>
+                      <p className="text-sm font-medium text-foreground">
+                        Transaction Hash
+                      </p>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
@@ -610,12 +736,21 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                           onClick={() => copyToClipboard(txHash)}
                           className="h-6 px-2"
                         >
-                          {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          {copied ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`https://sepolia.arbiscan.io/tx/${txHash}`, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              `https://sepolia.arbiscan.io/tx/${txHash}`,
+                              '_blank'
+                            )
+                          }
                           className="h-6 px-2"
                           title="View Transaction on Arbiscan"
                         >
@@ -630,7 +765,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`https://sepolia.arbiscan.io/tx/${txHash}`, '_blank')}
+                        onClick={() =>
+                          window.open(
+                            `https://sepolia.arbiscan.io/tx/${txHash}`,
+                            '_blank'
+                          )
+                        }
                         className="w-full"
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
@@ -640,10 +780,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                   </div>
                 )}
               </div>
-              
+
               {/* Next Steps */}
               <div className="p-4 rounded-lg bg-gold-2/10 border border-gold-2/20">
-                <h4 className="font-semibold text-foreground mb-2">What's Next?</h4>
+                <h4 className="font-semibold text-foreground mb-2">
+                  What's Next?
+                </h4>
                 <ul className="text-sm text-muted-foreground space-y-1 text-left">
                   <li>• Share your market link to attract participants</li>
                   <li>• Monitor betting activity and market sentiment</li>
@@ -662,9 +804,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 <Zap className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">Bridge to Arbitrum Sepolia</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Bridge to Arbitrum Sepolia
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Use Nexus to bridge native currency from supported chains to Arbitrum Sepolia.
+                  Use Nexus to bridge native currency from supported chains to
+                  Arbitrum Sepolia.
                 </p>
               </div>
 
@@ -672,7 +817,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               <div className="space-y-4">
                 <div className="space-y-3">
                   {/* Simple Bridge */}
-                  <BridgeButton prefill={{ chainId: 421614, token: 'ETH', amount: '0.01' }}>
+                  <BridgeButton
+                    prefill={{ chainId: 421614, token: 'ETH', amount: '0.01' }}
+                  >
                     {({ onClick, isLoading }) => (
                       <Button
                         onClick={onClick}
@@ -697,49 +844,65 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
 
                   {/* Bridge and Create Market in One Transaction */}
                   <BridgeAndExecuteButton
-                    contractAddress={process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}` || '0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`}
-                    contractAbi={[
-                      {
-                        name: 'createMarket',
-                        type: 'function',
-                        stateMutability: 'nonpayable',
-                        inputs: [
-                          { name: 'identifier', type: 'string' },
-                          { name: 'endTime', type: 'uint64' },
-                          { name: 'creatorFeeBps', type: 'uint96' },
-                          { name: 'question', type: 'string' },
-                          { name: 'description', type: 'string' },
-                          { name: 'category', type: 'string' },
-                          { name: 'platform', type: 'uint8' },
-                          { name: 'resolutionSource', type: 'string' },
-                          { name: 'options', type: 'string[]' }
-                        ],
-                        outputs: [{ name: 'market', type: 'address' }],
-                      },
-                    ] as const}
+                    contractAddress={
+                      (process.env
+                        .NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}`) ||
+                      ('0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`)
+                    }
+                    contractAbi={
+                      [
+                        {
+                          name: 'createMarket',
+                          type: 'function',
+                          stateMutability: 'nonpayable',
+                          inputs: [
+                            { name: 'identifier', type: 'string' },
+                            { name: 'endTime', type: 'uint64' },
+                            { name: 'creatorFeeBps', type: 'uint96' },
+                            { name: 'question', type: 'string' },
+                            { name: 'description', type: 'string' },
+                            { name: 'category', type: 'string' },
+                            { name: 'platform', type: 'uint8' },
+                            { name: 'resolutionSource', type: 'string' },
+                            { name: 'options', type: 'string[]' },
+                          ],
+                          outputs: [{ name: 'market', type: 'address' }],
+                        },
+                      ] as const
+                    }
                     functionName="createMarket"
                     buildFunctionParams={(token, amount, chainId, user) => {
                       // Generate a unique identifier string
-                      const identifier = marketData.identifier || `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                      
+                      const identifier =
+                        marketData.identifier ||
+                        `market_${Date.now()}_${Math.random()
+                          .toString(36)
+                          .substr(2, 9)}`
+
                       // Convert endDate to timestamp
-                      const endTime = Math.floor(marketData.endDate.getTime() / 1000);
-                      
+                      const endTime = Math.floor(
+                        marketData.endDate.getTime() / 1000
+                      )
+
                       // Convert creator fee percentage to basis points
-                      const creatorFeeBps = Math.floor((marketData.creatorFee || 2) * 100);
-                      
+                      const creatorFeeBps = Math.floor(
+                        (marketData.creatorFee || 2) * 100
+                      )
+
                       console.log('BridgeAndExecuteButton params:', {
                         identifier,
                         endTime,
                         creatorFeeBps,
                         question: marketData.question,
                         description: marketData.description,
-                        category: marketData.category || "other",
+                        category: marketData.category || 'other',
                         platform: marketData.platform || 0,
-                        resolutionSource: marketData.resolutionSource || "",
-                        options: marketData.options.filter((option: string) => option.trim())
-                      });
-                      
+                        resolutionSource: marketData.resolutionSource || '',
+                        options: marketData.options.filter((option: string) =>
+                          option.trim()
+                        ),
+                      })
+
                       return {
                         functionParams: [
                           identifier, // string
@@ -747,12 +910,14 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                           creatorFeeBps, // uint96
                           marketData.question,
                           marketData.description,
-                          marketData.category || "other",
+                          marketData.category || 'other',
                           marketData.platform || 0,
-                          marketData.resolutionSource || "",
-                          marketData.options.filter((option: string) => option.trim())
-                        ]
-                      };
+                          marketData.resolutionSource || '',
+                          marketData.options.filter((option: string) =>
+                            option.trim()
+                          ),
+                        ],
+                      }
                     }}
                     prefill={{
                       toChainId: 421614, // Arbitrum Sepolia
@@ -790,27 +955,28 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open('https://faucet.quicknode.com/arbitrum/sepolia', '_blank')}
+                    onClick={() =>
+                      window.open(
+                        'https://faucet.quicknode.com/arbitrum/sepolia',
+                        '_blank'
+                      )
+                    }
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Arbitrum Faucet
                   </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={refreshBalance}
-                  >
+
+                  <Button variant="outline" size="sm" onClick={refreshBalance}>
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh Balance
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setShowManualBridge(false);
-                      handleCreateMarket(true);
+                      setShowManualBridge(false)
+                      handleCreateMarket(true)
                     }}
                     className="bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30"
                   >
@@ -831,20 +997,28 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
                   <Zap className="w-6 h-6 text-green-500" />
                 </div>
-                
+
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">💰 Funds Found!</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    💰 Funds Found!
+                  </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    We found native currency on other chains. Bridge it to Arbitrum Sepolia?
+                    We found native currency on other chains. Bridge it to
+                    Arbitrum Sepolia?
                   </p>
                 </div>
 
                 {/* Chain Selection */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Select chain to bridge from:</label>
+                  <label className="text-sm font-medium">
+                    Select chain to bridge from:
+                  </label>
                   <div className="space-y-2">
                     {availableFunds.map((fund, index) => (
-                      <label key={index} className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50">
+                      <label
+                        key={index}
+                        className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50"
+                      >
                         <input
                           type="radio"
                           name="chain"
@@ -855,7 +1029,9 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                         />
                         <div className="flex-1">
                           <div className="font-medium">{fund.chain}</div>
-                          <div className="text-sm text-muted-foreground">{fund.balance}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {fund.balance}
+                          </div>
                         </div>
                       </label>
                     ))}
@@ -867,14 +1043,14 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowBridgePopup(false);
-                      setShowManualBridge(true);
+                      setShowBridgePopup(false)
+                      setShowManualBridge(true)
                     }}
                     className="flex-1"
                   >
                     Cancel
                   </Button>
-                  
+
                   <Button
                     onClick={handleBridgeConfirm}
                     disabled={!selectedChain}
