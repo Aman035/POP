@@ -522,14 +522,23 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           </div>
 
           {hasInsufficientBalance && (
-            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4 text-blue-500" />
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Auto-Bridge Available
-                </span>
+            <div className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-yellow-500/15 backdrop-blur-sm border-2 border-orange-500/30 shadow-lg">
+              {/* Glass effect overlay */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+              
+              <div className="relative flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-orange-500/30 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <span className="text-sm font-bold text-orange-700 dark:text-orange-300">
+                    Auto-Bridge Available
+                  </span>
+                  <div className="w-2 h-2 bg-orange-600 rounded-full ml-2 inline-block" />
+                </div>
               </div>
-              <p className="text-xs text-blue-600 dark:text-blue-400">
+              
+              <p className="text-sm font-medium text-black dark:text-black leading-relaxed">
                 We'll automatically bridge ETH from another chain when you
                 launch your market.
               </p>
@@ -557,26 +566,121 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 </p>
               </div>
 
-              <Button
-                onClick={() => handleCreateMarket()}
-                disabled={isCreating || creatingMarket}
-                className="w-full gold-gradient text-background font-semibold"
-                size="lg"
-                style={{
-                  opacity: isCreating || creatingMarket ? 0.5 : 1,
-                  cursor:
-                    isCreating || creatingMarket ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isCreating || creatingMarket ? (
-                  <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Launching Market...
-                  </>
-                ) : (
-                  'Launch Prediction Market'
-                )}
-              </Button>
+              {hasInsufficientBalance ? (
+                <div className="space-y-3">
+                  {/* Bridge and Execute Button - Primary Option */}
+                  <BridgeAndExecuteButton
+                    contractAddress={
+                      (process.env
+                        .NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}`) ||
+                      ('0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`)
+                    }
+                    contractAbi={
+                      [
+                        {
+                          name: 'createMarket',
+                          type: 'function',
+                          stateMutability: 'nonpayable',
+                          inputs: [
+                            { name: 'identifier', type: 'string' },
+                            { name: 'endTime', type: 'uint64' },
+                            { name: 'creatorFeeBps', type: 'uint96' },
+                            { name: 'question', type: 'string' },
+                            { name: 'description', type: 'string' },
+                            { name: 'category', type: 'string' },
+                            { name: 'platform', type: 'uint8' },
+                            { name: 'resolutionSource', type: 'string' },
+                            { name: 'options', type: 'string[]' },
+                          ],
+                          outputs: [{ name: 'market', type: 'address' }],
+                        },
+                      ] as const
+                    }
+                    functionName="createMarket"
+                    buildFunctionParams={(token, amount, chainId, user) => {
+                      // Generate a unique identifier string
+                      const identifier =
+                        marketData.identifier ||
+                        `market_${Date.now()}_${Math.random()
+                          .toString(36)
+                          .substr(2, 9)}`
+
+                      // Convert endDate to timestamp
+                      const endTime = Math.floor(
+                        marketData.endDate.getTime() / 1000
+                      )
+
+                      // Convert creator fee percentage to basis points
+                      const creatorFeeBps = Math.floor(
+                        (marketData.creatorFee || 2) * 100
+                      )
+
+                      return {
+                        functionParams: [
+                          identifier, // string
+                          endTime, // uint64
+                          creatorFeeBps, // uint96
+                          marketData.question,
+                          marketData.description,
+                          marketData.category || 'other',
+                          marketData.platform || 0,
+                          marketData.resolutionSource || '',
+                          marketData.options.filter((option: string) =>
+                            option.trim()
+                          ),
+                        ],
+                      }
+                    }}
+                    prefill={{
+                      toChainId: 421614, // Arbitrum Sepolia
+                      token: 'ETH',
+                    }}
+                  >
+                    {({ onClick, isLoading }) => (
+                      <Button
+                        onClick={onClick}
+                        disabled={isLoading}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        size="lg"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                            Bridge & Launch Market...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Bridge ETH & Launch Market
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </BridgeAndExecuteButton>
+
+                </div>
+              ) : (
+                <Button
+                  onClick={() => handleCreateMarket()}
+                  disabled={isCreating || creatingMarket}
+                  className="w-full gold-gradient text-background font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  size="lg"
+                  style={{
+                    opacity: isCreating || creatingMarket ? 0.5 : 1,
+                    cursor:
+                      isCreating || creatingMarket ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isCreating || creatingMarket ? (
+                    <>
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
+                      Launching Market...
+                    </>
+                  ) : (
+                    'Launch Your Prediction Market'
+                  )}
+                </Button>
+              )}
             </div>
           </Card>
         ) : (
@@ -816,8 +920,8 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
               {/* Nexus Bridge Widget */}
               <div className="space-y-4">
                 <div className="space-y-3">
-                  {/* Simple Bridge */}
-                  <BridgeButton
+                  {/* Simple Bridge - COMMENTED OUT */}
+                  {/* <BridgeButton
                     prefill={{ chainId: 421614, token: 'ETH', amount: '0.01' }}
                   >
                     {({ onClick, isLoading }) => (
@@ -840,7 +944,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                         )}
                       </Button>
                     )}
-                  </BridgeButton>
+                  </BridgeButton> */}
 
                   {/* Bridge and Create Market in One Transaction */}
                   <BridgeAndExecuteButton
