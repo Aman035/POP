@@ -26,6 +26,54 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const resolvedParams = use(params)
   const { market: marketInfo, loading, error, refetch } = useMarketGraphQL(resolvedParams.address)
   
+  // Debug logging for market data
+  useEffect(() => {
+    console.log('🔍 Market Page: Market data state:', {
+      marketInfo: marketInfo ? {
+        address: marketInfo.address,
+        question: marketInfo.question,
+        options: marketInfo.options,
+        totalLiquidity: marketInfo.totalLiquidity,
+        state: marketInfo.state
+      } : null,
+      loading,
+      error
+    })
+    
+    // Force a re-render test
+    if (marketInfo) {
+      console.log('🔍 Market Page: Market data is available, forcing re-render test')
+      // This will help us see if the data is actually being passed to the UI
+    }
+  }, [marketInfo, loading, error])
+
+  // Force refetch if stuck in loading state
+  useEffect(() => {
+    if (loading && !error) {
+      const timeoutId = setTimeout(() => {
+        console.log('🔄 Market Page: Loading timeout, forcing refetch')
+        refetch()
+      }, 5000) // Wait 5 seconds before forcing refetch
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [loading, error, refetch])
+
+  // Track refresh times
+  useEffect(() => {
+    if (marketInfo && !loading) {
+      setLastRefreshTime(new Date())
+      setIsRefreshing(false)
+    }
+  }, [marketInfo, loading])
+
+  // Enhanced refetch with loading state
+  const handleRefetch = async () => {
+    setIsRefreshing(true)
+    console.log('🔄 Market Page: Manual refetch triggered')
+    await refetch()
+  }
+  
   // Wallet and betting state
   const { isConnected, address, connect, isCorrectChain, switchToArbitrumSepolia } = useWallet()
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -36,6 +84,8 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const [transactionHash, setTransactionHash] = useState<string>("")
   const [showSuccess, setShowSuccess] = useState(false)
   const [copiedHash, setCopiedHash] = useState(false)
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Contract hooks
   const { placeBet, loading: placeBetLoading, error: placeBetError, isConfirmed: betConfirmed } = usePlaceBet(resolvedParams.address)
@@ -237,9 +287,12 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
       setBetAmount("")
       setTransactionHash("")
       
-      // Refetch market data to update liquidity
+      // Refetch market data to update liquidity with delay to prevent race conditions
       if (refetch) {
-        refetch()
+        setTimeout(() => {
+          console.log('🔄 Refetching market data after bet confirmation')
+          refetch()
+        }, 2000) // Wait 2 seconds for blockchain confirmation
       }
       
       // Clear success message after 5 seconds
@@ -283,6 +336,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   }
 
   if (loading) {
+    console.log('🔍 Market Page: Loading state - showing loading UI')
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
@@ -302,6 +356,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   }
 
   if (error || !marketInfo) {
+    console.log('🔍 Market Page: Error or no market data - showing error UI', { error, marketInfo })
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
@@ -316,9 +371,9 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Market Not Found</h3>
           <p className="text-muted-foreground mb-4">
-            {error || "The market you're looking for doesn't exist or has been removed."}
+            {typeof error === 'string' ? error : error?.message || "The market you're looking for doesn't exist or has been removed."}
           </p>
-          {error && error.includes('Failed to fetch') && (
+          {error && typeof error === 'string' && error.includes('Failed to fetch') && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
               <p className="text-yellow-800 text-sm">
                 <strong>Network Issue:</strong> Unable to connect to the data source. 
@@ -339,6 +394,35 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     )
   }
 
+  console.log('🔍 Market Page: Rendering market content with data:', {
+    question: marketInfo.question,
+    options: marketInfo.options,
+    totalLiquidity: marketInfo.totalLiquidity,
+    state: marketInfo.state
+  })
+  
+  // Test if the data is actually being passed to the UI
+  if (!marketInfo.question) {
+    console.error('❌ Market Page: No question found in market data!')
+    console.error('❌ Market Page: Full market data:', marketInfo)
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold mb-2">Data Issue</h3>
+          <p className="text-muted-foreground mb-4">
+            Market data is missing required fields. Check console for details.
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
+            <p className="text-red-800 text-sm">
+              <strong>Debug Info:</strong> {JSON.stringify(marketInfo, null, 2)}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   const timeRemaining = getTimeRemaining(new Date(marketInfo.endTime * 1000))
   const totalLiquidity = parseFloat(marketInfo.totalLiquidity)
   
@@ -370,6 +454,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Button variant="outline" size="sm" asChild>
@@ -379,7 +464,15 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold mb-2">{marketInfo.question}</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">{marketInfo.question}</h1>
+            {isRefreshing && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span>Refreshing...</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="text-sm">
               {marketInfo.category}
@@ -390,6 +483,11 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
             {isResolved && marketInfo.winningOption !== undefined && (
               <Badge className="text-sm bg-green-600 text-white">
                 Winner: {marketInfo.options[marketInfo.winningOption]}
+              </Badge>
+            )}
+            {lastRefreshTime && (
+              <Badge variant="outline" className="text-xs">
+                Updated: {lastRefreshTime.toLocaleTimeString()}
               </Badge>
             )}
           </div>
