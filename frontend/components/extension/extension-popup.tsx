@@ -78,7 +78,7 @@ export function ExtensionPopup() {
         <div className="space-y-2">
           {recentMarkets.map((market) => (
             <Card key={market.id} className="p-3 bg-card border-border hover:border-gold-2/50 transition-colors">
-              <p className="text-xs font-medium mb-2 line-clamp-2">{market.question}</p>
+              <p className="text-xs font-medium mb-2 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{market.question}</p>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary" className="text-xs">
                   {market.odds}% odds

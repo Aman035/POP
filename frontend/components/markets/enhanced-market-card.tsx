@@ -103,7 +103,7 @@ export function EnhancedMarketCard({
           <div>
             <h3 className="font-semibold text-lg leading-tight mb-1">{question}</h3>
             {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+              <p className="text-sm text-muted-foreground overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{description}</p>
             )}
           </div>
 

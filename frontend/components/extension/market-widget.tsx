@@ -39,7 +39,7 @@ export function MarketWidget({ market, compact = false }: MarketWidgetProps) {
             <div className="w-6 h-6 rounded gold-gradient flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-3 h-3 text-background" />
             </div>
-            <p className="text-xs font-semibold flex-1 line-clamp-1">{market.question}</p>
+            <p className="text-xs font-semibold flex-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{market.question}</p>
           </div>
 
           <div className="flex items-center gap-2">

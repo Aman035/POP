@@ -4,9 +4,9 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle } from "lucide-react"
+import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import { useMarketApi } from "@/hooks/use-market-api"
+import { useMarketGraphQL } from "@/hooks/use-market-graphql"
 
 interface MarketDetailsPageProps {
   params: {
@@ -15,7 +15,7 @@ interface MarketDetailsPageProps {
 }
 
 export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
-  const { market: marketInfo, loading, error } = useMarketApi(params.address)
+  const { market: marketInfo, loading, error } = useMarketGraphQL(params.address)
 
   if (loading) {
     return (
@@ -63,10 +63,19 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
 
   const timeRemaining = getTimeRemaining(new Date(marketInfo.endTime * 1000))
   const totalLiquidity = parseFloat(marketInfo.totalLiquidity)
-  const isResolved = marketInfo.status === 1
-  const isCancelled = marketInfo.status === 2
-  const isActive = marketInfo.status === 0
-  const statusColor = isResolved ? "bg-green-500" : isCancelled ? "bg-red-500" : "bg-blue-500"
+  
+  // Use actual contract states
+  const isTrading = marketInfo.state === 0 // Trading state
+  const isProposed = marketInfo.state === 1 // Proposed state  
+  const isResolved = marketInfo.state === 2 // Resolved state
+  
+  const getStatusInfo = () => {
+    if (isResolved) return { label: "Resolved", color: "bg-green-500", textColor: "text-green-700" }
+    if (isProposed) return { label: "Proposed", color: "bg-yellow-500", textColor: "text-yellow-700" }
+    return { label: "Trading", color: "bg-blue-500", textColor: "text-blue-700" }
+  }
+  
+  const statusInfo = getStatusInfo()
 
   // Calculate odds for each option
   const optionsWithOdds = marketInfo.options.map((option, index) => {
@@ -97,8 +106,8 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
             <Badge variant="secondary" className="text-sm">
               {marketInfo.category}
             </Badge>
-            <Badge className={`text-sm text-white ${statusColor}`}>
-              {isResolved ? "Resolved" : isCancelled ? "Cancelled" : "Active"}
+            <Badge className={`text-sm text-white ${statusInfo.color}`}>
+              {statusInfo.label}
             </Badge>
             {isResolved && marketInfo.winningOption !== undefined && (
               <Badge className="text-sm bg-green-600 text-white">
@@ -152,7 +161,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
           </Card>
 
           {/* Betting Interface */}
-          {isActive && (
+          {isTrading && (
             <Card className="p-6">
               <h3 className="font-semibold mb-4">Place Your Bet</h3>
               <div className="space-y-4">
@@ -161,7 +170,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                     <Button
                       key={index}
                       variant="outline"
-                      className="p-4 h-auto flex flex-col items-center gap-2"
+                      className="p-4 h-auto flex flex-col items-center gap-2 hover:border-gold-2 transition-colors"
                     >
                       <span className="font-medium">{option}</span>
                       <span className="text-sm text-muted-foreground">
@@ -171,12 +180,27 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                   ))}
                 </div>
                 <div className="text-center">
-                  <Button className="gold-gradient text-background font-semibold px-8">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Connect Wallet to Bet
+                  <Button className="gold-gradient text-background font-semibold px-8 py-3 text-lg hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-gold-2/20">
+                    <TrendingUp className="w-5 h-5 mr-2" />
+                    Connect Wallet to Place Bet
                   </Button>
                 </div>
               </div>
+            </Card>
+          )}
+
+          {/* Proposed State Info */}
+          {isProposed && (
+            <Card className="p-6 border-yellow-200 bg-yellow-50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-white" />
+                </div>
+                <h3 className="font-semibold text-yellow-800">Resolution Proposed</h3>
+              </div>
+              <p className="text-yellow-700 text-sm">
+                This market has ended and a resolution has been proposed. The creator has a window to override the resolution if needed.
+              </p>
             </Card>
           )}
         </div>
@@ -231,27 +255,27 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                   {new Date(marketInfo.endTime * 1000).toLocaleString()}
                 </div>
               </div>
-              {marketInfo.platform > 0 && (
+              {marketInfo.platform >= 0 && (
                 <div>
                   <span className="text-muted-foreground">Platform:</span>
                   <div className="flex items-center gap-1 mt-1">
-                    <Twitter className="w-3 h-3" />
-                    <span>{marketInfo.platform === 1 ? 'Twitter' : marketInfo.platform === 2 ? 'Farcaster' : 'Other'}</span>
+                    {marketInfo.platform === 0 && <Twitter className="w-3 h-3 text-blue-500" />}
+                    {marketInfo.platform === 1 && <MessageSquare className="w-3 h-3 text-purple-500" />}
+                    {marketInfo.platform === 2 && <Activity className="w-3 h-3 text-green-500" />}
+                    {marketInfo.platform === 3 && <ExternalLink className="w-3 h-3 text-gray-500" />}
+                    <span>
+                      {marketInfo.platform === 0 ? 'Twitter' : 
+                       marketInfo.platform === 1 ? 'Farcaster' : 
+                       marketInfo.platform === 2 ? 'Lens' : 'Other'}
+                    </span>
                   </div>
                 </div>
               )}
-              {marketInfo.postUrl && (
+              {marketInfo.resolutionSource && (
                 <div>
-                  <span className="text-muted-foreground">Source:</span>
+                  <span className="text-muted-foreground">Resolution Source:</span>
                   <div className="mt-1">
-                    <a 
-                      href={marketInfo.postUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-xs"
-                    >
-                      {marketInfo.postUrl}
-                    </a>
+                    <span className="text-xs text-muted-foreground">{marketInfo.resolutionSource}</span>
                   </div>
                 </div>
               )}

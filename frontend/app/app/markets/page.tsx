@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Filter, RefreshCw, TrendingUp, DollarSign, Users, Clock, AlertCircle } from "lucide-react"
+import { Search, RefreshCw, TrendingUp, DollarSign, Users, Clock, AlertCircle, Plus, BarChart3, Activity, Filter } from "lucide-react"
 import { MarketCard } from "@/components/markets/market-card"
-import { useMarketsApi } from "@/hooks/use-markets-api"
+import { useMarketsGraphQL } from "@/hooks/use-markets-graphql"
 import { MarketInfo } from "@/lib/types"
+import Link from "next/link"
 
 export default function MarketsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -16,60 +17,87 @@ export default function MarketsPage() {
   const [sortBy, setSortBy] = useState<"newest" | "liquidity" | "ending">("newest")
   const [refreshKey, setRefreshKey] = useState(0)
   
-  const { markets, loading, error } = useMarketsApi()
-  
+  const { markets, loading, error } = useMarketsGraphQL()
 
-
-
-  // Filter and sort markets
-  const filteredMarkets = markets
-    .filter((market) => {
-      const matchesSearch = market.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           market.description.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory = !selectedCategory || market.category === selectedCategory
-      return matchesSearch && matchesCategory
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "liquidity":
-          return parseFloat(b.totalLiquidity) - parseFloat(a.totalLiquidity)
-        case "ending":
-          return a.endTime - b.endTime
-        case "newest":
-        default:
-          return b.identifier - a.identifier
-      }
-    })
+  // Memoized filtered and sorted markets
+  const filteredMarkets = useMemo(() => {
+    return markets
+      .filter((market) => {
+        const matchesSearch = market.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             market.description.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory = !selectedCategory || market.category === selectedCategory
+        return matchesSearch && matchesCategory
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "liquidity":
+            return parseFloat(b.totalLiquidity) - parseFloat(a.totalLiquidity)
+          case "ending":
+            return a.endTime - b.endTime
+          case "newest":
+          default:
+            return b.createdAt - a.createdAt
+        }
+      })
+  }, [markets, searchTerm, selectedCategory, sortBy])
 
   // Get unique categories
-  const categories = Array.from(new Set(markets.map(market => market.category)))
+  const categories = useMemo(() => {
+    return Array.from(new Set(markets.map(market => market.category).filter(Boolean)))
+  }, [markets])
 
-  // Calculate total stats
-  const totalLiquidity = markets.reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
-  const activeMarkets = markets.filter(market => market.status === 0).length
-  const resolvedMarkets = markets.filter(market => market.status === 1).length
-  const cancelledMarkets = markets.filter(market => market.status === 2).length
+  // Calculate total stats based on actual contract states
+  const stats = useMemo(() => {
+    const totalLiquidity = markets.reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+    const tradingMarkets = markets.filter(market => market.state === 0).length // Trading state
+    const proposedMarkets = markets.filter(market => market.state === 1).length // Proposed state  
+    const resolvedMarkets = markets.filter(market => market.state === 2).length // Resolved state
+    
+    return {
+      totalLiquidity,
+      tradingMarkets,
+      proposedMarkets, 
+      resolvedMarkets,
+      totalMarkets: markets.length
+    }
+  }, [markets])
 
+  // Loading state
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 animate-spin" />
-            <span>Loading markets...</span>
+          <div className="flex flex-col items-center gap-4">
+            <RefreshCw className="w-8 h-8 animate-spin text-gold-2" />
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">Loading Markets</h2>
+              <p className="text-muted-foreground">Fetching the latest prediction markets...</p>
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
+  // Error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
             <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Markets</h2>
-            <p className="text-muted-foreground">{error}</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="mt-4"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </div>
       </div>
@@ -80,186 +108,184 @@ export default function MarketsPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Prediction Markets</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-4xl font-bold mb-2 text-foreground">
+              Markets
+            </h1>
+            <p className="text-muted-foreground text-lg">
               Bet on the outcome of real-world events and earn rewards for accurate predictions.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={() => setRefreshKey(prev => prev + 1)}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+          <div className="flex items-center gap-3">
+            <Button asChild className="gold-gradient text-background font-semibold px-6 py-3 text-lg hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-gold-2/20">
+              <Link href="/app/create">
+                <Plus className="w-5 h-5 mr-2" />
+                Create Market
+              </Link>
             </Button>
-            {loading && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Loading markets...</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-
-      {/* Showcase Banner */}
-      {markets.length > 0 && (
-        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-1">
-                🎉 Live Prediction Markets Connected!
-              </h3>
-              <p className="text-blue-700 text-sm">
-                Successfully connected to Arbitrum Sepolia and loaded {markets.length} active markets. 
-                Click on any market to view details and place bets.
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                ✅ Connected
-              </Badge>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Display */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <div className="flex items-center gap-2 text-red-600">
-            <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Error Loading Markets</span>
-          </div>
-          <p className="text-red-600 text-sm mt-1">{error}</p>
-        </div>
-      )}
-
-
-
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-gold-2" />
-            <span className="font-semibold">Total Liquidity</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-blue-900">Total Liquidity</span>
           </div>
-          <p className="text-2xl font-bold">${totalLiquidity.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-blue-900">${stats.totalLiquidity.toLocaleString()}</p>
         </Card>
         
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-blue-500" />
-            <span className="font-semibold">Active Markets</span>
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-green-900">Trading</span>
           </div>
-          <p className="text-2xl font-bold">{activeMarkets}</p>
+          <p className="text-2xl font-bold text-green-900">{stats.tradingMarkets}</p>
         </Card>
         
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-green-500" />
-            <span className="font-semibold">Resolved</span>
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-yellow-900">Proposed</span>
           </div>
-          <p className="text-2xl font-bold">{resolvedMarkets}</p>
+          <p className="text-2xl font-bold text-yellow-900">{stats.proposedMarkets}</p>
         </Card>
         
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-red-500" />
-            <span className="font-semibold">Cancelled</span>
+        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-purple-900">Resolved</span>
           </div>
-          <p className="text-2xl font-bold">{cancelledMarkets}</p>
+          <p className="text-2xl font-bold text-purple-900">{stats.resolvedMarkets}</p>
         </Card>
         
-        <Card className="p-4 bg-card border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-orange-500" />
-            <span className="font-semibold">Total Markets</span>
+        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-orange-900">Total Markets</span>
           </div>
-          <p className="text-2xl font-bold">{markets.length}</p>
+          <p className="text-2xl font-bold text-orange-900">{stats.totalMarkets}</p>
         </Card>
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Search markets..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+      <Card className="p-6 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search markets by question or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <select
+                value={selectedCategory || ""}
+                onChange={(e) => setSelectedCategory(e.target.value || null)}
+                className="pl-10 pr-8 py-3 border border-border rounded-md bg-background h-12 min-w-[160px]"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-4 py-3 border border-border rounded-md bg-background h-12 min-w-[140px]"
+            >
+              <option value="newest">Newest First</option>
+              <option value="liquidity">Most Liquidity</option>
+              <option value="ending">Ending Soon</option>
+            </select>
           </div>
         </div>
-        
-        <div className="flex gap-2">
-          <select
-            value={selectedCategory || ""}
-            onChange={(e) => setSelectedCategory(e.target.value || null)}
-            className="px-3 py-2 border border-border rounded-md bg-background"
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border border-border rounded-md bg-background"
-          >
-            <option value="newest">Newest</option>
-            <option value="liquidity">Most Liquidity</option>
-            <option value="ending">Ending Soon</option>
-          </select>
-        </div>
-      </div>
-
-
+      </Card>
 
       {/* Markets Grid */}
       {filteredMarkets.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-xl font-semibold mb-2">No markets found</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchTerm || selectedCategory 
-              ? "Try adjusting your search or filter criteria."
-              : "No markets have been created yet. Create your first prediction market!"
-            }
-          </p>
-          {!searchTerm && !selectedCategory && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                No markets have been created yet. Create your first prediction market!
-              </p>
-              <div className="flex gap-4 justify-center">
+        <Card className="p-12 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">
+              {searchTerm || selectedCategory ? "No markets found" : "No markets available"}
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {searchTerm || selectedCategory 
+                ? "Try adjusting your search or filter criteria to find more markets."
+                : "No prediction markets have been created yet. Be the first to create one!"
+              }
+            </p>
+            {!searchTerm && !selectedCategory && (
+              <Button asChild className="gold-gradient text-background font-semibold">
+                <Link href="/app/create">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Market
+                </Link>
+              </Button>
+            )}
+            {(searchTerm || selectedCategory) && (
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm("")
+                    setSelectedCategory(null)
+                  }}
+                >
+                  Clear Filters
+                </Button>
                 <Button asChild>
-                  <a href="/app/create">Create Market</a>
+                  <Link href="/app/create">Create Market</Link>
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredMarkets.map((market) => (
             <MarketCard key={market.address} market={market} />
           ))}
+        </div>
+      )}
+
+      {/* Footer Stats */}
+      {filteredMarkets.length > 0 && (
+        <div className="mt-12 pt-8 border-t border-border">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              Showing {filteredMarkets.length} of {markets.length} markets
+              {searchTerm && ` matching "${searchTerm}"`}
+              {selectedCategory && ` in ${selectedCategory}`}
+            </p>
+          </div>
         </div>
       )}
     </div>
