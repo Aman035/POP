@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink, Wallet, Coins, CheckCircle, XCircle, Copy } from "lucide-react"
+import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink, Wallet, Coins, CheckCircle, XCircle, Copy, RefreshCw, Zap } from "lucide-react"
 import Link from "next/link"
 import { useMarketGraphQL } from "@/hooks/graphql/use-market-graphql"
 import { useWallet } from "@/hooks/wallet/use-wallet"
@@ -14,7 +14,10 @@ import { usePlaceBet, useExitBet } from "@/hooks/contracts/use-contracts"
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { formatUnits, parseUnits } from "viem"
 import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI } from "@/lib/contracts"
-// Note: toast functionality will be implemented with a proper toast library
+import { useUsdcBalance } from "@/hooks/wallet/use-usdc-balance"
+import { BridgeAndBetButton } from "@/components/nexus/bridge-and-bet-button"
+import { SimpleBridgeWidget } from "@/components/nexus/simple-bridge-widget"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MarketDetailsPageProps {
   params: Promise<{
@@ -95,6 +98,16 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const [copiedHash, setCopiedHash] = useState(false)
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showBridgeOption, setShowBridgeOption] = useState(false)
+  
+  // USDC balance checking with real-time validation
+  const { 
+    balanceFormatted: usdcBalanceFormatted, 
+    hasInsufficientBalance: hasInsufficientUSDC, 
+    isLoading: usdcBalanceLoading, 
+    error: usdcBalanceError,
+    refreshBalance: refreshUsdcBalance 
+  } = useUsdcBalance(betAmount)
   
   // Contract hooks
   const { placeBet, loading: placeBetLoading, error: placeBetError, isConfirmed: betConfirmed } = usePlaceBet(resolvedParams.address)
@@ -403,45 +416,14 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     )
   }
 
-  console.log('🔍 Market Page: Rendering market content with data:', {
+  console.log('🔍 Market Page: Rendering market content with real contract data:', {
     question: marketInfo.question,
     options: marketInfo.options,
     totalLiquidity: marketInfo.totalLiquidity,
-    state: marketInfo.state
+    state: marketInfo.state,
+    activeParticipantsCount: marketInfo.activeParticipantsCount,
+    isResolved: marketInfo.isResolved
   })
-  
-  // Test if the data is actually being passed to the UI
-  if (!marketInfo.question) {
-    console.error('❌ Market Page: No question found in market data!')
-    console.error('❌ Market Page: Full market data:', marketInfo)
-    
-    // Try to use fallback data if available
-    const fallbackQuestion = marketInfo.address ? `Market ${marketInfo.address.slice(0, 8)}...` : 'Unknown Market'
-    const fallbackOptions = marketInfo.options?.length > 0 ? marketInfo.options : ['Yes', 'No']
-    
-    console.log('🔄 Market Page: Using fallback data:', { fallbackQuestion, fallbackOptions })
-    
-    // Create a minimal market object for rendering
-    const fallbackMarket = {
-      ...marketInfo,
-      question: fallbackQuestion,
-      options: fallbackOptions,
-      description: marketInfo.description || 'No description available',
-      category: marketInfo.category || 'General',
-      totalLiquidity: marketInfo.totalLiquidity || '0',
-      state: marketInfo.state || 0,
-      activeParticipantsCount: marketInfo.activeParticipantsCount || 0,
-      endTime: marketInfo.endTime || 0,
-      createdAt: marketInfo.createdAt || 0,
-      creator: marketInfo.creator || 'Unknown',
-      platform: marketInfo.platform || 3
-    }
-    
-    // Update the marketInfo reference to use fallback data
-    Object.assign(marketInfo, fallbackMarket)
-    
-    console.log('✅ Market Page: Using fallback market data for rendering')
-  }
   
   const timeRemaining = getTimeRemaining(new Date(marketInfo.endTime * 1000))
   const totalLiquidity = parseFloat(marketInfo.totalLiquidity)
@@ -459,11 +441,12 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   
   const statusInfo = getStatusInfo()
 
-  // Calculate odds for each option
+  // Calculate odds for each option using real contract data
   const optionsWithOdds = marketInfo.options.map((option, index) => {
     const optionLiquidity = marketInfo.optionLiquidity && marketInfo.optionLiquidity[index] 
       ? parseFloat(marketInfo.optionLiquidity[index]) 
       : 0
+    // Calculate real odds based on actual liquidity data from contracts
     const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50
     return {
       label: option,
@@ -562,9 +545,23 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-lg">Place Your Bet</h3>
                 {isConnected && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Coins className="w-4 h-4" />
-                    <span>Balance: {formatUSDCBalance(usdcBalance as bigint | undefined)} USDC</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 border-2 border-green-600 dark:border-green-500 rounded-lg shadow-md">
+                      <Coins className="w-5 h-5 text-green-700 dark:text-green-300" />
+                      <span className="text-sm font-extrabold text-green-800 dark:text-green-200">
+                        Balance: {usdcBalanceLoading ? "..." : `$${usdcBalanceFormatted}`} USDC
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={refreshUsdcBalance}
+                      disabled={usdcBalanceLoading}
+                      className="h-8 w-8 p-0 border-2 border-gray-300 hover:border-green-500 hover:bg-green-50"
+                      title="Refresh Balance"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${usdcBalanceLoading ? 'animate-spin text-green-600' : 'text-gray-600'}`} />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -665,10 +662,28 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                           </Button>
                         </div>
                         {betAmount && parseFloat(betAmount) > 0 && (
-                          <div className="mt-2 space-y-1">
+                          <div className="mt-2 space-y-2">
                             <div className="text-sm text-muted-foreground">
                               Potential winnings: {calculatePotentialWinnings(selectedOption, betAmount)} USDC
                             </div>
+                            
+                            {/* USDC Balance Status */}
+                            {hasInsufficientUSDC ? (
+                              <Alert className="border-2 border-red-600 bg-red-100 dark:bg-red-900/40 py-3 shadow-lg">
+                                <AlertCircle className="h-5 w-5 text-red-700 dark:text-red-400" />
+                                <AlertDescription className="text-sm font-bold text-red-900 dark:text-red-100">
+                                  ⚠️ Insufficient USDC! You need ${Number(betAmount).toFixed(2)} but only have ${usdcBalanceFormatted}.
+                                </AlertDescription>
+                              </Alert>
+                            ) : (
+                              <Alert className="border-2 border-green-600 bg-green-100 dark:bg-green-900/40 py-3 shadow-lg">
+                                <CheckCircle className="h-5 w-5 text-green-700 dark:text-green-400" />
+                                <AlertDescription className="text-sm font-bold text-green-900 dark:text-green-100">
+                                  ✅ Sufficient USDC balance available!
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            
                             {usdcAllowance ? (
                               <div className="text-xs text-muted-foreground">
                                 USDC Allowance: {Number(formatUnits(usdcAllowance as bigint, 6)).toFixed(2)} USDC
@@ -683,43 +698,168 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                         )}
                       </div>
 
-                      {/* Approval and Place Bet Buttons */}
-                      {!hasSufficientAllowance() ? (
-                        <Button
-                          onClick={handleApproveUSDC}
-                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isApproving || isApprovingUSDC || isApprovalConfirming}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isApproving || isApprovingUSDC || isApprovalConfirming ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              {isApprovalConfirming ? "Confirming..." : "Approving USDC..."}
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-5 h-5 mr-2" />
-                              Approve USDC
-                            </>
-                          )}
-                        </Button>
+                      {/* Smart Betting Flow - Automatically handles the entire process */}
+                      {hasInsufficientUSDC ? (
+                        /* Bridge and Bet Button - shown when insufficient USDC */
+                        <div className="space-y-3">
+                          <Alert className="border-2 border-blue-600 bg-blue-100 dark:bg-blue-900/40 py-3 shadow-lg">
+                            <Zap className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+                            <AlertDescription className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                              💡 Bridge ETH to USDC and place your bet in one transaction!
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <BridgeAndBetButton
+                            marketAddress={resolvedParams.address}
+                            option={selectedOption!}
+                            amount={betAmount}
+                            onSuccess={(txHash) => {
+                              setShowSuccess(true)
+                              setTransactionHash(txHash)
+                              setTimeout(() => {
+                                setShowSuccess(false)
+                                setBetAmount("")
+                                setSelectedOption(null)
+                                refetch()
+                              }, 3000)
+                            }}
+                            onError={(error) => {
+                              console.error("Bridge and bet failed:", error)
+                              setTransactionStatus(`Bridge failed: ${error}`)
+                            }}
+                          />
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowBridgeOption(!showBridgeOption)}
+                            className="w-full border-2 border-purple-500 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold"
+                            size="sm"
+                          >
+                            <Zap className="w-4 h-4 mr-2" />
+                            {showBridgeOption ? 'Hide' : 'Show'} Alternative Bridge Options
+                          </Button>
+                        </div>
                       ) : (
+                        /* Smart Betting Button - Automatically handles approval + bet */
                         <Button
-                          onClick={handlePlaceBet}
-                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || placeBetLoading}
+                          onClick={async () => {
+                            if (!hasSufficientAllowance()) {
+                              // Auto-approve first, then place bet
+                              try {
+                                setIsApproving(true)
+                                setTransactionStatus("Auto-approving USDC...")
+                                const amountWei = parseUnits(betAmount, 6)
+                                
+                                await writeContractUSDC({
+                                  address: COLLATERAL_TOKEN_ADDRESS as `0x${string}`,
+                                  abi: IERC20_ABI,
+                                  functionName: 'approve',
+                                  args: [resolvedParams.address as `0x${string}`, amountWei]
+                                })
+                                
+                                setTransactionStatus("USDC approved! Now placing bet...")
+                                // Wait for approval confirmation, then auto-place bet
+                                setTimeout(async () => {
+                                  try {
+                                    setIsPlacingBet(true)
+                                    setTransactionStatus("Placing your bet...")
+                                    const result = await placeBet(selectedOption, betAmount)
+                                    
+                                    if (result && result.hash) {
+                                      setTransactionStatus("Bet placed successfully!")
+                                      setTransactionHash(result.hash)
+                                      setShowSuccess(true)
+                                      setTimeout(() => {
+                                        setShowSuccess(false)
+                                        setBetAmount("")
+                                        setSelectedOption(null)
+                                        refetch()
+                                      }, 3000)
+                                    }
+                                  } catch (error) {
+                                    console.error("Bet placement failed:", error)
+                                    setTransactionStatus(`Bet failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                                  } finally {
+                                    setIsPlacingBet(false)
+                                  }
+                                }, 3000) // Wait 3 seconds for approval to confirm
+                                
+                              } catch (error) {
+                                console.error("Approval failed:", error)
+                                setTransactionStatus(`Approval failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              } finally {
+                                setIsApproving(false)
+                              }
+                            } else {
+                              // Direct bet placement
+                              try {
+                                setIsPlacingBet(true)
+                                setTransactionStatus("Placing your bet...")
+                                const result = await placeBet(selectedOption, betAmount)
+                                
+                                if (result && result.hash) {
+                                  setTransactionStatus("Bet placed successfully!")
+                                  setTransactionHash(result.hash)
+                                  setShowSuccess(true)
+                                  setTimeout(() => {
+                                    setShowSuccess(false)
+                                    setBetAmount("")
+                                    setSelectedOption(null)
+                                    refetch()
+                                  }, 3000)
+                                }
+                              } catch (error) {
+                                console.error("Bet placement failed:", error)
+                                setTransactionStatus(`Bet failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                              } finally {
+                                setIsPlacingBet(false)
+                              }
+                            }
+                          }}
+                          disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || isApproving || placeBetLoading}
                           className="w-full gold-gradient text-background font-semibold py-3 text-lg hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-gold-2/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isPlacingBet || placeBetLoading ? (
+                          {isPlacingBet || isApproving || placeBetLoading ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2"></div>
-                              Placing Bet...
+                              {isApproving ? "Auto-approving..." : "Placing Bet..."}
                             </>
                           ) : (
                             <>
                               <TrendingUp className="w-5 h-5 mr-2" />
-                              Place Bet
+                              {!hasSufficientAllowance() ? "Auto-approve & Place Bet" : "Place Bet"}
                             </>
                           )}
                         </Button>
+                      )}
+                      
+                      {/* Bridge Option Section */}
+                      {showBridgeOption && hasInsufficientUSDC && (
+                        <Card className="p-6 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 border-2 border-purple-400 dark:border-purple-600 mt-4 shadow-xl">
+                          <div className="text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto shadow-lg">
+                              <Zap className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold mb-2 text-purple-900 dark:text-purple-100">
+                                🌉 Bridge ETH to USDC
+                              </h3>
+                              <p className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-4">
+                                Bridge ETH from any supported chain to get USDC on Arbitrum Sepolia
+                              </p>
+                            </div>
+
+                            <SimpleBridgeWidget
+                              onSuccess={() => {
+                                setShowBridgeOption(false)
+                                refreshUsdcBalance()
+                              }}
+                              onError={(error) => {
+                                console.error("Bridge failed:", error)
+                              }}
+                            />
+                          </div>
+                        </Card>
                       )}
                     </div>
                   )}

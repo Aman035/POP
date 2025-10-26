@@ -64,7 +64,7 @@ export default function MarketsPage() {
     )
   }, [markets])
 
-  // Calculate total stats based on actual contract states
+  // Calculate comprehensive stats based on actual contract states and GraphQL data
   const stats = useMemo(() => {
     const totalLiquidity = markets.reduce(
       (sum, market) => sum + parseFloat(market.totalLiquidity),
@@ -78,12 +78,47 @@ export default function MarketsPage() {
       (market) => market.state === 2
     ).length // Resolved state
 
+    // Calculate total participants across all markets
+    const totalParticipants = markets.reduce(
+      (sum, market) => sum + market.activeParticipantsCount,
+      0
+    )
+
+    // Calculate liquidity by state
+    const tradingLiquidity = markets
+      .filter((market) => market.state === 0)
+      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+    
+    const proposedLiquidity = markets
+      .filter((market) => market.state === 1)
+      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+    
+    const resolvedLiquidity = markets
+      .filter((market) => market.state === 2)
+      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+
+    // Calculate average liquidity per market
+    const averageLiquidity = markets.length > 0 ? totalLiquidity / markets.length : 0
+
+    // Calculate total option liquidity across all markets
+    const totalOptionLiquidity = markets.reduce((sum, market) => {
+      return sum + market.optionLiquidity.reduce((optionSum, liquidity) => 
+        optionSum + parseFloat(liquidity), 0
+      )
+    }, 0)
+
     return {
       totalLiquidity,
       tradingMarkets,
       proposedMarkets,
       resolvedMarkets,
       totalMarkets: markets.length,
+      totalParticipants,
+      tradingLiquidity,
+      proposedLiquidity,
+      resolvedLiquidity,
+      averageLiquidity,
+      totalOptionLiquidity,
     }
   }, [markets])
 
@@ -136,7 +171,7 @@ export default function MarketsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -146,6 +181,9 @@ export default function MarketsPage() {
           </div>
           <p className="text-2xl font-bold text-blue-900">
             ${stats.totalLiquidity.toLocaleString()}
+          </p>
+          <p className="text-xs text-blue-700 mt-1">
+            Avg: ${stats.averageLiquidity.toLocaleString()}
           </p>
         </Card>
 
@@ -159,6 +197,9 @@ export default function MarketsPage() {
           <p className="text-2xl font-bold text-green-900">
             {stats.tradingMarkets}
           </p>
+          <p className="text-xs text-green-700 mt-1">
+            ${stats.tradingLiquidity.toLocaleString()} liquidity
+          </p>
         </Card>
 
         <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
@@ -170,6 +211,9 @@ export default function MarketsPage() {
           </div>
           <p className="text-2xl font-bold text-yellow-900">
             {stats.proposedMarkets}
+          </p>
+          <p className="text-xs text-yellow-700 mt-1">
+            ${stats.proposedLiquidity.toLocaleString()} liquidity
           </p>
         </Card>
 
@@ -183,17 +227,38 @@ export default function MarketsPage() {
           <p className="text-2xl font-bold text-purple-900">
             {stats.resolvedMarkets}
           </p>
+          <p className="text-xs text-purple-700 mt-1">
+            ${stats.resolvedLiquidity.toLocaleString()} liquidity
+          </p>
         </Card>
 
         <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
+              <Users className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-orange-900">Total Markets</span>
+            <span className="font-semibold text-orange-900">Participants</span>
           </div>
           <p className="text-2xl font-bold text-orange-900">
+            {stats.totalParticipants}
+          </p>
+          <p className="text-xs text-orange-700 mt-1">
+            Across all markets
+          </p>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-semibold text-indigo-900">Total Markets</span>
+          </div>
+          <p className="text-2xl font-bold text-indigo-900">
             {stats.totalMarkets}
+          </p>
+          <p className="text-xs text-indigo-700 mt-1">
+            ${stats.totalOptionLiquidity.toLocaleString()} in options
           </p>
         </Card>
       </div>
