@@ -110,14 +110,17 @@ export async function getAllMarkets(
   offset?: number
 ): Promise<MarketCreated[]> {
   try {
+    console.log('🔍 GraphQL: Fetching all markets with limit:', limit, 'offset:', offset)
     const response = await graphqlClient.request<AllMarketsResponse>(
       GET_ALL_MARKETS,
       { limit, offset }
     )
+    console.log('✅ GraphQL: Successfully fetched markets:', response.MarketFactory_MarketCreated.length)
     return response.MarketFactory_MarketCreated
   } catch (error) {
-    console.error('Error fetching all markets:', error)
-    throw error
+    console.error('❌ GraphQL: Error fetching all markets:', error)
+    // Return empty array instead of throwing to prevent app crashes
+    return []
   }
 }
 
@@ -128,16 +131,17 @@ export async function getMarketsByCreator(
   try {
     // Use viem's getAddress to ensure proper checksumming
     const checksummedAddress = getAddress(creatorAddress)
-    console.log('GraphQL: Fetching markets by creator:', checksummedAddress)
+    console.log('🔍 GraphQL: Fetching markets by creator:', checksummedAddress)
     const response = await graphqlClient.request<MarketsByCreatorResponse>(
       GET_MARKETS_BY_CREATOR,
       { creator: checksummedAddress }
     )
-    console.log('GraphQL: Markets by creator response:', response)
+    console.log('✅ GraphQL: Markets by creator response:', response)
     return response.MarketFactory_MarketCreated
   } catch (error) {
-    console.error('GraphQL: Error fetching markets by creator:', error)
-    throw error
+    console.error('❌ GraphQL: Error fetching markets by creator:', error)
+    // Return empty array instead of throwing to prevent app crashes
+    return []
   }
 }
 
@@ -148,15 +152,16 @@ export async function getMarketByAddress(
   try {
     // Use viem's getAddress to ensure proper checksumming
     const checksummedAddress = getAddress(marketAddress)
-    console.log('GraphQL: Fetching market by address:', checksummedAddress)
+    console.log('🔍 GraphQL: Fetching market by address:', checksummedAddress)
     const response = await graphqlClient.request<MarketByAddressResponse>(
       GET_MARKET_BY_ADDRESS,
       { marketAddress: checksummedAddress }
     )
-    console.log('GraphQL: Market by address response:', response)
+    console.log('✅ GraphQL: Market by address response:', response)
     return response.MarketFactory_MarketCreated[0] || null
   } catch (error) {
-    console.error('GraphQL: Error fetching market by address:', error)
-    throw error
+    console.error('❌ GraphQL: Error fetching market by address:', error)
+    // Return null instead of throwing to prevent app crashes
+    return null
   }
 }

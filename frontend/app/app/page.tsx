@@ -2,10 +2,16 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, Clock, DollarSign, Users, ArrowRight } from "lucide-react"
+import { TrendingUp, Clock, DollarSign, Users, ArrowRight, BarChart3, Activity } from "lucide-react"
 import Link from "next/link"
-import { useTrendingMarkets } from "@/hooks/use-trending-markets"
-import { useMarketStats } from "@/hooks/use-market-stats"
+import { useTrendingMarketsGraphQL } from "@/hooks/use-trending-markets-graphql"
+import { useMarketStatsGraphQL } from "@/hooks/use-market-stats-graphql"
+import { useAnalytics } from "@/hooks/use-analytics"
+import { CategoryChart } from "@/components/analytics/category-chart"
+import { PlatformChart } from "@/components/analytics/platform-chart"
+import { MarketInsights } from "@/components/analytics/market-insights"
+import { TrendingCreators } from "@/components/analytics/trending-creators"
+import { EnhancedMarketCard } from "@/components/markets/enhanced-market-card"
 
 function getTimeRemaining(endsAt: Date): string {
   const now = new Date()
@@ -22,8 +28,9 @@ function getTimeRemaining(endsAt: Date): string {
 }
 
 export default function AppHomePage() {
-  const { markets: trendingMarkets, loading: trendingLoading, error: trendingError } = useTrendingMarkets()
-  const { stats, loading: statsLoading, error: statsError } = useMarketStats()
+  const { markets: trendingMarkets, loading: trendingLoading, error: trendingError } = useTrendingMarketsGraphQL()
+  const { stats, loading: statsLoading, error: statsError } = useMarketStatsGraphQL()
+  const { categoryData, platformData, topCreators, loading: analyticsLoading, error: analyticsError } = useAnalytics()
 
   // Use stats from API or fallback to 0
   const totalLiquidity = stats ? parseFloat(stats.totalLiquidity) : 0
@@ -33,8 +40,8 @@ export default function AppHomePage() {
   const totalParticipants = stats?.totalParticipants || 0
   const uniqueCategories = stats?.uniqueCategories || 0
 
-  const loading = trendingLoading || statsLoading
-  const error = trendingError || statsError
+  const loading = trendingLoading || statsLoading || analyticsLoading
+  const error = trendingError || statsError || analyticsError
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -105,6 +112,18 @@ export default function AppHomePage() {
         </Card>
       </div>
 
+      {/* Market Insights */}
+      {stats && (
+        <MarketInsights
+          totalMarkets={stats.totalMarkets}
+          activeMarkets={stats.activeMarkets}
+          resolvedMarkets={stats.resolvedMarkets}
+          categoryBreakdown={stats.categoryBreakdown}
+          platformBreakdown={stats.platformBreakdown}
+          avgResolutionTime={stats.avgResolutionTime}
+        />
+      )}
+
       {/* Content Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Trending Markets */}
@@ -140,22 +159,24 @@ export default function AppHomePage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {trendingMarkets.slice(0, 3).map((market) => (
-                <Link key={market.address} href={`/app/markets/${market.address}`}>
-                  <div className="p-4 rounded-lg bg-background border border-border hover:border-gold-2/50 transition-colors cursor-pointer">
-                    <p className="font-medium mb-2">{market.question}</p>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>Pool: ${parseFloat(market.totalLiquidity).toLocaleString()}</span>
-                      <span>
-                        {market.isResolved 
-                          ? "Resolved" 
-                          : `Ends in ${getTimeRemaining(new Date(market.endTime * 1000))}`
-                        }
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                <EnhancedMarketCard
+                  key={market.address}
+                  address={market.address}
+                  question={market.question}
+                  description={market.description}
+                  category={market.category}
+                  platform={market.platform}
+                  creator={market.creator}
+                  createdAt={market.createdAt}
+                  endTime={market.endTime}
+                  totalLiquidity={market.totalLiquidity}
+                  activeParticipantsCount={market.activeParticipantsCount}
+                  options={market.options}
+                  isResolved={market.isResolved}
+                  timeRemaining={market.timeRemaining}
+                />
               ))}
             </div>
           )}
@@ -217,6 +238,15 @@ export default function AppHomePage() {
           )}
         </Card>
       </div>
+
+      {/* Analytics Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CategoryChart data={categoryData} />
+        <PlatformChart data={platformData} />
+      </div>
+
+      {/* Top Creators */}
+      <TrendingCreators creators={topCreators} />
     </div>
   )
 }
