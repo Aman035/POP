@@ -16,7 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useNexusSDK } from '@/components/providers/nexus-provider';
-import { useWallet } from '@/hooks/use-wallet';
+import { useWallet } from '@/hooks/wallet/use-wallet';
 import { cn } from '@/lib/utils';
 
 interface UnifiedBalanceDisplayProps {

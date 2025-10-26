@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
 import { arbitrumSepolia } from 'wagmi/chains';
-import { useNexusSDK } from './use-nexus-sdk';
+import { useNexusSDK } from '../utils/use-nexus-sdk';
 
 export interface EthBalanceState {
   balance: string;

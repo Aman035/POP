@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useNexusSDK as useNexusSDKHook } from '@/hooks/use-nexus-sdk';
+import { useNexusSDK as useNexusSDKHook } from '@/hooks/utils/use-nexus-sdk';
 
 type NexusSDKContextType = ReturnType<typeof useNexusSDKHook>;
 

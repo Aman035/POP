@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useWallet } from '@/hooks/use-wallet';
+import { useWallet } from '@/hooks/wallet/use-wallet';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';

@@ -4,10 +4,10 @@ import { CheckCircle2, Twitter, MessageSquare, Calendar, DollarSign, FileText, C
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useCreateMarket } from "@/hooks/use-contracts"
-import { toast } from "@/hooks/use-toast"
+import { useCreateMarket } from "@/hooks/contracts/use-contracts"
+import { toast } from "@/hooks/utils/use-toast"
 import { Platform } from "@/lib/types"
-import { useEthBalance } from "@/hooks/use-eth-balance"
+import { useEthBalance } from "@/hooks/wallet/use-eth-balance"
 import { BridgeButton, BridgeAndExecuteButton, TOKEN_CONTRACT_ADDRESSES, TOKEN_METADATA, SUPPORTED_CHAINS, type SUPPORTED_TOKENS, type SUPPORTED_CHAINS_IDS } from '@avail-project/nexus-widgets'
 import { parseUnits } from 'viem'
 
@@ -237,9 +237,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         description: "Please confirm the transaction in your wallet...",
       })
 
-      console.log('Calling createMarket with params:', marketParams);
+      console.log('🔄 Calling createMarket with params:', marketParams);
+      console.log('🔄 createMarket function reference:', createMarket);
+      console.log('🔄 createMarket type:', typeof createMarket);
+      
       const result = await createMarket(marketParams)
-      console.log('createMarket result:', result);
+      console.log('✅ createMarket result:', result);
       
       if (result) {
         // Set the transaction hash immediately
@@ -415,47 +418,6 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           <p className="text-sm">{marketData.resolutionSource}</p>
         </Card>
 
-        {/* Betting Limits */}
-        <Card className="p-4 bg-gradient-to-br from-gold-2/5 to-gold-2/10 border-gold-2/20">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-gold-2/20 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-gold-2" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Betting Parameters</p>
-              <p className="text-xs text-muted-foreground">Configured limits for your market</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-              <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Target className="w-4 h-4 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Minimum Bet</p>
-                <p className="text-sm font-semibold text-foreground">${(marketData.minBet || 1).toFixed(2)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-              <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Users className="w-4 h-4 text-green-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Max Per User</p>
-                <p className="text-sm font-semibold text-foreground">${(marketData.maxBetPerUser || 1000).toFixed(2)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-              <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Max Total Pool</p>
-                <p className="text-sm font-semibold text-foreground">${(marketData.maxTotalStake || 10000).toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* Current Balance Status */}
         <Card className="p-4 bg-background border-border">
@@ -512,9 +474,6 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                 <p className="text-sm text-muted-foreground mb-4">
                   Deploy your market to the blockchain and start accepting predictions. {hasInsufficientBalance ? 'Bridge ETH from another chain first.' : 'No upfront costs required.'}
                 </p>
-                <div className="text-xs text-gray-500 mb-2">
-                  Debug: isCreating={isCreating.toString()}, creatingMarket={creatingMarket.toString()}, hasInsufficientBalance={hasInsufficientBalance.toString()}
-                </div>
                 
                 
               </div>

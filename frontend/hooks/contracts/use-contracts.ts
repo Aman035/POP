@@ -15,7 +15,7 @@ import {
 import { MarketReadAbi } from '@/lib/abi/Market.read';
 import { MarketFactoryReadAbi } from '@/lib/abi/MarketFactory.read';
 import { MarketInfo, BetInfo, MarketStats } from '@/lib/types';
-import { useWallet } from './use-wallet';
+import { useWallet } from '../wallet/use-wallet';
 
 // Hook for MarketFactory contract
 export const useMarketFactory = () => {
@@ -79,12 +79,32 @@ export const useCreateMarket = () => {
     hash,
   });
 
+  // Debug wagmi hooks
+  console.log('🔍 Wagmi hooks debug:');
+  console.log('  - writeContract:', writeContract);
+  console.log('  - hash:', hash);
+  console.log('  - isPending:', isPending);
+  console.log('  - writeError:', writeError);
+  console.log('  - isConfirming:', isConfirming);
+  console.log('  - isConfirmed:', isConfirmed);
+
   const createMarket = useCallback(async (params: MarketCreationParams) => {
+    console.log('🚀 createMarket function called with params:', params);
+    
     // Use wallet address as fallback if useAccount address is not available
     const userAddress = address || walletAddress;
     const isWalletConnected = isConnected || walletConnected;
 
+    console.log('🔍 Wallet connection check:');
+    console.log('  - isConnected (useAccount):', isConnected);
+    console.log('  - walletConnected (useWallet):', walletConnected);
+    console.log('  - address (useAccount):', address);
+    console.log('  - walletAddress (useWallet):', walletAddress);
+    console.log('  - Final userAddress:', userAddress);
+    console.log('  - Final isWalletConnected:', isWalletConnected);
+
     if (!isWalletConnected || !userAddress) {
+      console.error('❌ Wallet not connected or no address found');
       setError('Wallet not connected');
       return null;
     }
@@ -93,11 +113,15 @@ export const useCreateMarket = () => {
       setLoading(true);
       setError(null);
 
+      console.log('✅ Wallet connection verified, proceeding with market creation');
       console.log('Creating market with params:', params);
       console.log('useAccount address:', address);
       console.log('useWallet address:', walletAddress);
       console.log('Final user address:', userAddress);
       console.log('Contract address:', MARKET_FACTORY_ADDRESS);
+      console.log('Contract ABI length:', MARKET_FACTORY_ABI?.length);
+      console.log('writeContract function:', writeContract);
+      console.log('writeContract type:', typeof writeContract);
 
       // Validate required parameters
       if (!params.question || !params.description || !params.options || params.options.length < 2) {
@@ -137,22 +161,51 @@ export const useCreateMarket = () => {
 
       console.log('Market creation params:', marketCreationParams);
 
-      await writeContract({
-        address: MARKET_FACTORY_ADDRESS as `0x${string}`,
-        abi: MARKET_FACTORY_ABI,
-        functionName: 'createMarket',
-        args: [
-          params.identifier, // string
-          params.endTime, // uint64 (number)
-          params.creatorFeeBps, // uint96 (number)
-          params.question, // string
-          params.description, // string
-          params.category, // string
-          params.platform, // uint8 (number)
-          params.resolutionSource, // string
-          params.options // string[]
-        ]
-      });
+      console.log('🔄 About to call writeContract with:');
+      console.log('  - address:', MARKET_FACTORY_ADDRESS);
+      console.log('  - functionName: createMarket');
+      console.log('  - args:', [
+        params.identifier,
+        params.endTime,
+        params.creatorFeeBps,
+        params.question,
+        params.description,
+        params.category,
+        params.platform,
+        params.resolutionSource,
+        params.options
+      ]);
+
+      try {
+        console.log('🔄 Attempting writeContract call...');
+        const writeContractResult = await writeContract({
+          address: MARKET_FACTORY_ADDRESS as `0x${string}`,
+          abi: MARKET_FACTORY_ABI,
+          functionName: 'createMarket',
+          args: [
+            params.identifier, // string
+            params.endTime, // uint64 (number)
+            params.creatorFeeBps, // uint96 (number)
+            params.question, // string
+            params.description, // string
+            params.category, // string
+            params.platform, // uint8 (number)
+            params.resolutionSource, // string
+            params.options // string[]
+          ]
+        });
+
+        console.log('✅ writeContract call completed:', writeContractResult);
+      } catch (writeError: any) {
+        console.error('❌ writeContract call failed:', writeError);
+        console.error('❌ Error details:', {
+          name: writeError?.name,
+          message: writeError?.message,
+          stack: writeError?.stack,
+          cause: writeError?.cause
+        });
+        throw writeError;
+      }
 
       return { hash, isPending, isConfirming, isConfirmed };
     } catch (err) {

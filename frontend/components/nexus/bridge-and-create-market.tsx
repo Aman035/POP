@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { BridgeAndExecuteButton } from '@avail-project/nexus-widgets';
 import { Button } from '@/components/ui/button';
 import { Loader2, Zap, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/utils/use-toast';
 import { parseUnits } from 'viem';
 
 interface BridgeAndCreateMarketProps {

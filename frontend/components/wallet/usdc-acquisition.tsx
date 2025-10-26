@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ExternalLink, Copy, CheckCircle, AlertCircle, Coins } from 'lucide-react';
-import { useWallet } from '@/hooks/use-wallet';
-import { useCollateralToken } from '@/hooks/use-contracts';
+import { useWallet } from '@/hooks/wallet/use-wallet';
+import { useCollateralToken } from '@/hooks/contracts/use-contracts';
 import { ethers } from 'ethers';
 import { config } from '@/lib/config';
 

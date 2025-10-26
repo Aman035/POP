@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, Wallet, AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { usePlaceBet, useExitBet, useClaimPayout } from "@/hooks/use-contracts"
+import { usePlaceBet, useExitBet, useClaimPayout } from "@/hooks/contracts/use-contracts"
 import { MarketInfo } from "@/lib/types"
 
 interface BettingPanelProps {

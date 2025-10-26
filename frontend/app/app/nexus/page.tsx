@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { NexusShowcase } from '@/components/nexus/nexus-showcase';
 import { NexusProvider, useNexusSDK } from '@/components/providers/nexus-provider';
-import { useWallet } from '@/hooks/use-wallet';
+import { useWallet } from '@/hooks/wallet/use-wallet';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink } from 'lucide-react';

@@ -15,9 +15,9 @@ import {
   Wallet,
   Zap
 } from 'lucide-react';
-import { useEthBalance } from '@/hooks/use-eth-balance';
-import { useWallet } from '@/hooks/use-wallet';
-import { toast } from '@/hooks/use-toast';
+import { useEthBalance } from '@/hooks/wallet/use-eth-balance';
+import { useWallet } from '@/hooks/wallet/use-wallet';
+import { toast } from '@/hooks/utils/use-toast';
 
 interface EthBalanceCheckerProps {
   onBalanceSufficient: () => void;

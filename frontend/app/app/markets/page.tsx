@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, RefreshCw, TrendingUp, DollarSign, Users, Clock, AlertCircle, Plus, BarChart3, Activity, Filter } from "lucide-react"
 import { MarketCard } from "@/components/markets/market-card"
-import { useMarketsGraphQL } from "@/hooks/use-markets-graphql"
+import { useMarketsGraphQL } from "@/hooks/graphql/use-markets-graphql"
 import { MarketInfo } from "@/lib/types"
 import Link from "next/link"
 

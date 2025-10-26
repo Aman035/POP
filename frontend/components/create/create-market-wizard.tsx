@@ -22,10 +22,6 @@ interface MarketData {
   creatorFee: number
   resolutionSource: string
   identifier: string
-  // Betting limit fields (for UI display)
-  minBet: number
-  maxBetPerUser: number
-  maxTotalStake: number
   // Smart contract fields
   marketAddress?: string
   txHash?: string
@@ -50,10 +46,6 @@ export function CreateMarketWizard({ onClose }: CreateMarketWizardProps) {
     creatorFee: 2,
     resolutionSource: "",
     identifier: "",
-    // Default betting limits
-    minBet: 1,
-    maxBetPerUser: 1000,
-    maxTotalStake: 10000,
   })
 
   const totalSteps = 4

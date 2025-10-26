@@ -1,7 +1,7 @@
 'use client';
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useWallet } from '@/hooks/use-wallet';
+import { useWallet } from '@/hooks/wallet/use-wallet';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink } from 'lucide-react';

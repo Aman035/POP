@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useWallet } from '@/hooks/use-wallet';
+import { useWallet } from '@/hooks/wallet/use-wallet';
 import { WalletConnectionModal } from './wallet-connection-modal';
 import { WalletLoading } from './wallet-loading';
 

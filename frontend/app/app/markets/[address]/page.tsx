@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import { useMarketGraphQL } from "@/hooks/use-market-graphql"
+import { useMarketGraphQL } from "@/hooks/graphql/use-market-graphql"
 
 interface MarketDetailsPageProps {
   params: {
