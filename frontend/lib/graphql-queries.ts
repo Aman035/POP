@@ -153,14 +153,32 @@ export async function getMarketByAddress(
     // Use viem's getAddress to ensure proper checksumming
     const checksummedAddress = getAddress(marketAddress)
     console.log('🔍 GraphQL: Fetching market by address:', checksummedAddress)
-    const response = await graphqlClient.request<MarketByAddressResponse>(
+    
+    // Add timeout to prevent hanging requests
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('GraphQL request timeout')), 10000)
+    })
+    
+    const requestPromise = graphqlClient.request<MarketByAddressResponse>(
       GET_MARKET_BY_ADDRESS,
       { marketAddress: checksummedAddress }
     )
+    
+    const response = await Promise.race([requestPromise, timeoutPromise])
     console.log('✅ GraphQL: Market by address response:', response)
     return response.MarketFactory_MarketCreated[0] || null
   } catch (error) {
     console.error('❌ GraphQL: Error fetching market by address:', error)
+    
+    // Check if it's a network error
+    if (error instanceof Error && (
+      error.message.includes('Failed to fetch') ||
+      error.message.includes('NetworkError') ||
+      error.message.includes('timeout')
+    )) {
+      console.log('⚠️ GraphQL: Network error detected, GraphQL endpoint may be unavailable')
+    }
+    
     // Return null instead of throwing to prevent app crashes
     return null
   }

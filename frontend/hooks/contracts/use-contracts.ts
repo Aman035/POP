@@ -711,29 +711,17 @@ export const usePlaceBet = (marketAddress: string) => {
 
       // Convert amount to wei (USDC has 6 decimals)
       const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e6));
-
-      // First approve the market contract to spend USDC
-      const approveData = encodeFunctionData({
-        abi: IERC20_ABI,
-        functionName: 'approve',
-        args: [marketAddress as `0x${string}`, amountWei],
-      });
-
-      // Then place the bet
-      const placeBetData = encodeFunctionData({
-        abi: MARKET_ABI,
-        functionName: 'placeBet',
-        args: [option, amountWei],
-      });
+      console.log("🎯 Contract hook - placeBet:", { option, amount, amountWei, marketAddress });
 
       // Execute the transaction
-      writeContract({
+      await writeContract({
         address: marketAddress as `0x${string}`,
         abi: MARKET_ABI,
         functionName: 'placeBet',
         args: [option, amountWei],
       });
 
+      console.log("📝 Contract hook - writeContract called, hash:", hash);
       return { hash, isPending, isConfirming, isConfirmed };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to place bet');

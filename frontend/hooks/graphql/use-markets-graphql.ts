@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import { getAllMarkets, MarketCreated } from '@/lib/graphql-queries'
 import { MarketInfo, Platform, MarketState, MarketStatus } from '@/lib/types'
+import { useReadContracts } from 'wagmi'
+import { MARKET_ABI } from '@/lib/contracts'
+import { formatUnits } from 'viem'
 
 export function useMarketsGraphQL() {
   const [markets, setMarkets] = useState<MarketInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [baseMarkets, setBaseMarkets] = useState<MarketInfo[]>([])
 
   useEffect(() => {
     const fetchMarkets = async () => {
@@ -66,6 +70,7 @@ export function useMarketsGraphQL() {
         // Sort by creation time (newest first)
         const sortedMarkets = transformedMarkets.sort((a, b) => b.createdAt - a.createdAt)
         
+        setBaseMarkets(sortedMarkets)
         setMarkets(sortedMarkets)
         console.log(`✅ GraphQL Hook: Loaded ${sortedMarkets.length} markets`)
         
@@ -100,5 +105,69 @@ export function useMarketsGraphQL() {
     fetchMarkets()
   }, [])
 
-  return { markets, loading, error }
+  // Create contract calls for liquidity data
+  const contractCalls = baseMarkets.flatMap(market => {
+    const calls = [
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'totalStaked' as const },
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'activeParticipantsCount' as const },
+      { address: market.address as `0x${string}`, abi: MARKET_ABI, functionName: 'state' as const },
+    ]
+    
+    // Add option liquidity calls for each option
+    for (let i = 0; i < market.options.length; i++) {
+      calls.push({
+        address: market.address as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'optionLiquidity' as const,
+        args: [i] as const
+      })
+    }
+    
+    return calls
+  })
+
+  const { data: contractData, isLoading: contractLoading } = useReadContracts({
+    contracts: contractCalls,
+    query: { enabled: baseMarkets.length > 0 }
+  })
+
+  // Process contract data and update markets
+  useEffect(() => {
+    if (!contractData || baseMarkets.length === 0) return
+
+    try {
+      console.log('🔍 GraphQL Hook: Processing liquidity data for', baseMarkets.length, 'markets')
+      
+      const updatedMarkets = baseMarkets.map((market, marketIndex) => {
+        const startIndex = marketIndex * (3 + market.options.length) // 3 base calls + option calls
+        const marketResults = contractData.slice(startIndex, startIndex + 3 + market.options.length)
+        
+        const totalStaked = marketResults[0]?.result
+        const activeParticipantsCount = marketResults[1]?.result
+        const state = marketResults[2]?.result
+        const optionLiquidityResults = marketResults.slice(3)
+        
+        const totalLiquidity = totalStaked ? formatUnits(totalStaked as bigint, 6) : "0"
+        const optionLiquidity = optionLiquidityResults.map(result => 
+          result?.result ? formatUnits(result.result as bigint, 6) : "0"
+        )
+        
+        return {
+          ...market,
+          totalLiquidity,
+          optionLiquidity,
+          activeParticipantsCount: Number(activeParticipantsCount || 0),
+          state: Number(state || 0)
+        }
+      })
+
+      setMarkets(updatedMarkets)
+      console.log('✅ GraphQL Hook: Updated markets with liquidity data')
+      
+    } catch (err) {
+      console.error('❌ GraphQL Hook: Error processing liquidity data:', err)
+    }
+  }, [contractData, baseMarkets])
+
+  return { markets, loading: loading || contractLoading, error }
 }
