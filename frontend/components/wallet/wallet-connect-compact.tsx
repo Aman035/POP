@@ -1,40 +1,40 @@
-'use client';
+'use client'
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useWallet } from '@/hooks/wallet/use-wallet';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink } from 'lucide-react';
-import { arbitrumSepolia } from 'wagmi/chains';
-import { WalletLoading } from './wallet-loading';
-import { WalletErrorBoundary } from './wallet-error-boundary';
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useWallet } from '@/hooks/wallet/use-wallet'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle, ExternalLink } from 'lucide-react'
+import { arbitrumSepolia } from 'wagmi/chains'
+import { WalletLoading } from './wallet-loading'
+import { WalletErrorBoundary } from './wallet-error-boundary'
 
 interface WalletConnectCompactProps {
-  className?: string;
+  className?: string
 }
 
 export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
-  const { 
-    isConnected, 
-    isCorrectChain, 
+  const {
+    isConnected,
+    isCorrectChain,
     isConnecting,
     isSwitchingChain,
-    error, 
-    switchToArbitrumSepolia, 
-    clearError 
-  } = useWallet();
+    error,
+    switchToArbitrumSepolia,
+    clearError,
+  } = useWallet()
 
   const handleChainSwitch = async () => {
     try {
-      await switchToArbitrumSepolia();
+      await switchToArbitrumSepolia()
     } catch (err) {
-      console.error('Failed to switch chain:', err);
+      console.error('Failed to switch chain:', err)
     }
-  };
+  }
 
   // Show loading state while connecting
   if (isConnecting) {
-    return <WalletLoading className={className} />;
+    return <WalletLoading className={className} />
   }
 
   return (
@@ -50,13 +50,13 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
             authenticationStatus,
             mounted,
           }) => {
-            const ready = mounted && authenticationStatus !== 'loading';
+            const ready = mounted && authenticationStatus !== 'loading'
             const connected =
               ready &&
               account &&
               chain &&
               (!authenticationStatus ||
-                authenticationStatus === 'authenticated');
+                authenticationStatus === 'authenticated')
 
             return (
               <div
@@ -79,7 +79,7 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
                       >
                         Connect
                       </Button>
-                    );
+                    )
                   }
 
                   if (chain.unsupported) {
@@ -92,7 +92,7 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
                       >
                         Wrong Net
                       </Button>
-                    );
+                    )
                   }
 
                   return (
@@ -104,24 +104,12 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
                     >
                       {account.displayName.split('...')[0]}...
                     </Button>
-                  );
+                  )
                 })()}
               </div>
-            );
-        }}
-      </ConnectButton.Custom>
-
-      {/* Network Info - Right Side */}
-      {isConnected && isCorrectChain && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-full flex items-center justify-center">
-              <div className="w-1 h-1 bg-white rounded-full"></div>
-            </div>
-            <span>Arb Sepolia</span>
-          </div>
-        </div>
-      )}
+            )
+          }}
+        </ConnectButton.Custom>
       </div>
 
       {/* Chain Switch Button - Below */}
@@ -166,5 +154,5 @@ export function WalletConnectCompact({ className }: WalletConnectCompactProps) {
         </div>
       )}
     </WalletErrorBoundary>
-  );
+  )
 }

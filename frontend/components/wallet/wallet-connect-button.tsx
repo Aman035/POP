@@ -1,39 +1,39 @@
-'use client';
+'use client'
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useWallet } from '@/hooks/wallet/use-wallet';
-import { useReadContract } from 'wagmi';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink, Coins } from 'lucide-react';
-import { arbitrumSepolia } from 'wagmi/chains';
-import { WalletLoading } from './wallet-loading';
-import { WalletErrorBoundary } from './wallet-error-boundary';
-import { useState, useEffect } from 'react';
-import { formatUnits } from 'viem';
-import { IERC20_ABI } from '@/lib/contracts';
-import { COLLATERAL_TOKEN_ADDRESS } from '@/lib/contracts';
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useWallet } from '@/hooks/wallet/use-wallet'
+import { useReadContract } from 'wagmi'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
+import { arbitrumSepolia } from 'wagmi/chains'
+import { WalletLoading } from './wallet-loading'
+import { WalletErrorBoundary } from './wallet-error-boundary'
+import { useState, useEffect } from 'react'
+import { formatUnits } from 'viem'
+import { IERC20_ABI } from '@/lib/contracts'
+import { COLLATERAL_TOKEN_ADDRESS } from '@/lib/contracts'
 
 interface WalletConnectButtonProps {
-  className?: string;
-  showChainSwitch?: boolean;
+  className?: string
+  showChainSwitch?: boolean
 }
 
-export function WalletConnectButton({ 
-  className, 
-  showChainSwitch = true 
+export function WalletConnectButton({
+  className,
+  showChainSwitch = true,
 }: WalletConnectButtonProps) {
-  const { 
-    isConnected, 
-    isCorrectChain, 
+  const {
+    isConnected,
+    isCorrectChain,
     isConnecting,
     isSwitchingChain,
     address,
-    error, 
-    switchToArbitrumSepolia, 
-    clearError 
-  } = useWallet();
-  
+    error,
+    switchToArbitrumSepolia,
+    clearError,
+  } = useWallet()
+
   // Get USDC balance using wagmi hook
   const { data: usdcBalance, isLoading: isLoadingBalance } = useReadContract({
     address: COLLATERAL_TOKEN_ADDRESS as `0x${string}`,
@@ -44,146 +44,94 @@ export function WalletConnectButton({
       enabled: isConnected && isCorrectChain && !!address,
       refetchInterval: 10000, // Refetch every 10 seconds
     },
-  });
+  })
 
   // Format the balance for display
-  const formattedBalance = usdcBalance ? formatUnits(usdcBalance as bigint, 6) : '0';
+  const formattedBalance = usdcBalance
+    ? formatUnits(usdcBalance as bigint, 6)
+    : '0'
 
   const handleChainSwitch = async () => {
     try {
-      await switchToArbitrumSepolia();
+      await switchToArbitrumSepolia()
     } catch (err) {
-      console.error('Failed to switch chain:', err);
+      console.error('Failed to switch chain:', err)
     }
-  };
+  }
 
   // Show loading state while connecting
   if (isConnecting) {
-    return <WalletLoading className={className} />;
+    return <WalletLoading className={className} />
   }
 
   return (
     <WalletErrorBoundary>
       <div className="flex items-center gap-2">
         <ConnectButton.Custom>
-        {({
-          account,
-          chain,
-          openAccountModal,
-          openChainModal,
-          openConnectModal,
-          authenticationStatus,
-          mounted,
-        }) => {
-          // Note: If your app doesn't use authentication, you
-          // can remove all 'authenticationStatus' checks
-          const ready = mounted && authenticationStatus !== 'loading';
-          const connected =
-            ready &&
-            account &&
-            chain &&
-            (!authenticationStatus ||
-              authenticationStatus === 'authenticated');
+          {({
+            account,
+            chain,
+            openAccountModal,
+            openChainModal,
+            openConnectModal,
+            authenticationStatus,
+            mounted,
+          }) => {
+            // Note: If your app doesn't use authentication, you
+            // can remove all 'authenticationStatus' checks
+            const ready = mounted && authenticationStatus !== 'loading'
+            const connected =
+              ready &&
+              account &&
+              chain &&
+              (!authenticationStatus ||
+                authenticationStatus === 'authenticated')
 
-          return (
-            <div
-              {...(!ready && {
-                'aria-hidden': 'true',
-                style: {
-                  opacity: 0,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                },
-              })}
-            >
-              {(() => {
-                if (!connected) {
+            return (
+              <div
+                {...(!ready && {
+                  'aria-hidden': 'true',
+                  style: {
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  },
+                })}
+              >
+                {(() => {
+                  if (!connected) {
+                    return (
+                      <Button
+                        onClick={openConnectModal}
+                        className={`gold-gradient text-background font-semibold ${className}`}
+                        size="sm"
+                      >
+                        <span className="hidden sm:inline">Connect Wallet</span>
+                        <span className="sm:hidden">Connect</span>
+                      </Button>
+                    )
+                  }
+
                   return (
                     <Button
-                      onClick={openConnectModal}
-                      className={`gold-gradient text-background font-semibold ${className}`}
+                      onClick={openAccountModal}
+                      variant="outline"
+                      className={`bg-transparent ${className}`}
                       size="sm"
                     >
-                      <span className="hidden sm:inline">Connect Wallet</span>
-                      <span className="sm:hidden">Connect</span>
+                      <span className="hidden sm:inline">
+                        {account.displayName}
+                      </span>
+                      <span className="sm:hidden">
+                        {account.displayName.split('...')[0]}...
+                      </span>
                     </Button>
-                  );
-                }
-
-                if (chain.unsupported) {
-                  return (
-                    <Button
-                      onClick={openChainModal}
-                      variant="destructive"
-                      className={className}
-                      size="sm"
-                    >
-                      <span className="hidden sm:inline">Wrong Network</span>
-                      <span className="sm:hidden">Wrong Net</span>
-                    </Button>
-                  );
-                }
-
-                return (
-                  <Button
-                    onClick={openAccountModal}
-                    variant="outline"
-                    className={`bg-transparent ${className}`}
-                    size="sm"
-                  >
-                    <span className="hidden sm:inline">
-                      {account.displayName}
-                      {account.displayBalance ? ` (${account.displayBalance})` : ''}
-                    </span>
-                    <span className="sm:hidden">
-                      {account.displayName.split('...')[0]}...
-                    </span>
-                  </Button>
-                );
-              })()}
-            </div>
-          );
-        }}
-      </ConnectButton.Custom>
-
-      {/* Network Info - Right Side */}
-      {isConnected && isCorrectChain && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-            </div>
-            <span className="hidden sm:inline">Arbitrum Sepolia</span>
-            <span className="sm:hidden">Arb Sepolia</span>
-          </div>
-        </div>
-      )}
-
-      {/* USDC Balance Display */}
-      {isConnected && isCorrectChain && (
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1">
-            <Coins className="w-3 h-3 text-gold-2" />
-            <span className="hidden sm:inline">
-              {isLoadingBalance ? 'Loading...' : `${parseFloat(formattedBalance).toFixed(2)} USDC`}
-            </span>
-            <span className="sm:hidden">
-              {isLoadingBalance ? '...' : `${parseFloat(formattedBalance).toFixed(1)} USDC`}
-            </span>
-          </div>
-          {parseFloat(formattedBalance) === 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-1 text-xs hover:bg-gold-50 dark:hover:bg-gold-950"
-              onClick={() => window.open('https://faucet.circle.com/', '_blank')}
-              title="Get USDC from Circle Faucet"
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      )}
+                  )
+                })()}
+              </div>
+            )
+          }}
+        </ConnectButton.Custom>
       </div>
 
       {/* Chain Switch Button - Below */}
@@ -204,7 +152,9 @@ export function WalletConnectButton({
               </>
             ) : (
               <>
-                <span className="hidden sm:inline">Switch to Arbitrum Sepolia</span>
+                <span className="hidden sm:inline">
+                  Switch to Arbitrum Sepolia
+                </span>
                 <span className="sm:hidden">Switch Network</span>
               </>
             )}
@@ -232,5 +182,5 @@ export function WalletConnectButton({
         </div>
       )}
     </WalletErrorBoundary>
-  );
+  )
 }
