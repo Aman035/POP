@@ -34,15 +34,24 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
         question: marketInfo.question,
         options: marketInfo.options,
         totalLiquidity: marketInfo.totalLiquidity,
-        state: marketInfo.state
+        state: marketInfo.state,
+        description: marketInfo.description,
+        category: marketInfo.category,
+        platform: marketInfo.platform,
+        createdAt: marketInfo.createdAt,
+        endTime: marketInfo.endTime
       } : null,
       loading,
-      error
+      error,
+      hasQuestion: !!marketInfo?.question,
+      hasOptions: !!marketInfo?.options?.length,
+      hasDescription: !!marketInfo?.description
     })
     
     // Force a re-render test
     if (marketInfo) {
       console.log('🔍 Market Page: Market data is available, forcing re-render test')
+      console.log('🔍 Market Page: Full market object:', JSON.stringify(marketInfo, null, 2))
       // This will help us see if the data is actually being passed to the UI
     }
   }, [marketInfo, loading, error])
@@ -371,7 +380,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Market Not Found</h3>
           <p className="text-muted-foreground mb-4">
-            {typeof error === 'string' ? error : error?.message || "The market you're looking for doesn't exist or has been removed."}
+            {typeof error === 'string' ? error : "The market you're looking for doesn't exist or has been removed."}
           </p>
           {error && typeof error === 'string' && error.includes('Failed to fetch') && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
@@ -405,22 +414,33 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   if (!marketInfo.question) {
     console.error('❌ Market Page: No question found in market data!')
     console.error('❌ Market Page: Full market data:', marketInfo)
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Data Issue</h3>
-          <p className="text-muted-foreground mb-4">
-            Market data is missing required fields. Check console for details.
-          </p>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
-            <p className="text-red-800 text-sm">
-              <strong>Debug Info:</strong> {JSON.stringify(marketInfo, null, 2)}
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    
+    // Try to use fallback data if available
+    const fallbackQuestion = marketInfo.address ? `Market ${marketInfo.address.slice(0, 8)}...` : 'Unknown Market'
+    const fallbackOptions = marketInfo.options?.length > 0 ? marketInfo.options : ['Yes', 'No']
+    
+    console.log('🔄 Market Page: Using fallback data:', { fallbackQuestion, fallbackOptions })
+    
+    // Create a minimal market object for rendering
+    const fallbackMarket = {
+      ...marketInfo,
+      question: fallbackQuestion,
+      options: fallbackOptions,
+      description: marketInfo.description || 'No description available',
+      category: marketInfo.category || 'General',
+      totalLiquidity: marketInfo.totalLiquidity || '0',
+      state: marketInfo.state || 0,
+      activeParticipantsCount: marketInfo.activeParticipantsCount || 0,
+      endTime: marketInfo.endTime || 0,
+      createdAt: marketInfo.createdAt || 0,
+      creator: marketInfo.creator || 'Unknown',
+      platform: marketInfo.platform || 3
+    }
+    
+    // Update the marketInfo reference to use fallback data
+    Object.assign(marketInfo, fallbackMarket)
+    
+    console.log('✅ Market Page: Using fallback market data for rendering')
   }
   
   const timeRemaining = getTimeRemaining(new Date(marketInfo.endTime * 1000))
