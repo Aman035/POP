@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Wallet, AlertCircle, CheckCircle } from "lucide-react"
+import { TrendingUp, Wallet, AlertCircle, CheckCircle, Zap, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { usePlaceBet, useExitBet, useClaimPayout } from "@/hooks/contracts/use-contracts"
+import { useUsdcBalance } from "@/hooks/wallet/use-usdc-balance"
+import { BridgeAndBetButton } from "@/components/nexus/bridge-and-bet-button"
+import { SimpleBridgeWidget } from "@/components/nexus/simple-bridge-widget"
 import { MarketInfo } from "@/lib/types"
 
 interface BettingPanelProps {
@@ -20,11 +23,21 @@ interface BettingPanelProps {
 export function BettingPanel({ market, selectedOption, onSelectOption }: BettingPanelProps) {
   const [betAmount, setBetAmount] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showBridgeOption, setShowBridgeOption] = useState(false)
   
   // Smart contract hooks
   const { placeBet, loading: placeBetLoading, error: placeBetError, isConfirmed: betConfirmed } = usePlaceBet(market.address)
   const { exitBet, loading: exitBetLoading, error: exitBetError } = useExitBet(market.address)
   const { claimPayout, loading: claimLoading, error: claimError } = useClaimPayout(market.address)
+  
+  // USDC balance checking
+  const { 
+    balanceFormatted, 
+    hasInsufficientBalance, 
+    isLoading: usdcLoading, 
+    error: usdcError,
+    refreshBalance 
+  } = useUsdcBalance(betAmount)
 
   const totalLiquidity = parseFloat(market.totalLiquidity)
   const selectedOptionLiquidity = selectedOption !== null ? parseFloat(market.optionLiquidity[selectedOption] || "0") : 0
@@ -156,7 +169,23 @@ export function BettingPanel({ market, selectedOption, onSelectOption }: Betting
       {selectedOption !== null && !market.isResolved && (
         <div className="space-y-4 mb-6">
           <div>
-            <Label htmlFor="bet-amount">Bet Amount (USDC)</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="bet-amount">Bet Amount (USDC)</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Balance: {usdcLoading ? "..." : `$${balanceFormatted}`}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshBalance}
+                  disabled={usdcLoading}
+                  className="h-6 w-6 p-0"
+                >
+                  <RefreshCw className={`w-3 h-3 ${usdcLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
             <div className="relative mt-2">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
               <Input
@@ -164,12 +193,36 @@ export function BettingPanel({ market, selectedOption, onSelectOption }: Betting
                 type="number"
                 placeholder="0.00"
                 value={betAmount}
-                onChange={(e) => setBetAmount(e.target.value)}
+                onChange={(e) => {
+                  setBetAmount(e.target.value)
+                  setShowBridgeOption(false)
+                }}
                 className="pl-7"
                 min="0"
                 step="0.01"
               />
             </div>
+            
+            {/* USDC Balance Status */}
+            {betAmount && Number(betAmount) > 0 && (
+              <div className="mt-2">
+                {hasInsufficientBalance ? (
+                  <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <AlertDescription className="text-orange-800 dark:text-orange-200">
+                      Insufficient USDC balance. You need ${Number(betAmount).toFixed(2)} but have ${balanceFormatted}.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800 dark:text-green-200">
+                      Sufficient USDC balance available.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick Amount Buttons */}
@@ -214,15 +267,65 @@ export function BettingPanel({ market, selectedOption, onSelectOption }: Betting
       {/* Action Buttons */}
       <div className="space-y-3">
         {!market.isResolved ? (
-          <Button
-            className="w-full gold-gradient text-background font-semibold"
-            size="lg"
-            disabled={!selectedOption || !betAmount || Number(betAmount) <= 0 || placeBetLoading}
-            onClick={handlePlaceBet}
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            {placeBetLoading ? "Placing Bet..." : "Place Bet"}
-          </Button>
+          <div className="space-y-3">
+            {/* Normal Place Bet Button - shown when user has sufficient USDC */}
+            {!hasInsufficientBalance && (
+              <Button
+                className="w-full gold-gradient text-background font-semibold"
+                size="lg"
+                disabled={!selectedOption || !betAmount || Number(betAmount) <= 0 || placeBetLoading}
+                onClick={handlePlaceBet}
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                {placeBetLoading ? "Placing Bet..." : "Place Bet"}
+              </Button>
+            )}
+
+            {/* Bridge and Bet Button - shown when user has insufficient USDC */}
+            {hasInsufficientBalance && betAmount && Number(betAmount) > 0 && (
+              <div className="space-y-3">
+                <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
+                  <Zap className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200">
+                    Bridge ETH to USDC and place your bet in one transaction.
+                  </AlertDescription>
+                </Alert>
+                
+                <BridgeAndBetButton
+                  marketAddress={market.address}
+                  option={selectedOption!}
+                  amount={betAmount}
+                  onSuccess={(txHash) => {
+                    setShowSuccess(true)
+                    setTimeout(() => {
+                      setShowSuccess(false)
+                      setBetAmount("")
+                      onSelectOption(null)
+                    }, 3000)
+                  }}
+                  onError={(error) => {
+                    console.error("Bridge and bet failed:", error)
+                  }}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Bridge ETH & Place Bet
+                </BridgeAndBetButton>
+              </div>
+            )}
+
+            {/* Show bridge option button when insufficient balance */}
+            {hasInsufficientBalance && (!betAmount || Number(betAmount) <= 0) && (
+              <Button
+                variant="outline"
+                className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                size="lg"
+                onClick={() => setShowBridgeOption(true)}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Bridge ETH to USDC
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="space-y-2">
             <Button
@@ -246,6 +349,49 @@ export function BettingPanel({ market, selectedOption, onSelectOption }: Betting
           </div>
         )}
       </div>
+
+      {/* Bridge Option Section */}
+      {showBridgeOption && (
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
+              <Zap className="w-6 h-6 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">
+                Bridge ETH to USDC
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Use Nexus to bridge ETH from supported chains to Arbitrum Sepolia and get USDC for betting.
+              </p>
+            </div>
+
+            {/* Simple Bridge Widget */}
+            <div className="space-y-3">
+              <SimpleBridgeWidget
+                onSuccess={() => {
+                  setShowBridgeOption(false)
+                  refreshBalance() // Refresh USDC balance after bridge
+                }}
+                onError={(error) => {
+                  console.error("Bridge failed:", error)
+                }}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Bridge ETH to Arbitrum Sepolia
+              </SimpleBridgeWidget>
+              
+              <Button
+                variant="ghost"
+                onClick={() => setShowBridgeOption(false)}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Warning */}
       <Alert className="mt-4">

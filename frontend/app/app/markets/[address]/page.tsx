@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink, Wallet, Coins, CheckCircle, XCircle, Copy } from "lucide-react"
+import { ArrowLeft, Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, AlertCircle, Activity, ExternalLink, Wallet, Coins, CheckCircle, XCircle, Copy, RefreshCw, Zap } from "lucide-react"
 import Link from "next/link"
 import { useMarketGraphQL } from "@/hooks/graphql/use-market-graphql"
 import { useWallet } from "@/hooks/wallet/use-wallet"
@@ -14,7 +14,10 @@ import { usePlaceBet, useExitBet } from "@/hooks/contracts/use-contracts"
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { formatUnits, parseUnits } from "viem"
 import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI } from "@/lib/contracts"
-// Note: toast functionality will be implemented with a proper toast library
+import { useUsdcBalance } from "@/hooks/wallet/use-usdc-balance"
+import { BridgeAndBetButton } from "@/components/nexus/bridge-and-bet-button"
+import { SimpleBridgeWidget } from "@/components/nexus/simple-bridge-widget"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MarketDetailsPageProps {
   params: Promise<{
@@ -95,6 +98,16 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const [copiedHash, setCopiedHash] = useState(false)
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showBridgeOption, setShowBridgeOption] = useState(false)
+  
+  // USDC balance checking with real-time validation
+  const { 
+    balanceFormatted: usdcBalanceFormatted, 
+    hasInsufficientBalance: hasInsufficientUSDC, 
+    isLoading: usdcBalanceLoading, 
+    error: usdcBalanceError,
+    refreshBalance: refreshUsdcBalance 
+  } = useUsdcBalance(betAmount)
   
   // Contract hooks
   const { placeBet, loading: placeBetLoading, error: placeBetError, isConfirmed: betConfirmed } = usePlaceBet(resolvedParams.address)
@@ -562,9 +575,23 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-lg">Place Your Bet</h3>
                 {isConnected && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Coins className="w-4 h-4" />
-                    <span>Balance: {formatUSDCBalance(usdcBalance as bigint | undefined)} USDC</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 border-2 border-green-600 dark:border-green-500 rounded-lg shadow-md">
+                      <Coins className="w-5 h-5 text-green-700 dark:text-green-300" />
+                      <span className="text-sm font-extrabold text-green-800 dark:text-green-200">
+                        Balance: {usdcBalanceLoading ? "..." : `$${usdcBalanceFormatted}`} USDC
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={refreshUsdcBalance}
+                      disabled={usdcBalanceLoading}
+                      className="h-8 w-8 p-0 border-2 border-gray-300 hover:border-green-500 hover:bg-green-50"
+                      title="Refresh Balance"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${usdcBalanceLoading ? 'animate-spin text-green-600' : 'text-gray-600'}`} />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -665,10 +692,28 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                           </Button>
                         </div>
                         {betAmount && parseFloat(betAmount) > 0 && (
-                          <div className="mt-2 space-y-1">
+                          <div className="mt-2 space-y-2">
                             <div className="text-sm text-muted-foreground">
                               Potential winnings: {calculatePotentialWinnings(selectedOption, betAmount)} USDC
                             </div>
+                            
+                            {/* USDC Balance Status */}
+                            {hasInsufficientUSDC ? (
+                              <Alert className="border-2 border-red-600 bg-red-100 dark:bg-red-900/40 py-3 shadow-lg">
+                                <AlertCircle className="h-5 w-5 text-red-700 dark:text-red-400" />
+                                <AlertDescription className="text-sm font-bold text-red-900 dark:text-red-100">
+                                  ⚠️ Insufficient USDC! You need ${Number(betAmount).toFixed(2)} but only have ${usdcBalanceFormatted}.
+                                </AlertDescription>
+                              </Alert>
+                            ) : (
+                              <Alert className="border-2 border-green-600 bg-green-100 dark:bg-green-900/40 py-3 shadow-lg">
+                                <CheckCircle className="h-5 w-5 text-green-700 dark:text-green-400" />
+                                <AlertDescription className="text-sm font-bold text-green-900 dark:text-green-100">
+                                  ✅ Sufficient USDC balance available!
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            
                             {usdcAllowance ? (
                               <div className="text-xs text-muted-foreground">
                                 USDC Allowance: {Number(formatUnits(usdcAllowance as bigint, 6)).toFixed(2)} USDC
@@ -684,7 +729,47 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                       </div>
 
                       {/* Approval and Place Bet Buttons */}
-                      {!hasSufficientAllowance() ? (
+                      {hasInsufficientUSDC ? (
+                        /* Bridge and Bet Button - shown when insufficient USDC */
+                        <div className="space-y-3">
+                          <Alert className="border-2 border-blue-600 bg-blue-100 dark:bg-blue-900/40 py-3 shadow-lg">
+                            <Zap className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+                            <AlertDescription className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                              💡 Bridge ETH to USDC and place your bet in one transaction!
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <BridgeAndBetButton
+                            marketAddress={resolvedParams.address}
+                            option={selectedOption!}
+                            amount={betAmount}
+                            onSuccess={(txHash) => {
+                              setShowSuccess(true)
+                              setTransactionHash(txHash)
+                              setTimeout(() => {
+                                setShowSuccess(false)
+                                setBetAmount("")
+                                setSelectedOption(null)
+                                refetch()
+                              }, 3000)
+                            }}
+                            onError={(error) => {
+                              console.error("Bridge and bet failed:", error)
+                              setTransactionStatus(`Bridge failed: ${error}`)
+                            }}
+                          />
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowBridgeOption(!showBridgeOption)}
+                            className="w-full border-2 border-purple-500 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold"
+                            size="sm"
+                          >
+                            <Zap className="w-4 h-4 mr-2" />
+                            {showBridgeOption ? 'Hide' : 'Show'} Alternative Bridge Options
+                          </Button>
+                        </div>
+                      ) : !hasSufficientAllowance() ? (
                         <Button
                           onClick={handleApproveUSDC}
                           disabled={!betAmount || parseFloat(betAmount) <= 0 || isApproving || isApprovingUSDC || isApprovalConfirming}
@@ -720,6 +805,35 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             </>
                           )}
                         </Button>
+                      )}
+                      
+                      {/* Bridge Option Section */}
+                      {showBridgeOption && hasInsufficientUSDC && (
+                        <Card className="p-6 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 border-2 border-purple-400 dark:border-purple-600 mt-4 shadow-xl">
+                          <div className="text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto shadow-lg">
+                              <Zap className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold mb-2 text-purple-900 dark:text-purple-100">
+                                🌉 Bridge ETH to USDC
+                              </h3>
+                              <p className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-4">
+                                Bridge ETH from any supported chain to get USDC on Arbitrum Sepolia
+                              </p>
+                            </div>
+
+                            <SimpleBridgeWidget
+                              onSuccess={() => {
+                                setShowBridgeOption(false)
+                                refreshUsdcBalance()
+                              }}
+                              onError={(error) => {
+                                console.error("Bridge failed:", error)
+                              }}
+                            />
+                          </div>
+                        </Card>
                       )}
                     </div>
                   )}
