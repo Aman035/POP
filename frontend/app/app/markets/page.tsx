@@ -1,40 +1,56 @@
-"use client"
+'use client'
 
-import { useState, useMemo } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, RefreshCw, TrendingUp, DollarSign, Users, Clock, AlertCircle, Plus, BarChart3, Activity, Filter } from "lucide-react"
-import { MarketCard } from "@/components/markets/market-card"
-import { useMarketsGraphQL } from "@/hooks/graphql/use-markets-graphql"
-import { MarketInfo } from "@/lib/types"
-import Link from "next/link"
+import { useState, useMemo } from 'react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Search,
+  RefreshCw,
+  TrendingUp,
+  DollarSign,
+  Users,
+  Clock,
+  AlertCircle,
+  Plus,
+  BarChart3,
+  Activity,
+  Filter,
+} from 'lucide-react'
+import { MarketCard } from '@/components/markets/market-card'
+import { useMarketsGraphQL } from '@/hooks/graphql/use-markets-graphql'
+import { MarketInfo } from '@/lib/types'
+import Link from 'next/link'
 
 export default function MarketsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState<"newest" | "liquidity" | "ending">("newest")
+  const [sortBy, setSortBy] = useState<'newest' | 'liquidity' | 'ending'>(
+    'newest'
+  )
   const [refreshKey, setRefreshKey] = useState(0)
-  
+
   const { markets, loading, error } = useMarketsGraphQL()
 
   // Memoized filtered and sorted markets
   const filteredMarkets = useMemo(() => {
     return markets
       .filter((market) => {
-        const matchesSearch = market.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             market.description.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory = !selectedCategory || market.category === selectedCategory
+        const matchesSearch =
+          market.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          market.description.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory =
+          !selectedCategory || market.category === selectedCategory
         return matchesSearch && matchesCategory
       })
       .sort((a, b) => {
         switch (sortBy) {
-          case "liquidity":
+          case 'liquidity':
             return parseFloat(b.totalLiquidity) - parseFloat(a.totalLiquidity)
-          case "ending":
+          case 'ending':
             return a.endTime - b.endTime
-          case "newest":
+          case 'newest':
           default:
             return b.createdAt - a.createdAt
         }
@@ -43,22 +59,31 @@ export default function MarketsPage() {
 
   // Get unique categories
   const categories = useMemo(() => {
-    return Array.from(new Set(markets.map(market => market.category).filter(Boolean)))
+    return Array.from(
+      new Set(markets.map((market) => market.category).filter(Boolean))
+    )
   }, [markets])
 
   // Calculate total stats based on actual contract states
   const stats = useMemo(() => {
-    const totalLiquidity = markets.reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
-    const tradingMarkets = markets.filter(market => market.state === 0).length // Trading state
-    const proposedMarkets = markets.filter(market => market.state === 1).length // Proposed state  
-    const resolvedMarkets = markets.filter(market => market.state === 2).length // Resolved state
-    
+    const totalLiquidity = markets.reduce(
+      (sum, market) => sum + parseFloat(market.totalLiquidity),
+      0
+    )
+    const tradingMarkets = markets.filter((market) => market.state === 0).length // Trading state
+    const proposedMarkets = markets.filter(
+      (market) => market.state === 1
+    ).length // Proposed state
+    const resolvedMarkets = markets.filter(
+      (market) => market.state === 2
+    ).length // Resolved state
+
     return {
       totalLiquidity,
       tradingMarkets,
-      proposedMarkets, 
+      proposedMarkets,
       resolvedMarkets,
-      totalMarkets: markets.length
+      totalMarkets: markets.length,
     }
   }, [markets])
 
@@ -71,7 +96,9 @@ export default function MarketsPage() {
             <RefreshCw className="w-8 h-8 animate-spin text-gold-2" />
             <div className="text-center">
               <h2 className="text-xl font-semibold mb-2">Loading Markets</h2>
-              <p className="text-muted-foreground">Fetching the latest prediction markets...</p>
+              <p className="text-muted-foreground">
+                Fetching the latest prediction markets...
+              </p>
             </div>
           </div>
         </div>
@@ -88,10 +115,12 @@ export default function MarketsPage() {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Markets</h2>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">
+              Error Loading Markets
+            </h2>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
+            <Button
+              onClick={() => window.location.reload()}
               variant="outline"
               className="mt-4"
             >
@@ -106,28 +135,6 @@ export default function MarketsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 text-foreground">
-              Markets
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Bet on the outcome of real-world events and earn rewards for accurate predictions.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button asChild className="gold-gradient text-background font-semibold px-6 py-3 text-lg hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-gold-2/20">
-              <Link href="/app/create">
-                <Plus className="w-5 h-5 mr-2" />
-                Create Market
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -137,9 +144,11 @@ export default function MarketsPage() {
             </div>
             <span className="font-semibold text-blue-900">Total Liquidity</span>
           </div>
-          <p className="text-2xl font-bold text-blue-900">${stats.totalLiquidity.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-blue-900">
+            ${stats.totalLiquidity.toLocaleString()}
+          </p>
         </Card>
-        
+
         <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
@@ -147,9 +156,11 @@ export default function MarketsPage() {
             </div>
             <span className="font-semibold text-green-900">Trading</span>
           </div>
-          <p className="text-2xl font-bold text-green-900">{stats.tradingMarkets}</p>
+          <p className="text-2xl font-bold text-green-900">
+            {stats.tradingMarkets}
+          </p>
         </Card>
-        
+
         <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
@@ -157,9 +168,11 @@ export default function MarketsPage() {
             </div>
             <span className="font-semibold text-yellow-900">Proposed</span>
           </div>
-          <p className="text-2xl font-bold text-yellow-900">{stats.proposedMarkets}</p>
+          <p className="text-2xl font-bold text-yellow-900">
+            {stats.proposedMarkets}
+          </p>
         </Card>
-        
+
         <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
@@ -167,9 +180,11 @@ export default function MarketsPage() {
             </div>
             <span className="font-semibold text-purple-900">Resolved</span>
           </div>
-          <p className="text-2xl font-bold text-purple-900">{stats.resolvedMarkets}</p>
+          <p className="text-2xl font-bold text-purple-900">
+            {stats.resolvedMarkets}
+          </p>
         </Card>
-        
+
         <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -177,7 +192,9 @@ export default function MarketsPage() {
             </div>
             <span className="font-semibold text-orange-900">Total Markets</span>
           </div>
-          <p className="text-2xl font-bold text-orange-900">{stats.totalMarkets}</p>
+          <p className="text-2xl font-bold text-orange-900">
+            {stats.totalMarkets}
+          </p>
         </Card>
       </div>
 
@@ -195,12 +212,12 @@ export default function MarketsPage() {
               />
             </div>
           </div>
-          
+
           <div className="flex gap-3">
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <select
-                value={selectedCategory || ""}
+                value={selectedCategory || ''}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
                 className="pl-10 pr-8 py-3 border border-border rounded-md bg-background h-12 min-w-[160px]"
               >
@@ -212,7 +229,7 @@ export default function MarketsPage() {
                 ))}
               </select>
             </div>
-            
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
@@ -234,16 +251,20 @@ export default function MarketsPage() {
               <TrendingUp className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-xl font-semibold mb-2">
-              {searchTerm || selectedCategory ? "No markets found" : "No markets available"}
+              {searchTerm || selectedCategory
+                ? 'No markets found'
+                : 'No markets available'}
             </h3>
             <p className="text-muted-foreground mb-6">
-              {searchTerm || selectedCategory 
-                ? "Try adjusting your search or filter criteria to find more markets."
-                : "No prediction markets have been created yet. Be the first to create one!"
-              }
+              {searchTerm || selectedCategory
+                ? 'Try adjusting your search or filter criteria to find more markets.'
+                : 'No prediction markets have been created yet. Be the first to create one!'}
             </p>
             {!searchTerm && !selectedCategory && (
-              <Button asChild className="gold-gradient text-background font-semibold">
+              <Button
+                asChild
+                className="gold-gradient text-background font-semibold"
+              >
                 <Link href="/app/create">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Your First Market
@@ -252,10 +273,10 @@ export default function MarketsPage() {
             )}
             {(searchTerm || selectedCategory) && (
               <div className="flex gap-3 justify-center">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
-                    setSearchTerm("")
+                    setSearchTerm('')
                     setSelectedCategory(null)
                   }}
                 >

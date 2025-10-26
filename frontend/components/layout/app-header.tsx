@@ -80,15 +80,6 @@ export function AppHeader({ minimalMode = false }: AppHeaderProps) {
               <span className="hidden sm:inline">Faucet</span>
             </Button>
           )}
-
-          {/* Settings - hidden in minimal mode */}
-          {!minimalMode && (
-            <Link href="/app/settings">
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
-                <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
     </header>
