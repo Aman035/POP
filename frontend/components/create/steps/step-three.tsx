@@ -1,16 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import "@/styles/calendar.css"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import { Calendar } from "@/components/ui/calendar"
+import { DayPicker } from "react-day-picker"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CalendarIcon, AlertCircle, CheckCircle, DollarSign, TrendingUp, Shield, Users, Target, MessageSquare } from "lucide-react"
 import { format, addDays, isAfter, isToday } from "date-fns"
 
@@ -75,8 +78,22 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
   }, [marketData.endDate, marketData.creatorFee, marketData.resolutionSource, marketData.identifier])
 
   const handleDateSelect = (date: Date | undefined) => {
-    updateMarketData({ endDate: date })
-    setIsDatePickerOpen(false)
+    console.log('Date selected:', date)
+    if (date) {
+      // Ensure the date is not in the past
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      console.log('Today:', today, 'Selected:', date, 'Is valid:', date >= today)
+      
+      if (date >= today) {
+        updateMarketData({ endDate: date })
+        setIsDatePickerOpen(false)
+        console.log('Date updated successfully')
+      } else {
+        console.log('Date is in the past, not selecting')
+      }
+    }
   }
 
   const handleSliderChange = (value: number[]) => {
@@ -157,15 +174,16 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
                 variant="outline" 
                 className={`w-full justify-start text-left font-normal transition-all duration-200 ${
                   validationErrors.endDate 
-                    ? "border-red-500 bg-red-50 hover:bg-red-100" 
+                    ? "border-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:border-red-500" 
                     : marketData.endDate 
-                    ? "border-green-500 bg-green-50 hover:bg-green-100"
-                    : "bg-background border-border hover:bg-accent hover:text-accent-foreground"
+                    ? "border-gold-2 bg-gold-2/10 hover:bg-gold-2/20 dark:bg-gold-2/20 dark:border-gold-2"
+                    : "bg-background border-border hover:bg-accent hover:text-accent-foreground hover:border-gold-2/50"
                 }`}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {marketData.endDate ? (
                   <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gold-2"></div>
                     {format(marketData.endDate, "PPP")}
                     {isValidating && <Spinner className="w-3 h-3" />}
                   </span>
@@ -174,14 +192,77 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50" align="start">
-              <Calendar
+            <PopoverContent className="w-auto p-0 z-[999999] bg-white border border-gray-200 shadow-2xl dark:bg-gray-50 dark:border-gray-300" align="start">
+              <DayPicker
                 mode="single"
                 selected={marketData.endDate}
                 onSelect={handleDateSelect}
-                initialFocus
-                disabled={(date) => date < new Date()}
-                className="rounded-md border"
+                disabled={(date) => {
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  return date < today
+                }}
+                defaultMonth={new Date()}
+                fromDate={new Date()}
+                className="rounded-md border bg-background p-3"
+                classNames={{
+                  months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                  month: "space-y-4",
+                  caption: "flex justify-center pt-1 relative items-center",
+                  caption_label: "text-sm font-medium",
+                  nav: "space-x-1 flex items-center",
+                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                  nav_button_previous: "absolute left-1",
+                  nav_button_next: "absolute right-1",
+                  table: "w-full border-collapse space-y-1",
+                  head_row: "flex",
+                  head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                  row: "flex w-full mt-2",
+                  cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                  day_range_end: "day-range-end",
+                  day_selected: "bg-gold-2 text-gold-2-foreground hover:bg-gold-2 hover:text-gold-2-foreground focus:bg-gold-2 focus:text-gold-2-foreground",
+                  day_today: "bg-accent text-accent-foreground",
+                  day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                  day_disabled: "text-muted-foreground opacity-50",
+                  day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                  day_hidden: "invisible",
+                }}
+                styles={{
+                  day: {
+                    borderRadius: '6px',
+                    transition: 'all 0.2s ease-in-out',
+                  },
+                  day_selected: {
+                    backgroundColor: '#D4AF37',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    boxShadow: '0 2px 4px rgba(212, 175, 55, 0.3)',
+                  },
+                  day_today: {
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    fontWeight: '600',
+                  }
+                }}
+                modifiers={{
+                  selected: marketData.endDate,
+                  today: new Date(),
+                }}
+                modifiersStyles={{
+                  selected: {
+                    backgroundColor: '#D4AF37',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    boxShadow: '0 2px 8px rgba(212, 175, 55, 0.4)',
+                  },
+                  today: {
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    fontWeight: '600',
+                    border: '2px solid #D4AF37',
+                  }
+                }}
               />
             </PopoverContent>
           </Popover>
@@ -219,28 +300,100 @@ export function StepThree({ marketData, updateMarketData }: StepThreeProps) {
             </div>
           </div>
           
-          <div className="px-1">
-            <Slider
-              id="creator-fee"
-              value={[marketData.creatorFee]}
-              onValueChange={handleSliderChange}
-              onPointerDown={handleSliderStart}
-              onPointerUp={handleSliderEnd}
-              min={1}
-              max={5}
-              step={0.5}
-              className="w-full"
-              disabled={isValidating}
-            />
-          </div>
+          {/* Radio Button Options */}
+          <RadioGroup 
+            value={marketData.creatorFee.toString()} 
+            onValueChange={(value) => updateMarketData({ creatorFee: parseFloat(value) })}
+            className="grid grid-cols-2 gap-3"
+          >
+            <div className={`flex items-center space-x-2 p-3 rounded-lg border transition-all duration-200 ${
+              marketData.creatorFee === 1 
+                ? 'border-gold-2 bg-gold-2/10 shadow-md' 
+                : 'border-border hover:bg-accent/50 hover:border-gold-2/50'
+            }`}>
+              <RadioGroupItem value="1" id="fee-1" className="text-gold-2" />
+              <Label htmlFor="fee-1" className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${marketData.creatorFee === 1 ? 'text-gold-2' : 'text-foreground'}`}>1%</span>
+                  <span className="text-xs text-muted-foreground">Low fee</span>
+                </div>
+              </Label>
+            </div>
+            <div className={`flex items-center space-x-2 p-3 rounded-lg border transition-all duration-200 ${
+              marketData.creatorFee === 2 
+                ? 'border-gold-2 bg-gold-2/10 shadow-md' 
+                : 'border-border hover:bg-accent/50 hover:border-gold-2/50'
+            }`}>
+              <RadioGroupItem value="2" id="fee-2" className="text-gold-2" />
+              <Label htmlFor="fee-2" className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${marketData.creatorFee === 2 ? 'text-gold-2' : 'text-foreground'}`}>2%</span>
+                  <span className="text-xs text-muted-foreground">Recommended</span>
+                </div>
+              </Label>
+            </div>
+            <div className={`flex items-center space-x-2 p-3 rounded-lg border transition-all duration-200 ${
+              marketData.creatorFee === 3 
+                ? 'border-gold-2 bg-gold-2/10 shadow-md' 
+                : 'border-border hover:bg-accent/50 hover:border-gold-2/50'
+            }`}>
+              <RadioGroupItem value="3" id="fee-3" className="text-gold-2" />
+              <Label htmlFor="fee-3" className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${marketData.creatorFee === 3 ? 'text-gold-2' : 'text-foreground'}`}>3%</span>
+                  <span className="text-xs text-muted-foreground">Moderate</span>
+                </div>
+              </Label>
+            </div>
+            <div className={`flex items-center space-x-2 p-3 rounded-lg border transition-all duration-200 ${
+              marketData.creatorFee === 5 
+                ? 'border-gold-2 bg-gold-2/10 shadow-md' 
+                : 'border-border hover:bg-accent/50 hover:border-gold-2/50'
+            }`}>
+              <RadioGroupItem value="5" id="fee-5" className="text-gold-2" />
+              <Label htmlFor="fee-5" className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${marketData.creatorFee === 5 ? 'text-gold-2' : 'text-foreground'}`}>5%</span>
+                  <span className="text-xs text-muted-foreground">High fee</span>
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
           
-          {/* Fee level indicators */}
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>1%</span>
-            <span>2%</span>
-            <span>3%</span>
-            <span>4%</span>
-            <span>5%</span>
+          {/* Slider for fine-tuning */}
+          <div className="space-y-4 mt-4 p-4 rounded-lg bg-gradient-to-r from-gold-2/5 to-gold-2/10 border border-gold-2/20">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">Fine-tune with slider:</p>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gold-2"></div>
+                <span className="text-sm font-bold text-gold-2">{marketData.creatorFee}%</span>
+              </div>
+            </div>
+            <div className="px-2">
+              <Slider
+                id="creator-fee"
+                value={[marketData.creatorFee]}
+                onValueChange={handleSliderChange}
+                onPointerDown={handleSliderStart}
+                onPointerUp={handleSliderEnd}
+                min={1}
+                max={5}
+                step={0.5}
+                className="w-full [&_.slider-track]:bg-muted/50 [&_.slider-range]:bg-gold-2 [&_.slider-thumb]:bg-gold-2 [&_.slider-thumb]:border-2 [&_.slider-thumb]:border-background [&_.slider-thumb]:w-6 [&_.slider-thumb]:h-6 [&_.slider-thumb]:shadow-lg"
+                disabled={isValidating}
+              />
+            </div>
+            
+            {/* Fee level indicators with current position */}
+            <div className="relative">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className={marketData.creatorFee === 1 ? 'text-gold-2 font-bold' : ''}>1%</span>
+                <span className={marketData.creatorFee === 2 ? 'text-gold-2 font-bold' : ''}>2%</span>
+                <span className={marketData.creatorFee === 3 ? 'text-gold-2 font-bold' : ''}>3%</span>
+                <span className={marketData.creatorFee === 4 ? 'text-gold-2 font-bold' : ''}>4%</span>
+                <span className={marketData.creatorFee === 5 ? 'text-gold-2 font-bold' : ''}>5%</span>
+              </div>
+            </div>
           </div>
           
           {/* Dynamic feedback based on fee level */}

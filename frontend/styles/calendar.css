@@ -1,0 +1,144 @@
+/* Custom Calendar Styles - Light & Clean */
+.rdp {
+  --rdp-cell-size: 36px;
+  --rdp-accent-color: #3B82F6;
+  --rdp-background-color: #FFFFFF;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color);
+  --rdp-selected-color: #FFFFFF;
+  --rdp-today-color: #1F2937;
+  --rdp-today-background-color: #F3F4F6;
+}
+
+.rdp-day_selected {
+  background-color: #3B82F6 !important;
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+  border-radius: 8px !important;
+}
+
+.rdp-day_today {
+  background-color: #F3F4F6 !important;
+  color: #1F2937 !important;
+  font-weight: 600 !important;
+  border: 2px solid #3B82F6 !important;
+  border-radius: 8px !important;
+}
+
+.rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: #E5E7EB !important;
+  color: #1F2937 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.rdp-day {
+  border-radius: 8px !important;
+  transition: all 0.2s ease-in-out !important;
+  color: #374151 !important;
+}
+
+.rdp-caption_label {
+  font-weight: 600 !important;
+  color: #1F2937 !important;
+}
+
+.rdp-nav_button {
+  border-radius: 8px !important;
+  transition: all 0.2s ease-in-out !important;
+  color: #374151 !important;
+}
+
+.rdp-nav_button:hover {
+  background-color: #E5E7EB !important;
+  color: #1F2937 !important;
+}
+
+.rdp-head_cell {
+  font-weight: 600 !important;
+  color: #6B7280 !important;
+}
+
+.rdp-day_disabled {
+  opacity: 0.5 !important;
+  color: #9CA3AF !important;
+  cursor: not-allowed !important;
+  background-color: #F3F4F6 !important;
+  position: relative !important;
+  border: 1px solid #E5E7EB !important;
+}
+
+.rdp-day_disabled::before {
+  content: '✕' !important;
+  position: absolute !important;
+  top: 2px !important;
+  right: 2px !important;
+  font-size: 8px !important;
+  color: #9CA3AF !important;
+  font-weight: bold !important;
+}
+
+.rdp-day_disabled:hover {
+  background-color: #F3F4F6 !important;
+  color: #9CA3AF !important;
+}
+
+.rdp-day:not(.rdp-day_disabled) {
+  cursor: pointer !important;
+}
+
+/* Dark mode support - Light Clean Theme */
+.dark .rdp {
+  --rdp-background-color: #F9FAFB;
+  --rdp-today-background-color: #E5E7EB;
+}
+
+.dark .rdp-day_today {
+  background-color: #E5E7EB !important;
+  color: #1F2937 !important;
+  border: 2px solid #3B82F6 !important;
+}
+
+.dark .rdp-caption_label {
+  color: #1F2937 !important;
+}
+
+.dark .rdp-head_cell {
+  color: #6B7280 !important;
+}
+
+.dark .rdp-day {
+  color: #374151 !important;
+}
+
+.dark .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: #D1D5DB !important;
+  color: #1F2937 !important;
+}
+
+.dark .rdp-nav_button {
+  color: #374151 !important;
+}
+
+.dark .rdp-nav_button:hover {
+  background-color: #D1D5DB !important;
+  color: #1F2937 !important;
+}
+
+.dark .rdp-day_disabled {
+  opacity: 0.5 !important;
+  color: #6B7280 !important;
+  cursor: not-allowed !important;
+  background-color: #E5E7EB !important;
+  border: 1px solid #D1D5DB !important;
+}
+
+.dark .rdp-day_disabled::before {
+  color: #6B7280 !important;
+}
+
+.dark .rdp-day_disabled:hover {
+  background-color: #E5E7EB !important;
+  color: #6B7280 !important;
+}

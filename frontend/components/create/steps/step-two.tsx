@@ -69,15 +69,15 @@ export function StepTwo({ marketData, updateMarketData }: StepTwoProps) {
             <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent className="z-50">
-              <SelectItem value="crypto">Crypto</SelectItem>
-              <SelectItem value="tech">Tech</SelectItem>
-              <SelectItem value="finance">Finance</SelectItem>
-              <SelectItem value="science">Science</SelectItem>
-              <SelectItem value="health">Health</SelectItem>
-              <SelectItem value="sports">Sports</SelectItem>
-              <SelectItem value="politics">Politics</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+            <SelectContent className="z-[999999] bg-white border border-gray-200 shadow-2xl dark:bg-gray-50 dark:border-gray-300">
+              <SelectItem value="crypto" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Crypto</SelectItem>
+              <SelectItem value="tech" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Tech</SelectItem>
+              <SelectItem value="finance" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Finance</SelectItem>
+              <SelectItem value="science" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Science</SelectItem>
+              <SelectItem value="health" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Health</SelectItem>
+              <SelectItem value="sports" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Sports</SelectItem>
+              <SelectItem value="politics" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Politics</SelectItem>
+              <SelectItem value="other" className="hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-200 focus:bg-blue-100 focus:text-blue-900">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
