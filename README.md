@@ -1,34 +1,69 @@
 <div align="center">
-  <img src="frontend/public/POP-logo.png" alt="POP Logo" width="200" height="200" />
+  <img src="assets/POP-logo.png" alt="POP Logo" width="200" height="200" />
 </div>
 
-## 1. Concept
+<div align="center">
 
-**POP – Predict on Posts** lets anyone turn a **Twitter/X poll** into an onchain prediction market.
+**POP – Predict on Posts** lets anyone turn any social media post into an onchain prediction market.
 
-When a creator posts a poll on X — for example:
+![POP in action gif](./assets/pop-demo.gif)
 
-> “Will I get Monad Aridrop ?”
+</div>
 
-our browser extension recognizes it and instantly spins up a market on **Arbitrum** using **PYUSD** as collateral.
+## Introduction
 
-Users can stake on poll options, exit or switch sides before the poll closes, and claim payouts after the poll result is finalized.
+When you browse social media, the extension automatically detects whether a prediction market exists for the post you're viewing. If a market hasn't been created yet, it analyzes the post and offers anyone the opportunity to set one up. Once a market is live, users can participate by staking on outcomes they believe in.
 
-In short: **Polymarket, but embedded directly in Twitter.**
-
----
-
-## 2. Why It’s Needed
-
-| Pain Point                                                                              | How POP Solves It                                                                 |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Prediction markets are siloed off on external platforms like Polymarket, kalshi, myriad | Markets live _inside X itself_, accessible through a browser extension            |
-| Onboarding friction (bridging, swapping, connecting wallets)                            | One-click “Bridge & Execute” via **Avail Nexus** handles everything automatically |
-| Liquidity only for big, global questions                                                | Any creator can host micro-markets on their own polls                             |
+Players can bet on their preferred outcomes, adjust their positions before the poll closes, or exit early - all while interacting directly on the platform.
 
 ---
 
-## 3. Market Lifecycle Overview
+## Pain Points We're Solving
+
+Prediction markets today are broken:
+
+- Platforms like Polymarket decide which markets get created - you can't just start one yourself
+- You have to leave social media (where you get news about events) just to find and bet on markets
+- Only viral questions get enough volume - niche topics die
+- Creators can't monetize their own engagement
+
+POP changes this. Anyone can create markets for any post. Betting happens right where the conversation does.
+
+---
+
+## Architecture
+
+### Frontend
+
+**Deployment**: [https://predict-on-posts.vercel.app/](https://predict-on-posts.vercel.app/)
+
+- Next.js web dashboard for browsing markets and managing predictions
+- Browser extension for in-post betting directly on social media
+
+### Backend API
+
+**Deployment**: [Link TBD]
+
+- NestJS API that caches social media post metadata and orchestrates market creation
+- Provides endpoints for post analysis and market data retrieval
+
+### Smart Contracts
+
+**Deployment**: [Arbitrum Sepolia](https://sepolia.arbiscan.io/address/0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4)
+
+- MarketFactory contract that deploys individual market instances on-chain
+- Market contracts that handle betting, exiting, and resolution with PYUSD collateral
+
+### Indexer (Envio)
+
+**Deployment**: [GraphQL Endpoint TBD]
+
+- Real-time blockchain event indexing for market activity
+- Provides GraphQL API for querying market state, bets, and resolution history
+
+---
+
+## Market Lifecycle Overview
 
 ```mermaid
 flowchart LR
@@ -148,12 +183,13 @@ flowchart LR
 
 ## 7. Smart Contracts Overview
 
-| Contract          | Responsibility                                              | Address (Arbitrum Sepolia)                    |
-| ----------------- | ----------------------------------------------------------- | ---------------------------------------------- |
+| Contract          | Responsibility                                              | Address (Arbitrum Sepolia)                   |
+| ----------------- | ----------------------------------------------------------- | -------------------------------------------- |
 | **MarketFactory** | Deploys markets for detected polls                          | `0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4` |
-| **Market**        | Stores stakes, allows exits, handles resolution and payouts | Deployed dynamically by MarketFactory         |
+| **Market**        | Stores stakes, allows exits, handles resolution and payouts | Deployed dynamically by MarketFactory        |
 
 **Network Details:**
+
 - **Network**: Arbitrum Sepolia (Chain ID: 421614)
 - **Collateral Token**: Testnet USDC (`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d`)
 - **Creator Override Window**: 21,600 seconds (6 hours)
