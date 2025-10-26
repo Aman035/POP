@@ -620,6 +620,8 @@ function buildCreateMarketUrl(params = {}) {
     url.searchParams.set('identifier', params.tweetId) // Use tweetId as identifier
   }
 
+  url.searchParams.set('platform', 'twitter')
+
   return url.toString()
 }
 
