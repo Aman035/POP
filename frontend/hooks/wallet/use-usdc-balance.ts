@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
-import { arbitrumSepolia } from 'wagmi/chains';
 import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI } from '@/lib/contracts';
 
 export interface UsdcBalanceState {
@@ -19,7 +18,7 @@ export interface UsdcBalanceActions {
   refreshBalance: () => Promise<void>;
 }
 
-const ARBITRUM_SEPOLIA_CHAIN_ID = arbitrumSepolia.id;
+const BSC_TESTNET_CHAIN_ID = 97;
 
 export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & UsdcBalanceActions {
   const { address, chainId } = useAccount();
@@ -42,7 +41,7 @@ export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & Usdc
   });
 
   // Check if we're on the correct chain
-  const isCorrectChain = chainId === ARBITRUM_SEPOLIA_CHAIN_ID;
+  const isCorrectChain = chainId === BSC_TESTNET_CHAIN_ID;
 
   // Update balance state when balance data changes
   useEffect(() => {
@@ -90,7 +89,7 @@ export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & Usdc
     }
 
     if (!isCorrectChain) {
-      setError('Please switch to Arbitrum Sepolia network');
+      setError('Please switch to BSC Testnet network');
       return;
     }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, useReadContracts, usePublicClient } from 'wagmi';
-import { parseAbiItem, encodeFunctionData, decodeEventLog, formatUnits } from 'viem';
+import { parseAbiItem, encodeFunctionData, decodeEventLog, formatUnits, keccak256, toBytes } from 'viem';
 import type { Abi } from 'viem';
 import { 
   MARKET_FACTORY_ADDRESS, 
@@ -71,22 +71,75 @@ export const useCollateralToken = () => {
 export const useCreateMarket = () => {
   const { address, isConnected } = useAccount();
   const { address: walletAddress, isConnected: walletConnected } = useWallet();
+  const publicClient = usePublicClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [marketAddress, setMarketAddress] = useState<string | null>(null);
 
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed,
+    isError: isReceiptError,
+    error: receiptError,
+    data: receipt
+  } = useWaitForTransactionReceipt({
     hash,
   });
 
-  // Debug wagmi hooks
-  console.log('🔍 Wagmi hooks debug:');
-  console.log('  - writeContract:', writeContract);
-  console.log('  - hash:', hash);
-  console.log('  - isPending:', isPending);
-  console.log('  - writeError:', writeError);
-  console.log('  - isConfirming:', isConfirming);
-  console.log('  - isConfirmed:', isConfirmed);
+  // Watch for transaction receipt errors
+  useEffect(() => {
+    if (isReceiptError && receiptError && hash) {
+      console.error('❌ Transaction receipt error:', receiptError);
+      const errorMsg = receiptError instanceof Error ? receiptError.message : 'Transaction failed on blockchain';
+      setError(errorMsg);
+    }
+  }, [isReceiptError, receiptError, hash]);
+
+  // Extract market address from receipt when confirmed
+  useEffect(() => {
+    if (isConfirmed && receipt && hash) {
+      try {
+        // Get the event signature hash
+        // MarketCreated(address,address,tuple,tuple)
+        const eventSignature = 'MarketCreated(address,address,tuple,tuple)';
+        const eventTopic = keccak256(toBytes(eventSignature));
+
+        // Parse MarketCreated event from receipt
+        const marketCreatedEvent = receipt.logs.find((log) => {
+          return log.topics[0] === eventTopic;
+        });
+
+        if (marketCreatedEvent) {
+          // Decode the event to get the market address
+          const decoded = decodeEventLog({
+            abi: MARKET_FACTORY_ABI,
+            eventName: 'MarketCreated',
+            data: marketCreatedEvent.data,
+            topics: marketCreatedEvent.topics,
+          });
+          
+          // The market address is in topics[2] (indexed parameter)
+          // topics[0] = event signature
+          // topics[1] = creator (indexed)
+          // topics[2] = market (indexed)
+          if (marketCreatedEvent.topics && marketCreatedEvent.topics.length >= 3) {
+            const extractedMarketAddress = marketCreatedEvent.topics[2] as string;
+            console.log('✅ Market address extracted from event:', extractedMarketAddress);
+            setMarketAddress(extractedMarketAddress);
+          } else if (decoded && decoded.args && typeof decoded.args === 'object' && 'market' in decoded.args) {
+            const extractedMarketAddress = (decoded.args as any).market as string;
+            console.log('✅ Market address extracted from decoded args:', extractedMarketAddress);
+            setMarketAddress(extractedMarketAddress);
+          }
+        } else {
+          console.warn('⚠️ MarketCreated event not found in receipt');
+        }
+      } catch (err) {
+        console.error('❌ Error parsing MarketCreated event:', err);
+      }
+    }
+  }, [isConfirmed, receipt, hash]);
 
   const createMarket = useCallback(async (params: MarketCreationParams) => {
     console.log('🚀 createMarket function called with params:', params);
@@ -94,14 +147,6 @@ export const useCreateMarket = () => {
     // Use wallet address as fallback if useAccount address is not available
     const userAddress = address || walletAddress;
     const isWalletConnected = isConnected || walletConnected;
-
-    console.log('🔍 Wallet connection check:');
-    console.log('  - isConnected (useAccount):', isConnected);
-    console.log('  - walletConnected (useWallet):', walletConnected);
-    console.log('  - address (useAccount):', address);
-    console.log('  - walletAddress (useWallet):', walletAddress);
-    console.log('  - Final userAddress:', userAddress);
-    console.log('  - Final isWalletConnected:', isWalletConnected);
 
     if (!isWalletConnected || !userAddress) {
       console.error('❌ Wallet not connected or no address found');
@@ -112,16 +157,41 @@ export const useCreateMarket = () => {
     try {
       setLoading(true);
       setError(null);
+      setMarketAddress(null);
 
-      console.log('✅ Wallet connection verified, proceeding with market creation');
-      console.log('Creating market with params:', params);
-      console.log('useAccount address:', address);
-      console.log('useWallet address:', walletAddress);
-      console.log('Final user address:', userAddress);
-      console.log('Contract address:', MARKET_FACTORY_ADDRESS);
-      console.log('Contract ABI length:', MARKET_FACTORY_ABI?.length);
-      console.log('writeContract function:', writeContract);
-      console.log('writeContract type:', typeof writeContract);
+      // Validate MARKET_FACTORY_ADDRESS is set and valid
+      if (!MARKET_FACTORY_ADDRESS || MARKET_FACTORY_ADDRESS.trim() === '') {
+        throw new Error('Market Factory contract address is not configured. Please set NEXT_PUBLIC_MARKET_FACTORY_ADDRESS in your .env.local file. Expected: 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4');
+      }
+
+      // Validate MARKET_FACTORY_ADDRESS format
+      if (!MARKET_FACTORY_ADDRESS.startsWith('0x') || MARKET_FACTORY_ADDRESS.length !== 42) {
+        throw new Error(`Invalid Market Factory contract address format: ${MARKET_FACTORY_ADDRESS}. Expected a valid Ethereum address (42 characters starting with 0x).`);
+      }
+
+      // Expected correct address on BSC Testnet
+      const EXPECTED_MARKET_FACTORY_ADDRESS = '0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4';
+      
+      // Warn if address doesn't match expected (case-insensitive comparison)
+      if (MARKET_FACTORY_ADDRESS.toLowerCase() !== EXPECTED_MARKET_FACTORY_ADDRESS.toLowerCase()) {
+        console.warn('⚠️ WARNING: Market Factory address does not match expected address!');
+        console.warn(`   Current: ${MARKET_FACTORY_ADDRESS}`);
+        console.warn(`   Expected: ${EXPECTED_MARKET_FACTORY_ADDRESS}`);
+        console.warn('   Please check your NEXT_PUBLIC_MARKET_FACTORY_ADDRESS environment variable.');
+        
+        // If it's the problematic address the user mentioned, throw an error
+        if (MARKET_FACTORY_ADDRESS.toLowerCase() === '0x6b70e7fc5e40acfc76ebc3fa148159e5ef6f7643') {
+          throw new Error(`Invalid Market Factory address detected: ${MARKET_FACTORY_ADDRESS}. This appears to be an incorrect address. Please update your .env.local file with: NEXT_PUBLIC_MARKET_FACTORY_ADDRESS=0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4`);
+        }
+      }
+
+      // Log the addresses being used for debugging
+      console.log('📋 Address validation:', {
+        userAddress,
+        marketFactoryAddress: MARKET_FACTORY_ADDRESS,
+        userAddressLength: userAddress?.length,
+        marketFactoryAddressLength: MARKET_FACTORY_ADDRESS.length,
+      });
 
       // Validate required parameters
       if (!params.question || !params.description || !params.options || params.options.length < 2) {
@@ -133,10 +203,7 @@ export const useCreateMarket = () => {
       }
 
       // Check if the user address is the same as contract address (this would cause the error)
-      if (userAddress === MARKET_FACTORY_ADDRESS) {
-        console.error('CRITICAL: Wallet is returning contract address instead of user address!');
-        console.error('This indicates a serious wallet connection issue.');
-        console.error('Please try: 1) Disconnect wallet 2) Refresh page 3) Reconnect wallet');
+      if (userAddress.toLowerCase() === MARKET_FACTORY_ADDRESS.toLowerCase()) {
         throw new Error('Wallet address is the same as contract address. Please disconnect and reconnect your wallet.');
       }
 
@@ -145,96 +212,88 @@ export const useCreateMarket = () => {
         throw new Error('Invalid wallet address format. Please reconnect your wallet.');
       }
 
-      // Write the contract with all required parameters
-      const marketCreationParams = {
-        identifier: params.identifier,
-        endTime: params.endTime,
-        creatorFeeBps: params.creatorFeeBps,
-        question: params.question,
-        description: params.description,
-        category: params.category,
-        platform: params.platform,
-        resolutionSource: params.resolutionSource,
-        options: params.options,
-        // Removed postUrl, minBet, maxBetPerUser, maxTotalStake as they're not in the new contract
+      console.log('🔄 Submitting transaction to create market...');
+      console.log('📍 Contract address:', MARKET_FACTORY_ADDRESS);
+      console.log('👤 User address:', userAddress);
+      
+      // Submit the transaction - writeContract triggers wallet prompt
+      // It may throw synchronously if user rejects immediately
+      writeContract({
+        address: MARKET_FACTORY_ADDRESS as `0x${string}`,
+        abi: MARKET_FACTORY_ABI,
+        functionName: 'createMarket',
+        args: [
+          params.identifier, // string
+          params.endTime, // uint64 (number)
+          params.creatorFeeBps, // uint96 (number)
+          params.question, // string
+          params.description, // string
+          params.category, // string
+          params.platform, // uint8 (number)
+          params.resolutionSource, // string
+          params.options // string[]
+        ]
+      });
+
+      // If writeContract didn't throw, transaction was submitted to wallet
+      // The hash will be set by wagmi asynchronously after user confirms
+      // We return immediately - the component should watch the hash from the hook's return value
+      console.log('✅ Transaction submitted to wallet, waiting for user confirmation...');
+      
+      return { 
+        hash: null, // Will be available from hook's return value after user confirms
+        marketAddress: null, // Will be set by useEffect when receipt is confirmed
+        isPending: true, 
+        isConfirming: false, 
+        isConfirmed: false 
       };
-
-      console.log('Market creation params:', marketCreationParams);
-
-      console.log('🔄 About to call writeContract with:');
-      console.log('  - address:', MARKET_FACTORY_ADDRESS);
-      console.log('  - functionName: createMarket');
-      console.log('  - args:', [
-        params.identifier,
-        params.endTime,
-        params.creatorFeeBps,
-        params.question,
-        params.description,
-        params.category,
-        params.platform,
-        params.resolutionSource,
-        params.options
-      ]);
-
-      try {
-        console.log('🔄 Attempting writeContract call...');
-        const writeContractResult = await writeContract({
-          address: MARKET_FACTORY_ADDRESS as `0x${string}`,
-          abi: MARKET_FACTORY_ABI,
-          functionName: 'createMarket',
-          args: [
-            params.identifier, // string
-            params.endTime, // uint64 (number)
-            params.creatorFeeBps, // uint96 (number)
-            params.question, // string
-            params.description, // string
-            params.category, // string
-            params.platform, // uint8 (number)
-            params.resolutionSource, // string
-            params.options // string[]
-          ]
-        });
-
-        console.log('✅ writeContract call completed:', writeContractResult);
-      } catch (writeError: any) {
-        console.error('❌ writeContract call failed:', writeError);
-        console.error('❌ Error details:', {
-          name: writeError?.name,
-          message: writeError?.message,
-          stack: writeError?.stack,
-          cause: writeError?.cause
-        });
-        throw writeError;
+    } catch (err: any) {
+      console.error('❌ Error in createMarket:', err);
+      
+      // Extract detailed error message
+      let errorMsg = 'Failed to create market';
+      
+      if (err instanceof Error) {
+        errorMsg = err.message;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      } else if (err?.error?.message) {
+        errorMsg = err.error.message;
+      } else if (err?.reason) {
+        errorMsg = err.reason;
+      } else if (typeof err === 'string') {
+        errorMsg = err;
       }
-
-      return { hash, isPending, isConfirming, isConfirmed };
-    } catch (err) {
-      console.error('Error in createMarket:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create market');
+      
+      // Log full error details
+      console.error('Error details:', {
+        error: err,
+        message: errorMsg,
+        name: err?.name,
+        code: err?.code,
+        cause: err?.cause,
+      });
+      
+      setError(errorMsg);
       return null;
     } finally {
       setLoading(false);
     }
   }, [isConnected, address, walletConnected, walletAddress, writeContract]);
 
-  // Return transaction status for the component to handle
-  const getTransactionResult = useCallback(() => {
-    if (isConfirmed && hash) {
-      return {
-        marketAddress: hash, // This should be the actual market address from the event
-        txHash: hash
-      };
-    }
-    return null;
-  }, [isConfirmed, hash]);
+  // Combine all error sources
+  const combinedError = error || 
+    (writeError ? (writeError instanceof Error ? writeError.message : String(writeError)) : null) ||
+    (receiptError ? (receiptError instanceof Error ? receiptError.message : String(receiptError)) : null);
 
   return { 
     createMarket, 
     loading: loading || isPending || isConfirming, 
-    error: error || (writeError ? writeError.message : null),
+    error: combinedError,
     hash,
     isConfirmed,
-    getTransactionResult
+    isError: isReceiptError || !!writeError || !!error,
+    marketAddress: marketAddress || (isConfirmed && hash ? null : null), // Will be set by useEffect
   };
 };
 

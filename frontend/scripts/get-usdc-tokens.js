@@ -2,8 +2,8 @@
 // Run this in your browser console or as a Node.js script
 // Note: This script should be updated to import from config in a real implementation
 
-const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // TODO: Import from config
-const ARBITRUM_SEPOLIA_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
+const USDC_ADDRESS = ""; // TODO: Update with BSC Testnet USDC address after deployment
+const BSC_TESTNET_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545";
 
 // ABI for common ERC20 functions and potential faucet functions
 const USDC_ABI = [
@@ -25,7 +25,7 @@ async function getUSDCTokens() {
       throw new Error('MetaMask not detected. Please install MetaMask.');
     }
 
-    // Connect to Arbitrum Sepolia
+    // Connect to BSC Testnet
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
@@ -85,9 +85,9 @@ async function getUSDCTokens() {
     }
 
     console.log('❌ No working faucet method found. Try external faucets:');
-    console.log('1. https://developer.interlace.money/docs/usdc-on-testing-networks');
-    console.log('2. https://faucet.quicknode.com/arbitrum/sepolia');
-    console.log('3. Bridge USDC from Ethereum Sepolia');
+    console.log('1. https://testnet.bnbchain.org/faucet-smart');
+    console.log('2. https://developer.interlace.money/docs/usdc-on-testing-networks');
+    console.log('3. Bridge USDC from other testnets');
 
   } catch (error) {
     console.error('Error getting USDC tokens:', error);
@@ -101,18 +101,18 @@ console.log(`
 
 To get USDC tokens from ${USDC_ADDRESS}:
 
-1. Make sure you're connected to Arbitrum Sepolia (Chain ID: 421614)
-2. Make sure you have some ETH for gas fees
+1. Make sure you're connected to BSC Testnet (Chain ID: 97)
+2. Make sure you have some BNB for gas fees
 3. Run: getUSDCTokens()
 
 If the built-in faucet doesn't work, try these external options:
+- BSC Testnet Faucet: https://testnet.bnbchain.org/faucet-smart
 - Interlace Faucet: https://developer.interlace.money/docs/usdc-on-testing-networks
-- QuickNode Faucet: https://faucet.quicknode.com/arbitrum/sepolia
-- Bridge from Ethereum Sepolia: https://bridge.arbitrum.io/
+- Bridge from other testnets
 
 Token Details:
-- Address: ${USDC_ADDRESS}
-- Network: Arbitrum Sepolia
+- Address: ${USDC_ADDRESS || 'TBD - Update after deployment'}
+- Network: BSC Testnet
 - Decimals: 6
 - Symbol: USDC
 `);

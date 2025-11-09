@@ -1,7 +1,29 @@
 import { NextResponse } from 'next/server';
-import { createPublicClient, http, parseAbi } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { createPublicClient, http, parseAbi, defineChain } from "viem";
 import { config } from "@/lib/config";
+
+// BSC Testnet chain definition
+const bscTestnet = defineChain({
+  id: 97,
+  name: 'BSC Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'BNB',
+    symbol: 'BNB',
+  },
+  rpcUrls: {
+    default: {
+      http: [config.network.rpcUrl],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'BscScan',
+      url: 'https://testnet.bscscan.com',
+    },
+  },
+  testnet: true,
+});
 
 // === ABIs ===
 const marketAbi = parseAbi([
@@ -24,7 +46,7 @@ const marketAbi = parseAbi([
 
 // === CLIENT ===
 const client = createPublicClient({
-  chain: arbitrumSepolia,
+  chain: bscTestnet,
   transport: http(config.network.rpcUrl),
 });
 

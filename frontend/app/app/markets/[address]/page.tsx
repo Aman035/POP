@@ -15,8 +15,6 @@ import { useReadContract, useReadContracts, useWriteContract, useWaitForTransact
 import { formatUnits, parseUnits } from "viem"
 import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI } from "@/lib/contracts"
 import { useUsdcBalance } from "@/hooks/wallet/use-usdc-balance"
-import { BridgeAndBetButton } from "@/components/nexus/bridge-and-bet-button"
-import { SimpleBridgeWidget } from "@/components/nexus/simple-bridge-widget"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MarketDetailsPageProps {
@@ -87,7 +85,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   }
   
   // Wallet and betting state
-  const { isConnected, address, connect, isCorrectChain, switchToArbitrumSepolia } = useWallet()
+  const { isConnected, address, connect, isCorrectChain, switchToBSCTestnet } = useWallet()
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [betAmount, setBetAmount] = useState("")
   const [isApproving, setIsApproving] = useState(false)
@@ -98,7 +96,6 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   const [copiedHash, setCopiedHash] = useState(false)
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showBridgeOption, setShowBridgeOption] = useState(false)
   
   // USDC balance checking with real-time validation
   const { 
@@ -180,7 +177,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     }
     
     if (!isCorrectChain) {
-      await switchToArbitrumSepolia()
+      await switchToBSCTestnet()
       return
     }
     
@@ -586,10 +583,10 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                   <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
                   <h4 className="font-semibold mb-2">Wrong Network</h4>
                   <p className="text-muted-foreground mb-4">
-                    Please switch to Arbitrum Sepolia to place bets
+                    Please switch to BSC Testnet to place bets
                   </p>
                   <Button 
-                    onClick={switchToArbitrumSepolia}
+                    onClick={switchToBSCTestnet}
                     className="gold-gradient text-background font-semibold px-6 py-2"
                   >
                     Switch Network
@@ -700,45 +697,14 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
 
                       {/* Smart Betting Flow - Automatically handles the entire process */}
                       {hasInsufficientUSDC ? (
-                        /* Bridge and Bet Button - shown when insufficient USDC */
-                        <div className="space-y-3">
-                          <Alert className="border-2 border-blue-600 bg-blue-100 dark:bg-blue-900/40 py-3 shadow-lg">
-                            <Zap className="h-5 w-5 text-blue-700 dark:text-blue-300" />
-                            <AlertDescription className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                              💡 Bridge ETH to USDC and place your bet in one transaction!
-                            </AlertDescription>
-                          </Alert>
-                          
-                          <BridgeAndBetButton
-                            marketAddress={resolvedParams.address}
-                            option={selectedOption!}
-                            amount={betAmount}
-                            onSuccess={(txHash) => {
-                              setShowSuccess(true)
-                              setTransactionHash(txHash)
-                              setTimeout(() => {
-                                setShowSuccess(false)
-                                setBetAmount("")
-                                setSelectedOption(null)
-                                refetch()
-                              }, 3000)
-                            }}
-                            onError={(error) => {
-                              console.error("Bridge and bet failed:", error)
-                              setTransactionStatus(`Bridge failed: ${error}`)
-                            }}
-                          />
-                          
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowBridgeOption(!showBridgeOption)}
-                            className="w-full border-2 border-purple-500 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold"
-                            size="sm"
-                          >
-                            <Zap className="w-4 h-4 mr-2" />
-                            {showBridgeOption ? 'Hide' : 'Show'} Alternative Bridge Options
-                          </Button>
-                        </div>
+                        /* Insufficient balance message */
+                        <Alert className="border-2 border-orange-600 bg-orange-100 dark:bg-orange-900/40 py-3 shadow-lg">
+                          <AlertCircle className="h-5 w-5 text-orange-700 dark:text-orange-400" />
+                          <AlertDescription className="text-sm font-bold text-orange-900 dark:text-orange-100">
+                            ⚠️ Insufficient USDC! You need ${Number(betAmount).toFixed(2)} but only have ${usdcBalanceFormatted}. 
+                            Please add USDC to your wallet on BSC Testnet to place this bet.
+                          </AlertDescription>
+                        </Alert>
                       ) : (
                         /* Smart Betting Button - Automatically handles approval + bet */
                         <Button
@@ -831,35 +797,6 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             </>
                           )}
                         </Button>
-                      )}
-                      
-                      {/* Bridge Option Section */}
-                      {showBridgeOption && hasInsufficientUSDC && (
-                        <Card className="p-6 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 border-2 border-purple-400 dark:border-purple-600 mt-4 shadow-xl">
-                          <div className="text-center space-y-4">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto shadow-lg">
-                              <Zap className="w-8 h-8 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-bold mb-2 text-purple-900 dark:text-purple-100">
-                                🌉 Bridge ETH to USDC
-                              </h3>
-                              <p className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-4">
-                                Bridge ETH from any supported chain to get USDC on Arbitrum Sepolia
-                              </p>
-                            </div>
-
-                            <SimpleBridgeWidget
-                              onSuccess={() => {
-                                setShowBridgeOption(false)
-                                refreshUsdcBalance()
-                              }}
-                              onError={(error) => {
-                                console.error("Bridge failed:", error)
-                              }}
-                            />
-                          </div>
-                        </Card>
                       )}
                     </div>
                   )}
@@ -1141,7 +1078,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
               </div>
               <div>
                 <span className="text-muted-foreground">Network:</span>
-                <div>Arbitrum Sepolia</div>
+                <div>BSC Testnet</div>
               </div>
             </div>
           </Card>

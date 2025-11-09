@@ -6,8 +6,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@avail-project/nexus-core": "^0.0.1",
-    "@avail-project/nexus-widgets": "^0.0.6",
     "@emotion/is-prop-valid": "latest",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

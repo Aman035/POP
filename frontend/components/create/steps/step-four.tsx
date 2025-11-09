@@ -17,24 +17,18 @@ import {
   Zap,
   Loader2,
   RefreshCw,
+  AlertCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCreateMarket } from '@/hooks/contracts/use-contracts'
 import { toast } from '@/hooks/utils/use-toast'
 import { Platform } from '@/lib/types'
 import { useEthBalance } from '@/hooks/wallet/use-eth-balance'
-import {
-  BridgeButton,
-  BridgeAndExecuteButton,
-  TOKEN_CONTRACT_ADDRESSES,
-  TOKEN_METADATA,
-  SUPPORTED_CHAINS,
-  type SUPPORTED_TOKENS,
-  type SUPPORTED_CHAINS_IDS,
-} from '@avail-project/nexus-widgets'
 import { parseUnits } from 'viem'
+import { MarketCreationProgress } from '../market-creation-progress'
 
 interface StepFourProps {
   marketData: any
@@ -48,38 +42,25 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
     error: createError,
     hash,
     isConfirmed,
+    marketAddress: hookMarketAddress,
   } = useCreateMarket()
   const [isCreating, setIsCreating] = useState(false)
   const [txHash, setTxHash] = useState<string | null>(null)
   const [marketAddress, setMarketAddress] = useState<string | null>(null)
   const [contractAddress, setContractAddress] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [showManualBridge, setShowManualBridge] = useState(false)
-  const [showBridgePopup, setShowBridgePopup] = useState(false)
-  const [availableFunds, setAvailableFunds] = useState<any[]>([])
-  const [selectedChain, setSelectedChain] = useState<string>('')
+  const [creationStep, setCreationStep] = useState<'idle' | 'preparing' | 'submitting' | 'confirming' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Note: Bridge state management removed - Nexus widgets handle their own state
-
-  // ETH balance and Nexus SDK hooks
+  // ETH balance hooks
   const {
     balance,
     balanceFormatted,
     hasInsufficientBalance,
     isLoading: balanceLoading,
     error: balanceError,
-    isBridging,
-    bridgeError,
-    bridgeSuccess,
-    availableChains,
-    bridgeEthFromOtherChain,
-    getAvailableChains,
     refreshBalance,
   } = useEthBalance()
-
-  // Note: Nexus widgets handle their own SDK internally
-
-  // const nexusWidget = useNexusWidget();
 
   const PlatformIcon =
     marketData.platform === Platform.Twitter
@@ -88,104 +69,6 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       ? MessageSquare
       : MessageSquare // Default fallback
 
-  // Check for available funds on other chains
-  const checkForAvailableFunds = async () => {
-    try {
-      console.log('Checking for available funds on other chains...')
-
-      // For now, just show manual bridge options
-      // The Nexus widgets will handle their own balance checking
-      console.log('Showing manual bridge options')
-      setShowManualBridge(true)
-
-      toast({
-        title: 'Bridge Options Available',
-        description:
-          'Use the Nexus widgets below to bridge funds from other chains.',
-      })
-    } catch (error) {
-      console.error('Error checking for funds:', error)
-      // Fallback to manual bridge options
-      setShowManualBridge(true)
-
-      toast({
-        title: 'Error Checking Funds',
-        description:
-          'Failed to check balances on other chains. Using manual bridge options.',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  // Helper function to get chain name from chain ID (Nexus Testnet supported chains)
-  const getChainName = (chainId: number): string => {
-    const chainNames: { [key: number]: string } = {
-      // Nexus Testnet supported chains
-      11155420: 'Optimism Sepolia',
-      80002: 'Polygon Amoy',
-      421614: 'Arbitrum Sepolia',
-      84532: 'Base Sepolia',
-      11155111: 'Sepolia',
-      10143: 'Monad Testnet',
-      // Additional chains for reference
-      1: 'Ethereum Mainnet',
-      42161: 'Arbitrum One',
-      8453: 'Base Mainnet',
-      137: 'Polygon Mainnet',
-      80001: 'Polygon Mumbai',
-    }
-    return chainNames[chainId] || `Chain ${chainId}`
-  }
-
-  // Handle bridge confirmation using real Nexus SDK
-  const handleBridgeConfirm = async () => {
-    if (!selectedChain) {
-      toast({
-        title: 'Please select a chain',
-        description: 'Choose which chain to bridge from',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    // Note: Nexus widgets handle their own initialization
-
-    try {
-      // Find the selected asset from available funds
-      const selectedAsset = availableFunds.find(
-        (fund) => fund.chain === selectedChain
-      )
-      if (!selectedAsset) {
-        toast({
-          title: 'Asset Not Found',
-          description: 'Selected asset not found. Please try again.',
-          variant: 'destructive',
-        })
-        return
-      }
-
-      console.log(
-        `Bridge requested for ${selectedAsset.balance} from ${selectedChain}`
-      )
-
-      toast({
-        title: '🔄 Bridge Requested',
-        description: `Please use the Nexus widgets below to bridge ${selectedAsset.balance} to Arbitrum Sepolia.`,
-      })
-
-      // Close the popup and let user use the widgets
-      setShowBridgePopup(false)
-    } catch (error) {
-      console.error('Bridge failed:', error)
-      toast({
-        title: '❌ Bridge Failed',
-        description: `Could not bridge funds: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }. Please try again or use manual options.`,
-        variant: 'destructive',
-      })
-    }
-  }
 
   const handleCreateMarket = async (forceContinue = false) => {
     console.log('Launch Prediction Market button clicked!')
@@ -229,33 +112,47 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
       return
     }
 
-    // If user has insufficient balance, check for funds on other chains
-    if (hasInsufficientBalance && !forceContinue) {
-      console.log(
-        'Insufficient balance detected, checking for funds on other chains...'
-      )
+    // Refresh balance before checking to ensure we have the latest balance
+    await refreshBalance()
+    
+    // Wait a bit for balance to update
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Re-check balance after refresh
+    const currentBalance = parseFloat(balanceFormatted)
+    const minimumRequired = 0.001
+    const actuallyHasInsufficientBalance = currentBalance < minimumRequired || (balanceLoading && currentBalance === 0)
+    
+    console.log('Balance check:', {
+      balanceFormatted,
+      currentBalance,
+      minimumRequired,
+      actuallyHasInsufficientBalance,
+      balanceLoading,
+      hasInsufficientBalance
+    })
 
-      // Show manual bridge options directly
-      setShowManualBridge(true)
-
-      // Also try to check for available funds
-      checkForAvailableFunds()
-
-      return
-    }
-
-    // Show warning if proceeding without sufficient balance
-    if (hasInsufficientBalance && forceContinue) {
+    // Only show warning, don't block - let the blockchain handle the actual check
+    if (actuallyHasInsufficientBalance && !forceContinue) {
       toast({
-        title: '⚠️ Insufficient ETH Balance',
+        title: '⚠️ Low ETH Balance Warning',
         description:
-          "You're proceeding without sufficient ETH. You'll need to get ETH before the transaction can be confirmed.",
+          `You have ${balanceFormatted} ETH. You may need at least 0.001 ETH for gas fees. The transaction will fail if you don't have enough.`,
         variant: 'destructive',
       })
+      // Don't return - let the user proceed, blockchain will reject if insufficient
     }
 
     try {
       setIsCreating(true)
+      setCreationStep('preparing')
+      setErrorMessage(null) // Reset error state
+
+      // Step 1: Preparing market parameters
+      toast({
+        title: '📋 Preparing Market',
+        description: 'Validating market parameters and preparing transaction...',
+      })
 
       // Convert endDate to timestamp
       const endTime = Math.floor(marketData.endDate.getTime() / 1000)
@@ -280,83 +177,106 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
         resolutionSource: marketData.resolutionSource || '',
       }
 
+      console.log('🔄 Calling createMarket with params:', marketParams)
+
+      // Step 2: Submitting transaction
+      setCreationStep('submitting')
       toast({
-        title: 'Creating Market',
+        title: '💼 Submitting Transaction',
         description: 'Please confirm the transaction in your wallet...',
       })
-
-      console.log('🔄 Calling createMarket with params:', marketParams)
-      console.log('🔄 createMarket function reference:', createMarket)
-      console.log('🔄 createMarket type:', typeof createMarket)
 
       const result = await createMarket(marketParams)
       console.log('✅ createMarket result:', result)
 
       if (result) {
-        // Set the transaction hash immediately
-        setTxHash(hash || '')
-
+        // Transaction was submitted to wallet - hash will come from hook state
+        // Set step to confirming and wait for hash from hook
+        setCreationStep('confirming')
         toast({
-          title: 'Transaction Submitted',
-          description:
-            'Your market creation transaction has been submitted to the blockchain',
+          title: '⏳ Transaction Submitted',
+          description: 'Waiting for transaction hash...',
         })
-
-        // Wait for confirmation
-        if (isConfirmed && hash) {
-          // For now, we'll use the transaction hash as a placeholder
-          // In a real implementation, you'd get the contract address from the transaction receipt
-          setContractAddress(hash) // This should be the actual contract address
-          setMarketAddress(hash) // This should be the actual market contract address
-
-          toast({
-            title: 'Market Created Successfully!',
-            description: `Your market has been deployed to the blockchain`,
-          })
-
-          // Call the callback if provided
-          if (onCreateMarket) {
-            onCreateMarket(hash, hash)
-          }
-        }
+        
+        // The hash will be set by wagmi after user confirms in wallet
+        // The useEffect below will handle updating txHash when hash becomes available
       } else {
         throw new Error('Failed to create market')
       }
-    } catch (error) {
-      console.error('Error creating market:', error)
+    } catch (error: any) {
+      console.error('❌ Error creating market:', error)
+      setCreationStep('error')
 
-      let errorMessage = 'An unknown error occurred'
+      let errorMsg = 'An unknown error occurred'
+      let errorDetails = ''
+      
       if (error instanceof Error) {
-        errorMessage = error.message
+        errorMsg = error.message
+        errorDetails = error.stack || ''
+      } else if (typeof error === 'string') {
+        errorMsg = error
+      } else if (error?.message) {
+        errorMsg = error.message
+        errorDetails = error.cause?.message || error.reason || ''
+      } else if (error?.error?.message) {
+        errorMsg = error.error.message
       }
 
-      // Handle specific MetaMask errors
+      // Log full error for debugging
+      console.error('Full error object:', {
+        error,
+        message: errorMsg,
+        details: errorDetails,
+        name: error?.name,
+        code: error?.code,
+      })
+
+      // Handle specific error types
+      let userFriendlyMessage = errorMsg
+      
       if (
-        errorMessage.includes(
+        errorMsg.includes(
           'External transactions to internal accounts cannot include data'
         )
       ) {
-        errorMessage =
+        userFriendlyMessage =
           'Wallet connection issue. Please disconnect and reconnect your wallet, then try again.'
-      } else if (errorMessage.includes('wallet_sendTransaction')) {
-        errorMessage =
+      } else if (errorMsg.includes('wallet_sendTransaction')) {
+        userFriendlyMessage =
           'MetaMask connection issue. Please refresh the page and try again.'
-      } else if (errorMessage.includes('User rejected')) {
-        errorMessage = 'Transaction was cancelled by user.'
-      } else if (errorMessage.includes('insufficient funds')) {
-        errorMessage =
+      } else if (errorMsg.includes('User rejected') || errorMsg.includes('user rejected') || errorMsg.includes('User denied')) {
+        userFriendlyMessage = 'Transaction was cancelled by user.'
+      } else if (errorMsg.includes('insufficient funds') || errorMsg.includes('insufficient balance')) {
+        userFriendlyMessage =
           'Insufficient funds for transaction. Please add ETH to your wallet.'
       } else if (
-        errorMessage.includes('Wallet address is the same as contract address')
+        errorMsg.includes('Wallet address is the same as contract address')
       ) {
-        errorMessage =
+        userFriendlyMessage =
           'Wallet connection error detected. Please follow these steps:\n1. Disconnect your wallet from the app\n2. Refresh the page\n3. Reconnect your wallet\n4. Try creating the market again'
+      } else if (errorMsg.includes('revert') || errorMsg.includes('execution reverted')) {
+        // Try to extract revert reason
+        const revertMatch = errorMsg.match(/revert\s+(.+)/i) || errorDetails.match(/revert\s+(.+)/i)
+        if (revertMatch) {
+          userFriendlyMessage = `Transaction failed: ${revertMatch[1]}`
+        } else {
+          userFriendlyMessage = 'Transaction failed. The contract rejected the transaction. Please check your inputs and try again.'
+        }
+      } else if (errorMsg.includes('nonce')) {
+        userFriendlyMessage = 'Transaction nonce error. Please try again in a moment.'
+      } else if (errorMsg.includes('gas') || errorMsg.includes('Gas')) {
+        userFriendlyMessage = 'Gas estimation failed. Please try again or check your wallet settings.'
+      } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+        userFriendlyMessage = 'Network error. Please check your connection and try again.'
       }
 
+      setErrorMessage(userFriendlyMessage)
+
       toast({
-        title: 'Error Creating Market',
-        description: errorMessage,
+        title: '❌ Transaction Failed',
+        description: userFriendlyMessage,
         variant: 'destructive',
+        duration: 10000, // Show for 10 seconds
       })
     } finally {
       setIsCreating(false)
@@ -377,27 +297,121 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
     }
   }
 
-  const isMarketCreated = marketAddress || marketData.marketAddress
+  const isMarketCreated = marketAddress || hookMarketAddress || marketData.marketAddress
 
-  // Handle transaction confirmation
+  // Update txHash when hash becomes available from hook
   useEffect(() => {
-    if (isConfirmed && hash && !marketAddress) {
-      setMarketAddress(hash) // Using hash as placeholder for market address
+    if (hash && !txHash) {
       setTxHash(hash)
+      if (creationStep === 'confirming') {
+        toast({
+          title: '⏳ Transaction Hash Received',
+          description: `Transaction hash: ${hash.slice(0, 10)}... Waiting for confirmation...`,
+        })
+      }
+    }
+  }, [hash, txHash, creationStep])
+
+  // Watch for market address when it becomes available (even after confirmation)
+  useEffect(() => {
+    if (hookMarketAddress && !marketAddress) {
+      setMarketAddress(hookMarketAddress)
+      setContractAddress(hookMarketAddress)
+      
+      // Ensure step is set to success if transaction is confirmed
+      if (isConfirmed && creationStep !== 'success') {
+        setCreationStep('success')
+      }
 
       toast({
-        title: 'Market Created Successfully!',
-        description: `Your market has been deployed to the blockchain`,
+        title: '🎉 Market Created Successfully!',
+        description: `Your market has been deployed at ${hookMarketAddress.slice(0, 10)}...`,
       })
 
       // Call the callback if provided
-      if (onCreateMarket) {
-        onCreateMarket(hash, hash)
+      if (onCreateMarket && hash) {
+        onCreateMarket(hookMarketAddress, hash)
       }
     }
-  }, [isConfirmed, hash, marketAddress, onCreateMarket])
+  }, [hookMarketAddress, marketAddress, isConfirmed, hash, onCreateMarket, creationStep])
 
-  // Note: Bridge in progress screen removed - Nexus widgets handle their own UI
+  // Watch for errors from the hook
+  useEffect(() => {
+    if (createError && creationStep !== 'success') {
+      console.error('❌ Create market error from hook:', createError)
+      setCreationStep('error')
+      setErrorMessage(createError)
+      
+      let userFriendlyMessage = createError
+      
+      // Parse common error messages
+      if (createError.includes('User rejected') || createError.includes('user rejected')) {
+        userFriendlyMessage = 'Transaction was cancelled by user.'
+      } else if (createError.includes('insufficient funds') || createError.includes('insufficient balance')) {
+        userFriendlyMessage = 'Insufficient funds for transaction. Please add ETH to your wallet.'
+      } else if (createError.includes('revert') || createError.includes('execution reverted')) {
+        // Try to extract the revert reason
+        const revertMatch = createError.match(/revert\s+(.+)/i)
+        if (revertMatch) {
+          userFriendlyMessage = `Transaction failed: ${revertMatch[1]}`
+        } else {
+          userFriendlyMessage = 'Transaction failed. Please check your inputs and try again.'
+        }
+      } else if (createError.includes('nonce')) {
+        userFriendlyMessage = 'Transaction nonce error. Please try again.'
+      } else if (createError.includes('gas')) {
+        userFriendlyMessage = 'Gas estimation failed. Please try again or increase gas limit.'
+      }
+      
+      toast({
+        title: '❌ Transaction Failed',
+        description: userFriendlyMessage,
+        variant: 'destructive',
+        duration: 10000, // Show for 10 seconds
+      })
+    }
+  }, [createError, creationStep])
+
+  // Handle transaction confirmation and market address extraction
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      // Update transaction hash if not set
+      if (!txHash) {
+        setTxHash(hash)
+      }
+
+      // Update step to success when transaction is confirmed
+      // Don't wait for market address - it might be extracted later
+      if (creationStep !== 'success' && creationStep !== 'error') {
+        setCreationStep('success')
+        setErrorMessage(null)
+      }
+
+      // Use market address from hook if available
+      if (hookMarketAddress && !marketAddress) {
+        setMarketAddress(hookMarketAddress)
+        setContractAddress(hookMarketAddress)
+
+        toast({
+          title: '🎉 Market Created Successfully!',
+          description: `Your market has been deployed at ${hookMarketAddress.slice(0, 10)}...`,
+        })
+
+        // Call the callback if provided
+        if (onCreateMarket) {
+          onCreateMarket(hookMarketAddress, hash)
+        }
+      } else if (!marketAddress && creationStep === 'success') {
+        // Transaction confirmed but still waiting for market address
+        toast({
+          title: '✅ Transaction Confirmed',
+          description: 'Extracting market address from transaction receipt...',
+        })
+      }
+    }
+  }, [isConfirmed, hash, hookMarketAddress, marketAddress, txHash, onCreateMarket, creationStep])
+
+  // Bridge functionality removed - use standard bridge methods
 
   return (
     <div className="space-y-6">
@@ -548,141 +562,94 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
 
         {/* Smart Contract Creation */}
         {!isMarketCreated ? (
-          <Card className="p-6 bg-background border-border">
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-gold-2/10 flex items-center justify-center mx-auto">
-                <Clock className="w-6 h-6 text-gold-2" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Launch Your Prediction Market
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Deploy your market to the blockchain and start accepting
-                  predictions.{' '}
-                  {hasInsufficientBalance
-                    ? 'Bridge ETH from another chain first.'
-                    : 'No upfront costs required.'}
-                </p>
-              </div>
+          <>
+            {/* Progress Bar - Show when creating (including success state before transition) */}
+            {creationStep !== 'idle' && (
+              <MarketCreationProgress
+                step={creationStep}
+                txHash={txHash || hash || null}
+                marketAddress={marketAddress || hookMarketAddress || null}
+                errorMessage={errorMessage || createError || null}
+                isConfirmed={isConfirmed}
+              />
+            )}
 
-              {hasInsufficientBalance ? (
-                <div className="space-y-3">
-                  {/* Bridge and Execute Button - Primary Option */}
-                  <BridgeAndExecuteButton
-                    contractAddress={
-                      (process.env
-                        .NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}`) ||
-                      ('0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`)
-                    }
-                    contractAbi={
-                      [
-                        {
-                          name: 'createMarket',
-                          type: 'function',
-                          stateMutability: 'nonpayable',
-                          inputs: [
-                            { name: 'identifier', type: 'string' },
-                            { name: 'endTime', type: 'uint64' },
-                            { name: 'creatorFeeBps', type: 'uint96' },
-                            { name: 'question', type: 'string' },
-                            { name: 'description', type: 'string' },
-                            { name: 'category', type: 'string' },
-                            { name: 'platform', type: 'uint8' },
-                            { name: 'resolutionSource', type: 'string' },
-                            { name: 'options', type: 'string[]' },
-                          ],
-                          outputs: [{ name: 'market', type: 'address' }],
-                        },
-                      ] as const
-                    }
-                    functionName="createMarket"
-                    buildFunctionParams={(token, amount, chainId, user) => {
-                      // Generate a unique identifier string
-                      const identifier =
-                        marketData.identifier ||
-                        `market_${Date.now()}_${Math.random()
-                          .toString(36)
-                          .substr(2, 9)}`
+            {/* Launch Button - Show when not creating or on error */}
+            {(creationStep === 'idle' || creationStep === 'error') && (
+              <Card className="p-6 bg-background border-border">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-gold-2/10 flex items-center justify-center mx-auto">
+                    <Clock className="w-6 h-6 text-gold-2" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Launch Your Prediction Market
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Deploy your market to the blockchain and start accepting
+                      predictions.{' '}
+                      {hasInsufficientBalance
+                        ? 'Bridge ETH from another chain first.'
+                        : 'No upfront costs required.'}
+                    </p>
+                  </div>
 
-                      // Convert endDate to timestamp
-                      const endTime = Math.floor(
-                        marketData.endDate.getTime() / 1000
-                      )
+                  {/* Show error if transaction failed */}
+                  {creationStep === 'error' && errorMessage && (
+                    <Alert className="mb-4 border-red-500 bg-red-50 dark:bg-red-950/20">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-800 dark:text-red-200">
+                        <div className="font-semibold mb-1">Transaction Failed</div>
+                        <div>{errorMessage}</div>
+                        {createError && createError !== errorMessage && (
+                          <div className="mt-2 text-xs opacity-75">
+                            Technical details: {createError}
+                          </div>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                      // Convert creator fee percentage to basis points
-                      const creatorFeeBps = Math.floor(
-                        (marketData.creatorFee || 2) * 100
-                      )
-
-                      return {
-                        functionParams: [
-                          identifier, // string
-                          endTime, // uint64
-                          creatorFeeBps, // uint96
-                          marketData.question,
-                          marketData.description,
-                          marketData.category || 'other',
-                          marketData.platform || 0,
-                          marketData.resolutionSource || '',
-                          marketData.options.filter((option: string) =>
-                            option.trim()
-                          ),
-                        ],
-                      }
-                    }}
-                    prefill={{
-                      toChainId: 421614, // Arbitrum Sepolia
-                      token: 'ETH',
+                  {/* Show warning if balance is low, but don't block */}
+                  {hasInsufficientBalance && parseFloat(balanceFormatted) < 0.001 && creationStep !== 'error' ? (
+                    <Alert className="mb-4 border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800 dark:text-orange-200">
+                        Low ETH balance: {balanceFormatted} ETH. You may need at least 0.001 ETH for gas fees.
+                        The transaction will fail if you don't have enough.
+                      </AlertDescription>
+                    </Alert>
+                  ) : null}
+                  
+                  <Button
+                    onClick={() => handleCreateMarket()}
+                    disabled={isCreating || creatingMarket || balanceLoading}
+                    className="w-full gold-gradient text-background font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                    size="lg"
+                    style={{
+                      opacity: isCreating || creatingMarket || balanceLoading ? 0.5 : 1,
+                      cursor:
+                        isCreating || creatingMarket || balanceLoading ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {({ onClick, isLoading }) => (
-                      <Button
-                        onClick={onClick}
-                        disabled={isLoading}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                        size="lg"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                            Bridge & Launch Market...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-4 h-4 mr-2" />
-                            Bridge ETH & Launch Market
-                          </>
-                        )}
-                      </Button>
+                    {isCreating || creatingMarket ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Launching Market...
+                      </>
+                    ) : balanceLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Checking Balance...
+                      </>
+                    ) : (
+                      'Launch Your Prediction Market'
                     )}
-                  </BridgeAndExecuteButton>
-
+                  </Button>
                 </div>
-              ) : (
-                <Button
-                  onClick={() => handleCreateMarket()}
-                  disabled={isCreating || creatingMarket}
-                  className="w-full gold-gradient text-background font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                  size="lg"
-                  style={{
-                    opacity: isCreating || creatingMarket ? 0.5 : 1,
-                    cursor:
-                      isCreating || creatingMarket ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {isCreating || creatingMarket ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Launching Market...
-                    </>
-                  ) : (
-                    'Launch Your Prediction Market'
-                  )}
-                </Button>
-              )}
-            </div>
-          </Card>
+              </Card>
+            )}
+          </>
         ) : (
           <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-500/30">
             <div className="text-center space-y-6">
@@ -900,274 +867,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
           </Card>
         )}
 
-        {/* Nexus Bridge Section - shown when user has insufficient balance */}
-        {showManualBridge && (
-          <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
-                <Zap className="w-6 h-6 text-blue-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Bridge to Arbitrum Sepolia
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Use Nexus to bridge native currency from supported chains to
-                  Arbitrum Sepolia.
-                </p>
-              </div>
 
-              {/* Nexus Bridge Widget */}
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  {/* Simple Bridge - COMMENTED OUT */}
-                  {/* <BridgeButton
-                    prefill={{ chainId: 421614, token: 'ETH', amount: '0.01' }}
-                  >
-                    {({ onClick, isLoading }) => (
-                      <Button
-                        onClick={onClick}
-                        disabled={isLoading}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                            Bridging ETH...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-4 h-4 mr-2" />
-                            Bridge 0.01 ETH to Arbitrum Sepolia
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </BridgeButton> */}
-
-                  {/* Bridge and Create Market in One Transaction */}
-                  <BridgeAndExecuteButton
-                    contractAddress={
-                      (process.env
-                        .NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}`) ||
-                      ('0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643' as `0x${string}`)
-                    }
-                    contractAbi={
-                      [
-                        {
-                          name: 'createMarket',
-                          type: 'function',
-                          stateMutability: 'nonpayable',
-                          inputs: [
-                            { name: 'identifier', type: 'string' },
-                            { name: 'endTime', type: 'uint64' },
-                            { name: 'creatorFeeBps', type: 'uint96' },
-                            { name: 'question', type: 'string' },
-                            { name: 'description', type: 'string' },
-                            { name: 'category', type: 'string' },
-                            { name: 'platform', type: 'uint8' },
-                            { name: 'resolutionSource', type: 'string' },
-                            { name: 'options', type: 'string[]' },
-                          ],
-                          outputs: [{ name: 'market', type: 'address' }],
-                        },
-                      ] as const
-                    }
-                    functionName="createMarket"
-                    buildFunctionParams={(token, amount, chainId, user) => {
-                      // Generate a unique identifier string
-                      const identifier =
-                        marketData.identifier ||
-                        `market_${Date.now()}_${Math.random()
-                          .toString(36)
-                          .substr(2, 9)}`
-
-                      // Convert endDate to timestamp
-                      const endTime = Math.floor(
-                        marketData.endDate.getTime() / 1000
-                      )
-
-                      // Convert creator fee percentage to basis points
-                      const creatorFeeBps = Math.floor(
-                        (marketData.creatorFee || 2) * 100
-                      )
-
-                      console.log('BridgeAndExecuteButton params:', {
-                        identifier,
-                        endTime,
-                        creatorFeeBps,
-                        question: marketData.question,
-                        description: marketData.description,
-                        category: marketData.category || 'other',
-                        platform: marketData.platform || 0,
-                        resolutionSource: marketData.resolutionSource || '',
-                        options: marketData.options.filter((option: string) =>
-                          option.trim()
-                        ),
-                      })
-
-                      return {
-                        functionParams: [
-                          identifier, // string
-                          endTime, // uint64
-                          creatorFeeBps, // uint96
-                          marketData.question,
-                          marketData.description,
-                          marketData.category || 'other',
-                          marketData.platform || 0,
-                          marketData.resolutionSource || '',
-                          marketData.options.filter((option: string) =>
-                            option.trim()
-                          ),
-                        ],
-                      }
-                    }}
-                    prefill={{
-                      toChainId: 421614, // Arbitrum Sepolia
-                      token: 'ETH',
-                    }}
-                  >
-                    {({ onClick, isLoading }) => (
-                      <Button
-                        onClick={onClick}
-                        disabled={isLoading}
-                        className="w-full gold-gradient text-background font-semibold"
-                        size="lg"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                            Bridge & Create Market...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-4 h-4 mr-2" />
-                            Bridge ETH & Create Market (One Transaction)
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </BridgeAndExecuteButton>
-                </div>
-              </div>
-
-              {/* Alternative Options */}
-              <div className="text-xs text-muted-foreground">
-                <p>💡 Alternative: Get testnet ETH from faucets:</p>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      window.open(
-                        'https://faucet.quicknode.com/arbitrum/sepolia',
-                        '_blank'
-                      )
-                    }
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Arbitrum Faucet
-                  </Button>
-
-                  <Button variant="outline" size="sm" onClick={refreshBalance}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh Balance
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowManualBridge(false)
-                      handleCreateMarket(true)
-                    }}
-                    className="bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30"
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Continue Anyway
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Simple Bridge Popup */}
-        {showBridgePopup && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="p-6 bg-background border-border max-w-md w-full mx-4">
-              <div className="text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                  <Zap className="w-6 h-6 text-green-500" />
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    💰 Funds Found!
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    We found native currency on other chains. Bridge it to
-                    Arbitrum Sepolia?
-                  </p>
-                </div>
-
-                {/* Chain Selection */}
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">
-                    Select chain to bridge from:
-                  </label>
-                  <div className="space-y-2">
-                    {availableFunds.map((fund, index) => (
-                      <label
-                        key={index}
-                        className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50"
-                      >
-                        <input
-                          type="radio"
-                          name="chain"
-                          value={fund.chain}
-                          checked={selectedChain === fund.chain}
-                          onChange={(e) => setSelectedChain(e.target.value)}
-                          className="w-4 h-4"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium">{fund.chain}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {fund.balance}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowBridgePopup(false)
-                      setShowManualBridge(true)
-                    }}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                    onClick={handleBridgeConfirm}
-                    disabled={!selectedChain}
-                    className="flex-1 gold-gradient text-background font-semibold"
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Bridge & Create Market
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
       </div>
     </div>
   )

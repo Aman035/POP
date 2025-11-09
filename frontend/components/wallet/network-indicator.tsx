@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Wifi, WifiOff } from 'lucide-react';
-import { arbitrumSepolia } from 'wagmi/chains';
 import { useAccount } from 'wagmi';
 
 interface NetworkIndicatorProps {
@@ -33,12 +32,12 @@ export function NetworkIndicator({
         explorerUrl: 'https://etherscan.io',
         color: 'from-blue-400 to-blue-600'
       };
-    } else if (chainId === arbitrumSepolia.id) {
+    } else if (chainId === 97) {
       return {
-        name: 'Arbitrum Sepolia',
-        shortName: 'Arb Sepolia',
-        explorerUrl: arbitrumSepolia.blockExplorers?.default.url || 'https://sepolia.arbiscan.io',
-        color: 'from-blue-400 to-blue-600'
+        name: 'BSC Testnet',
+        shortName: 'BSC Test',
+        explorerUrl: 'https://testnet.bscscan.com',
+        color: 'from-yellow-400 to-yellow-600'
       };
     }
     return {

@@ -96,7 +96,7 @@ export function WalletConnectionModal({ isOpen, onClose }: WalletConnectionModal
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Please switch to Arbitrum Sepolia to continue.
+                Please switch to BSC Testnet to continue.
               </AlertDescription>
             </Alert>
           )}

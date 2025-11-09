@@ -52,7 +52,7 @@ export function EthBalanceChecker({
     refreshBalance,
   } = useEthBalance();
 
-  const { isConnected, isCorrectChain, switchToArbitrumSepolia } = useWallet();
+  const { isConnected, isCorrectChain, switchToBSCTestnet } = useWallet();
 
   // Initialize available chains
   useEffect(() => {
@@ -89,7 +89,7 @@ export function EthBalanceChecker({
     if (bridgeSuccess) {
       toast({
         title: "Bridge Successful!",
-        description: "ETH has been bridged to Arbitrum Sepolia. Your balance will update shortly.",
+        description: "BNB has been bridged to BSC Testnet. Your balance will update shortly.",
       });
       
       // Refresh balance after successful bridge
@@ -132,7 +132,7 @@ export function EthBalanceChecker({
     try {
       toast({
         title: "Starting Bridge",
-        description: `Bridging ${bridgeAmount} ETH from ${selectedSourceChain} to Arbitrum Sepolia...`,
+        description: `Bridging ${bridgeAmount} BNB from ${selectedSourceChain} to BSC Testnet...`,
       });
 
       const success = await bridgeEthFromOtherChain(selectedSourceChain, bridgeAmount);
@@ -157,7 +157,7 @@ export function EthBalanceChecker({
 
   const handleSwitchChain = async () => {
     try {
-      await switchToArbitrumSepolia();
+      await switchToBSCTestnet();
       toast({
         title: "Switching Network",
         description: "Please confirm the network switch in your wallet.",
@@ -195,10 +195,10 @@ export function EthBalanceChecker({
           <div>
             <h3 className="text-lg font-semibold mb-2">Unsupported Network</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Please switch to Ethereum mainnet or Arbitrum Sepolia to create markets.
+              Please switch to BSC Testnet to create markets.
             </p>
             <Button onClick={handleSwitchChain} className="w-full">
-              Switch to Arbitrum Sepolia
+              Switch to BSC Testnet
             </Button>
           </div>
         </div>
@@ -265,7 +265,7 @@ export function EthBalanceChecker({
             <div>
               <h3 className="text-lg font-semibold mb-2">Bridge ETH from Another Chain</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Use Avail Nexus to bridge ETH from other testnets to Arbitrum Sepolia.
+                Bridge BNB from other testnets to BSC Testnet using a standard bridge.
               </p>
             </div>
 
@@ -318,7 +318,7 @@ export function EthBalanceChecker({
                 ) : (
                   <>
                     <ArrowRight className="w-4 h-4 mr-2" />
-                    Bridge ETH to Arbitrum Sepolia
+                    Bridge BNB to BSC Testnet
                   </>
                 )}
               </Button>
@@ -367,8 +367,8 @@ export function EthBalanceChecker({
               <div className="flex flex-wrap gap-2 mt-2">
                 <Badge variant="secondary" className="text-xs">
                   <ExternalLink className="w-3 h-3 mr-1" />
-                  <a href="https://faucet.quicknode.com/arbitrum/sepolia" target="_blank" rel="noopener noreferrer">
-                    Arbitrum Sepolia Faucet
+                  <a href="https://testnet.bnbchain.org/faucet-smart" target="_blank" rel="noopener noreferrer">
+                    BSC Testnet Faucet
                   </a>
                 </Badge>
                 <Badge variant="secondary" className="text-xs">

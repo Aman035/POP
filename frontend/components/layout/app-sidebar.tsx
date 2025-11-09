@@ -9,7 +9,6 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
-  Zap,
   FolderOpen,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -22,7 +21,6 @@ const navItems = [
   { href: '/app/create', label: 'Create', icon: PlusCircle },
   { href: '/app/my-predictions', label: 'My Predictions', icon: Target },
   { href: '/app/my-markets', label: 'My Markets', icon: FolderOpen },
-  { href: '/app/nexus', label: 'Cross-Chain', icon: Zap },
 ]
 
 export function AppSidebar() {

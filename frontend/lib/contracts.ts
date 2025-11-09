@@ -1,20 +1,29 @@
 // Contract addresses and ABIs for POP - Predict on Posts
-// Deployed on Arbitrum Sepolia
+// Deployed on BSC Testnet
 import { config } from './config';
 
 // Contract addresses - Imported from config.ts (single source of truth)
 export const MARKET_FACTORY_ADDRESS = config.contracts.marketFactory;
 export const COLLATERAL_TOKEN_ADDRESS = config.contracts.collateralToken;
 
+// Debug: Log the loaded address (client-side only, in development)
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  console.log('📋 Loaded contract addresses:', {
+    MARKET_FACTORY_ADDRESS,
+    COLLATERAL_TOKEN_ADDRESS,
+    source: 'lib/contracts.ts',
+  });
+}
+
 // Network configuration
 export const NETWORK_CONFIG = {
-  chainId: 421614, // Arbitrum Sepolia
-  name: "Arbitrum Sepolia",
-  rpcUrl: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
-  blockExplorer: "https://sepolia.arbiscan.io",
+  chainId: 97, // BSC Testnet
+  name: "BSC Testnet",
+  rpcUrl: process.env.NEXT_PUBLIC_BSC_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545",
+  blockExplorer: "https://testnet.bscscan.com",
   nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
+    name: "BNB",
+    symbol: "BNB",
     decimals: 18,
   },
 } as const;

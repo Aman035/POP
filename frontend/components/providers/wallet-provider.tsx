@@ -6,7 +6,6 @@ import { RainbowKitProvider, darkTheme, lightTheme } from '@rainbow-me/rainbowki
 import { config } from '@/lib/wallet-config';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { NexusWidgetProvider } from './nexus-widget-provider';
 
 // Import RainbowKit styles
 import '@rainbow-me/rainbowkit/styles.css';
@@ -52,9 +51,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     <WagmiProvider config={config!}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitThemeProvider>
-          <NexusWidgetProvider>
-            {children}
-          </NexusWidgetProvider>
+          {children}
         </RainbowKitThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>

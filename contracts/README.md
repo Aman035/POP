@@ -23,20 +23,30 @@ This package contains the onchain core for **POP – Predict on Posts**. It cove
 
 ### Deploy And Verify
 
+Set environment variables:
+```bash
+export COLLATERAL_BSC_TESTNET=<USDC_TOKEN_ADDRESS_ON_BSC_TESTNET>
+export CREATOR_OVERRIDE_WINDOW=21600
+export RPC_URL_BSC_TESTNET=https://data-seed-prebsc-1-s1.binance.org:8545
+export PRIVATE_KEY=<YOUR_PRIVATE_KEY>
+export BSCSCAN_API_KEY=<YOUR_BSCSCAN_API_KEY>
+```
+
+Deploy:
 ```bash
 forge script script/DeployMarketFactory.s.sol \
-    --rpc-url $RPC_URL_ARBITRUM_SEPOLIA \
+    --rpc-url $RPC_URL_BSC_TESTNET \
     --broadcast \
     --private-key $PRIVATE_KEY \
     --verify \
-    --verifier-url https://api.etherscan.io/v2/api?chainid=421614 \
-    --etherscan-api-key $ARBISCAN_API_KEY
+    --verifier-url https://api-testnet.bscscan.com/api?chainid=97 \
+    --etherscan-api-key $BSCSCAN_API_KEY
 ```
 
 #### Latest Deployment Details
 
-- **Contract Address**: `0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643`
-- **Network**: Arbitrum Sepolia (Chain ID: 421614)
-- **Collateral Token**: `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` (Testnet USDC)
+- **Contract Address**: TBD (Update after deployment)
+- **Network**: BSC Testnet (Chain ID: 97)
+- **Collateral Token**: TBD (Update after deployment)
 - **Creator Override Window**: 21,600 seconds (6 hours)
-- **Arbiscan**: https://sepolia.arbiscan.io/address/0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643
+- **BscScan**: https://testnet.bscscan.com/address/<CONTRACT_ADDRESS>

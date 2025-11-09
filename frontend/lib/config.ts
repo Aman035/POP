@@ -1,16 +1,24 @@
 // Configuration for the POP application
+// Debug: Log environment variable on module load (only in development)
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
+  console.log('🔍 Environment variable check:');
+  console.log('   NEXT_PUBLIC_MARKET_FACTORY_ADDRESS:', process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '(not set)');
+  console.log('   Expected: 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4');
+}
+
 export const config = {
   // Network configuration
   network: {
-    chainId: 421614, // Arbitrum Sepolia
-    name: 'Arbitrum Sepolia',
-    rpcUrl: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc',
+    chainId: 97, // BSC Testnet
+    name: 'BSC Testnet',
+    rpcUrl: process.env.NEXT_PUBLIC_BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545',
   },
   
   // Contract addresses - Single source of truth for all contract addresses
   contracts: {
-    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643',
-    collateralToken: process.env.NEXT_PUBLIC_COLLATERAL_TOKEN_ADDRESS || '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
+    // Expected MarketFactory address on BSC Testnet: 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4
+    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '',
+    collateralToken: process.env.NEXT_PUBLIC_COLLATERAL_TOKEN_ADDRESS || '',
   },
   
   // API configuration

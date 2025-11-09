@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
-import { arbitrumSepolia } from 'wagmi/chains';
-import { useNexusSDK } from '../utils/use-nexus-sdk';
 
 export interface EthBalanceState {
   balance: string;
@@ -14,48 +12,26 @@ export interface EthBalanceState {
   error: string | null;
 }
 
-export interface CrossChainBridgeState {
-  isBridging: boolean;
-  bridgeError: string | null;
-  bridgeSuccess: boolean;
-  availableChains: string[];
-  sourceChain: string | null;
-  targetChain: string | null;
-}
-
 export interface EthBalanceActions {
   checkBalance: () => Promise<void>;
-  bridgeEthFromOtherChain: (sourceChain: string, amount: string) => Promise<boolean>;
-  getAvailableChains: () => Promise<string[]>;
   refreshBalance: () => Promise<void>;
 }
 
-const MINIMUM_ETH_REQUIRED = '0.001'; // Minimum ETH required for transactions
-const ARBITRUM_SEPOLIA_CHAIN_ID = arbitrumSepolia.id;
+const MINIMUM_BNB_REQUIRED = '0.001'; // Minimum BNB required for transactions
+const BSC_TESTNET_CHAIN_ID = 97;
 
-export function useEthBalance(): EthBalanceState & CrossChainBridgeState & EthBalanceActions {
+export function useEthBalance(): EthBalanceState & EthBalanceActions {
   const { address, chainId } = useAccount();
   const [balance, setBalance] = useState<string>('0');
   const [balanceFormatted, setBalanceFormatted] = useState<string>('0.000');
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Cross-chain bridge state
-  const [isBridging, setIsBridging] = useState<boolean>(false);
-  const [bridgeError, setBridgeError] = useState<string | null>(null);
-  const [bridgeSuccess, setBridgeSuccess] = useState<boolean>(false);
-  const [availableChains, setAvailableChains] = useState<string[]>([]);
-  const [sourceChain, setSourceChain] = useState<string | null>(null);
-  const [targetChain, setTargetChain] = useState<string | null>(null);
 
-  // Nexus SDK integration
-  const nexusSDK = useNexusSDK();
-
-  // Get ETH balance using wagmi
+  // Get BNB balance using wagmi
   const { data: balanceData, isLoading: balanceLoading, error: balanceError } = useBalance({
     address: address as `0x${string}`,
-    chainId: ARBITRUM_SEPOLIA_CHAIN_ID,
+    chainId: BSC_TESTNET_CHAIN_ID,
     query: {
       enabled: !!address,
       refetchInterval: 10000, // Refetch every 10 seconds
@@ -63,23 +39,42 @@ export function useEthBalance(): EthBalanceState & CrossChainBridgeState & EthBa
   });
 
   // Check if we're on the correct chain
-  const isCorrectChain = chainId === ARBITRUM_SEPOLIA_CHAIN_ID;
+  const isCorrectChain = chainId === BSC_TESTNET_CHAIN_ID;
 
   // Update balance state when balance data changes
   useEffect(() => {
     if (balanceData) {
       const balanceWei = balanceData.value.toString();
-      const balanceEth = formatUnits(balanceData.value, 18);
+      const balanceBnb = formatUnits(balanceData.value, 18);
+      const balanceBnbNum = parseFloat(balanceBnb);
       
       setBalance(balanceWei);
-      setBalanceFormatted(parseFloat(balanceEth).toFixed(6));
+      setBalanceFormatted(balanceBnbNum.toFixed(6));
       
       // Check if balance is sufficient
-      const minimumRequired = parseUnits(MINIMUM_ETH_REQUIRED, 18);
+      // Only mark as insufficient if balance is actually less than minimum AND we're not loading
+      const minimumRequired = parseUnits(MINIMUM_BNB_REQUIRED, 18);
       const hasInsufficient = balanceData.value < minimumRequired;
+      
+      console.log('Balance update:', {
+        balanceWei,
+        balanceBnb: balanceBnbNum,
+        minimumRequired: MINIMUM_BNB_REQUIRED,
+        hasInsufficient,
+        balanceLoading
+      });
+      
       setHasInsufficientBalance(hasInsufficient);
+    } else if (!balanceLoading && address) {
+      // If balance data is not available and we're not loading, assume insufficient
+      // This handles the case where balance fetch failed
+      console.warn('Balance data not available, assuming insufficient');
+      setHasInsufficientBalance(true);
+    } else if (!address) {
+      // No address, reset to default
+      setHasInsufficientBalance(false);
     }
-  }, [balanceData]);
+  }, [balanceData, balanceLoading, address]);
 
   // Update loading state
   useEffect(() => {
@@ -103,7 +98,7 @@ export function useEthBalance(): EthBalanceState & CrossChainBridgeState & EthBa
     }
 
     if (!isCorrectChain) {
-      setError('Please switch to Arbitrum Sepolia network');
+      setError('Please switch to BSC Testnet network');
       return;
     }
 
@@ -123,131 +118,6 @@ export function useEthBalance(): EthBalanceState & CrossChainBridgeState & EthBa
     }
   }, [address, isCorrectChain]);
 
-  // Get available chains for bridging
-  const getAvailableChains = useCallback(async (): Promise<string[]> => {
-    try {
-      if (!nexusSDK.isInitialized) {
-        throw new Error('Nexus SDK not initialized');
-      }
-
-      // Get available chains from Nexus SDK
-      const chains = ['ethereum-sepolia', 'polygon-mumbai', 'avalanche-fuji'];
-      setAvailableChains(chains);
-      return chains;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to get available chains';
-      setBridgeError(errorMessage);
-      console.error('Error getting available chains:', err);
-      return [];
-    }
-  }, [nexusSDK.isInitialized]);
-
-  // Bridge ETH from another chain
-  const bridgeEthFromOtherChain = useCallback(async (
-    sourceChainName: string, 
-    amount: string
-  ): Promise<boolean> => {
-    if (!nexusSDK.isInitialized) {
-      setBridgeError('Nexus SDK not initialized. Please try refreshing the page.');
-      return false;
-    }
-
-    if (!address) {
-      setBridgeError('No wallet connected. Please connect your wallet first.');
-      return false;
-    }
-
-    // Validate amount
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setBridgeError('Invalid amount. Please enter a valid ETH amount.');
-      return false;
-    }
-
-    if (amountNum < 0.001) {
-      setBridgeError('Amount too small. Minimum bridge amount is 0.001 ETH.');
-      return false;
-    }
-
-    setIsBridging(true);
-    setBridgeError(null);
-    setBridgeSuccess(false);
-
-    try {
-      // Set source and target chains
-      setSourceChain(sourceChainName);
-      setTargetChain('arbitrum-sepolia');
-
-      // Prepare bridge parameters
-      const bridgeParams = {
-        fromChain: sourceChainName,
-        toChain: 'arbitrum-sepolia',
-        token: 'ETH' as const, // Cast to const to match SUPPORTED_TOKENS
-        amount: amount,
-        recipient: address,
-        chainId: ARBITRUM_SEPOLIA_CHAIN_ID, // Add required chainId
-      };
-
-      console.log('Bridging ETH with params:', bridgeParams);
-
-      // Simulate bridge first with timeout
-      const simulation = await Promise.race([
-        nexusSDK.simulateBridge(bridgeParams),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Simulation timeout')), 30000)
-        )
-      ]) as any;
-
-      console.log('Bridge simulation result:', simulation);
-
-      if (!simulation || !simulation.success) {
-        throw new Error(simulation?.error || 'Bridge simulation failed');
-      }
-
-      // Execute the bridge with timeout
-      const result = await Promise.race([
-        nexusSDK.bridge(bridgeParams),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Bridge execution timeout')), 120000)
-        )
-      ]) as any;
-
-      console.log('Bridge result:', result);
-
-      if (result && result.success) {
-        setBridgeSuccess(true);
-        
-        // Wait for balance to update (this will be handled by the useBalance hook)
-        console.log('Bridge completed successfully');
-        
-        return true;
-      } else {
-        throw new Error(result?.error || 'Bridge failed');
-      }
-    } catch (err) {
-      let errorMessage = 'Bridge failed';
-      
-      if (err instanceof Error) {
-        if (err.message.includes('timeout')) {
-          errorMessage = 'Bridge operation timed out. Please try again.';
-        } else if (err.message.includes('insufficient funds')) {
-          errorMessage = 'Insufficient funds on source chain. Please check your balance.';
-        } else if (err.message.includes('user rejected')) {
-          errorMessage = 'Transaction was cancelled by user.';
-        } else if (err.message.includes('network')) {
-          errorMessage = 'Network error. Please check your connection and try again.';
-        } else {
-          errorMessage = err.message;
-        }
-      }
-      
-      setBridgeError(errorMessage);
-      console.error('Error bridging ETH:', err);
-      return false;
-    } finally {
-      setIsBridging(false);
-    }
-  }, [nexusSDK, address]);
 
   // Refresh balance
   const refreshBalance = useCallback(async () => {
@@ -269,18 +139,8 @@ export function useEthBalance(): EthBalanceState & CrossChainBridgeState & EthBa
     isLoading,
     error,
     
-    // Cross-chain bridge state
-    isBridging,
-    bridgeError,
-    bridgeSuccess,
-    availableChains,
-    sourceChain,
-    targetChain,
-    
     // Actions
     checkBalance,
-    bridgeEthFromOtherChain,
-    getAvailableChains,
     refreshBalance,
   };
 }

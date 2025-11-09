@@ -3,58 +3,33 @@
 import { config } from '@/lib/config';
 
 export const CONTRACTS = {
-  ARBITRUM_SEPOLIA: {
+  BSC_TESTNET: {
     MARKET_FACTORY: config.contracts.marketFactory,
     COLLATERAL_TOKEN: config.contracts.collateralToken,
-    RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
-    BLOCK_EXPLORER: "https://sepolia.arbiscan.io",
-    CHAIN_ID: 421614,
-  },
-  ARBITRUM_MAINNET: {
-    MARKET_FACTORY: "TBD", // Not deployed yet
-    COLLATERAL_TOKEN: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC
-    RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL || "https://arb1.arbitrum.io/rpc",
-    BLOCK_EXPLORER: "https://arbiscan.io",
-    CHAIN_ID: 42161,
-  },
-  ETHEREUM_MAINNET: {
-    MARKET_FACTORY: "TBD", // Not deployed yet
-    COLLATERAL_TOKEN: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
-    RPC_URL: process.env.NEXT_PUBLIC_ETHEREUM_MAINNET_RPC_URL || "https://eth.llamarpc.com",
-    BLOCK_EXPLORER: "https://etherscan.io",
-    CHAIN_ID: 1,
+    RPC_URL: process.env.NEXT_PUBLIC_BSC_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545",
+    BLOCK_EXPLORER: "https://testnet.bscscan.com",
+    CHAIN_ID: 97,
   },
 } as const;
 
 // Current active network
-export const CURRENT_NETWORK = "ARBITRUM_SEPOLIA" as const;
+export const CURRENT_NETWORK = "BSC_TESTNET" as const;
 
 // Get current network contracts
 export const getCurrentNetworkContracts = () => CONTRACTS[CURRENT_NETWORK];
 
 // Network configurations for wallet connection
 export const NETWORK_CONFIGS = {
-  arbitrumSepolia: {
-    chainId: `0x${CONTRACTS.ARBITRUM_SEPOLIA.CHAIN_ID.toString(16)}`,
-    chainName: "Arbitrum Sepolia",
+  bscTestnet: {
+    chainId: `0x${CONTRACTS.BSC_TESTNET.CHAIN_ID.toString(16)}`,
+    chainName: "BSC Testnet",
     nativeCurrency: {
-      name: "Ethereum",
-      symbol: "ETH",
+      name: "BNB",
+      symbol: "BNB",
       decimals: 18,
     },
-    rpcUrls: [CONTRACTS.ARBITRUM_SEPOLIA.RPC_URL],
-    blockExplorerUrls: [CONTRACTS.ARBITRUM_SEPOLIA.BLOCK_EXPLORER],
-  },
-  arbitrumMainnet: {
-    chainId: `0x${CONTRACTS.ARBITRUM_MAINNET.CHAIN_ID.toString(16)}`,
-    chainName: "Arbitrum One",
-    nativeCurrency: {
-      name: "Ethereum",
-      symbol: "ETH",
-      decimals: 18,
-    },
-    rpcUrls: [CONTRACTS.ARBITRUM_MAINNET.RPC_URL],
-    blockExplorerUrls: [CONTRACTS.ARBITRUM_MAINNET.BLOCK_EXPLORER],
+    rpcUrls: [CONTRACTS.BSC_TESTNET.RPC_URL],
+    blockExplorerUrls: [CONTRACTS.BSC_TESTNET.BLOCK_EXPLORER],
   },
 } as const;
 

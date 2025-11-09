@@ -25,7 +25,7 @@ Unlike traditional subgraphs, HyperIndex provides:
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Smart        │    │   Envio          │    │   Frontend      │
 │   Contracts    │───▶│   HyperIndex     │───▶│   Application   │
-│   (Arbitrum)   │    │   (Indexer)      │    │   (Next.js)     │
+│   (BSC Testnet)│    │   (Indexer)      │    │   (Next.js)     │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                               │
                               ▼
@@ -97,12 +97,12 @@ pnpm clean
 ```yaml
 name: indexer
 networks:
-  - id: 421614  # Arbitrum Sepolia
+  - id: 97  # BSC Testnet
     start_block: 0
     contracts:
       - name: MarketFactory
         address:
-          - 0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643
+          - 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4
         handler: src/EventHandlers.ts
         events:
           - event: MarketCreated(...)
@@ -284,7 +284,7 @@ docker run -p 8080:8080 pop-indexer
 ## 🌐 Network Support
 
 Currently indexing:
-- **Arbitrum Sepolia** (Testnet) - Chain ID: 421614
+- **BSC Testnet** (Testnet) - Chain ID: 97
 - **Future**: Mainnet deployment planned
 
 ## 📚 Resources

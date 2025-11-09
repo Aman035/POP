@@ -2,7 +2,30 @@
 
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useCallback, useEffect, useState } from 'react';
-import { arbitrumSepolia } from 'wagmi/chains';
+import { defineChain } from 'viem';
+
+// BSC Testnet chain definition
+const bscTestnet = defineChain({
+  id: 97,
+  name: 'BSC Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'BNB',
+    symbol: 'BNB',
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'BscScan',
+      url: 'https://testnet.bscscan.com',
+    },
+  },
+  testnet: true,
+});
 
 export interface WalletState {
   isConnected: boolean;
@@ -18,7 +41,7 @@ export interface WalletState {
 export interface WalletActions {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  switchToArbitrumSepolia: () => Promise<void>;
+  switchToBSCTestnet: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -41,8 +64,8 @@ export function useWallet(): WalletState & WalletActions {
   
   const [error, setError] = useState<string | null>(null);
 
-  // Whitelist Ethereum mainnet (1) and Arbitrum Sepolia (421614)
-  const isCorrectChain = chainId === 1 || chainId === arbitrumSepolia.id;
+  // Only allow BSC Testnet (97)
+  const isCorrectChain = chainId === bscTestnet.id;
 
   // Clear error when connection state changes
   useEffect(() => {
@@ -94,10 +117,10 @@ export function useWallet(): WalletState & WalletActions {
     }
   }, [disconnect]);
 
-  const switchToArbitrumSepolia = useCallback(async () => {
+  const switchToBSCTestnet = useCallback(async () => {
     try {
       setError(null);
-      await switchChain({ chainId: arbitrumSepolia.id });
+      await switchChain({ chainId: bscTestnet.id });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to switch chain';
       setError(errorMessage);
@@ -122,7 +145,7 @@ export function useWallet(): WalletState & WalletActions {
       error: null,
       connect: async () => {},
       disconnect: async () => {},
-      switchToArbitrumSepolia: async () => {},
+      switchToBSCTestnet: async () => {},
       clearError: () => {},
     };
   }
@@ -141,7 +164,7 @@ export function useWallet(): WalletState & WalletActions {
     // Actions
     connect: connectWallet,
     disconnect: disconnectWallet,
-    switchToArbitrumSepolia,
+    switchToBSCTestnet,
     clearError,
   };
 }

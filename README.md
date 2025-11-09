@@ -6,13 +6,12 @@
 
 # POP – Predict on Posts
 
-**Turn any social media post into an onchain prediction market with cross-chain betting powered by Avail Nexus**
+**Turn any social media post into an onchain prediction market**
 
 ![POP in action gif](./assets/pop-demo.gif)
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://predict-on-posts.vercel.app/)
-[![Smart Contracts](https://img.shields.io/badge/Smart%20Contracts-Arbitrum%20Sepolia-green?style=for-the-badge&logo=ethereum)](https://sepolia.arbiscan.io/address/0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643)
-[![Avail Nexus](https://img.shields.io/badge/Powered%20by-Avail%20Nexus-purple?style=for-the-badge&logo=avail)](https://nexus.avail.tools/)
+[![Smart Contracts](https://img.shields.io/badge/Smart%20Contracts-BSC%20Testnet-green?style=for-the-badge&logo=ethereum)](https://testnet.bscscan.com/address/0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4)
 [![Envio HyperIndexer](https://img.shields.io/badge/Indexed%20by-Envio%20HyperIndexer-orange?style=for-the-badge&logo=envio)](https://envio.dev/app/aman035/predict-on-posts)
 
 </div>
@@ -25,9 +24,8 @@
 
 **Powered by cutting-edge technology:**
 
-- **Avail Nexus** enables unchained interactions, letting users bridge and bet across from any blockchain without friction
 - **Envio HyperIndex** delivers a beautiful, real-time dashboard with sub-second updates on all market activities
-- **Arbitrum** provides lightning-fast transactions at a fraction of mainnet costs
+- **BSC Testnet** provides lightning-fast transactions at a fraction of mainnet costs
 
 ### Why This Matters
 
@@ -38,7 +36,7 @@ Prediction markets today are broken:
 - Only viral questions get enough volume - niche topics die
 - Creators can't monetize their own engagement
 
-(Contract used for all deployments)[https://sepolia.arbiscan.io/address/0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643]
+[Contract used for all deployments](https://testnet.bscscan.com/address/0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4)
 
 **POP changes this.** Anyone can create markets for any post. Betting happens right where the conversation does.
 
@@ -50,7 +48,7 @@ Prediction markets today are broken:
 
 **POP** is built with four core components working together:
 
-1. **Frontend (Next.js + Vercel)**: Modern web dashboard powered by Avail Nexus, transforming POP from a chain-bound app to an unchained experience. Users can seamlessly interact across any supported blockchain without friction.
+1. **Frontend (Next.js + Vercel)**: Modern web dashboard for creating and managing prediction markets. Clean, intuitive interface for market creation, betting, and portfolio management.
 
 2. **Backend (LLM Inference Service)**: Intelligent post analysis using GROQ API to extract market parameters from social media posts. Automated content understanding enables instant market creation for any post.
 
@@ -68,12 +66,6 @@ flowchart TB
         C --> D[Cross-Chain Interface]
     end
 
-    subgraph "Avail Nexus Integration"
-        E[Nexus SDK] --> F[Cross-Chain Bridge]
-        F --> G[Unified Balances]
-        G --> H[Smart Contract Execution]
-    end
-
     subgraph "Backend Services"
         I[NestJS API] --> J[Post Analyzer]
         J --> K[Market Orchestration]
@@ -89,15 +81,9 @@ flowchart TB
         P --> Q[Real-time Events]
     end
 
-    D --> E
-    H --> L
+    C --> L
     K --> L
     M --> O
-
-    style E fill:#4F46E5,stroke:#312E81,color:#fff
-    style F fill:#4F46E5,stroke:#312E81,color:#fff
-    style G fill:#4F46E5,stroke:#312E81,color:#fff
-    style H fill:#4F46E5,stroke:#312E81,color:#fff
 ```
 
 ### Technology Stack
@@ -106,61 +92,10 @@ flowchart TB
 | --------------------- | ----------------------- | ----------------------------- | ------------- |
 | **Frontend**          | Next.js 15, React 19    | Web dashboard and UI          | ✅ Deployed   |
 | **Browser Extension** | Vanilla JS, Chrome APIs | Social media integration      | ✅ Active     |
-| **Cross-Chain**       | Avail Nexus Core        | Multi-chain bridging          | ✅ Integrated |
 | **Backend API**       | NestJS, TypeScript      | Post analysis & orchestration | ✅ Deployed   |
 | **Smart Contracts**   | Solidity, Foundry       | Market logic & betting        | ✅ Deployed   |
 | **Indexer**           | Envio HyperIndex        | Real-time blockchain data     | ✅ Active     |
 | **Deployment**        | Vercel, Docker, PM2     | Production infrastructure     | ✅ Live       |
-
----
-
-## Avail Nexus Integration
-
-### Cross-Chain Capabilities
-
-**POP** leverages Avail Nexus to provide seamless cross-chain experiences:
-
-#### Supported Networks
-
-| Network              | Chain ID | Status     | Use Case            |
-| -------------------- | -------- | ---------- | ------------------- |
-| **Arbitrum Sepolia** | 421614   | ✅ Primary | Main POP contracts  |
-| **Base Sepolia**     | 84532    | ✅ Active  | Cross-chain betting |
-| **Optimism Sepolia** | 11155420 | ✅ Active  | Cross-chain betting |
-| **Polygon Amoy**     | 80002    | ✅ Active  | Cross-chain betting |
-| **Sepolia**          | 11155111 | ✅ Active  | Cross-chain betting |
-
-#### Key Features
-
-- **Unified Balance Management**: See portfolio across all chains
-- **One-Click Bridging**: Bridge tokens between any supported testnet
-- **Bridge & Execute**: Bridge + smart contract execution in one transaction
-- **Smart Routing**: Automatic optimization for gas and speed
-- **Progress Tracking**: Real-time transaction updates
-
-### Integration Components
-
-```typescript
-// Core Nexus SDK Integration
-import { NexusSDK } from '@avail-project/nexus-core';
-import { BridgeAndExecuteButton } from '@avail-project/nexus-widgets';
-
-// Unified balance display across all chains
-<UnifiedBalanceDisplay />
-
-// Cross-chain bridge with progress tracking
-<CrossChainBridge />
-
-// Bridge and execute in one transaction
-<BridgeAndExecuteButton
-  contractAddress={marketAddress}
-  contractAbi={MARKET_ABI}
-  functionName="placeBet"
-  buildFunctionParams={(token, amount, chainId, user) => ({
-    functionParams: [option, amountWei],
-  })}
-/>
-```
 
 ---
 
@@ -173,36 +108,27 @@ sequenceDiagram
     participant U as User
     participant E as Extension
     participant B as Backend
-    participant N as Nexus
     participant C as Contract
 
     U->>E: Posts poll on social media
     E->>B: Analyze post content
     B->>E: Return market parameters
-    E->>N: Bridge ETH to USDC
-    N->>C: Deploy market contract
+    E->>C: Deploy market contract
     C->>E: Market created & live
     E->>U: Show betting interface
 ```
 
-### 2. Cross-Chain Betting Flow
+### 2. Betting Flow
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant E as Extension
-    participant N as Nexus
     participant C as Contract
     participant I as Indexer
 
     U->>E: Select outcome & amount
-    E->>N: Check USDC balance
-    alt Has USDC
-        N->>C: Direct bet placement
-    else No USDC
-        N->>N: Bridge ETH→USDC
-        N->>C: Place bet
-    end
+    E->>C: Place bet
     C->>I: Emit BetPlaced event
     I->>E: Update UI with new odds
 ```
@@ -232,9 +158,9 @@ sequenceDiagram
 
 ### Contract Architecture
 
-| Contract          | Address (Arbitrum Sepolia)                   | Purpose                              |
+| Contract          | Address (BSC Testnet)                        | Purpose                              |
 | ----------------- | -------------------------------------------- | ------------------------------------ |
-| **MarketFactory** | `0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643` | Deploys individual markets           |
+| **MarketFactory** | `0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4` | Deploys individual markets           |
 | **Market**        | Dynamic deployment                           | Handles betting, resolution, payouts |
 
 ### Key Functions
@@ -260,10 +186,10 @@ function claimPayout() external;
 
 ### Network Configuration
 
-- **Network**: Arbitrum Sepolia (Chain ID: 421614)
-- **Collateral Token**: Testnet USDC (`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d`)
+- **Network**: BSC Testnet (Chain ID: 97)
+- **Collateral Token**: Testnet USDC (`0x64544969ed7EBf5f083679233325356EbE738930`)
 - **Creator Override Window**: 21,600 seconds (6 hours)
-- **Block Explorer**: [Arbitrum Sepolia](https://sepolia.arbiscan.io)
+- **Block Explorer**: [BSC Testnet](https://testnet.bscscan.com)
 
 ---
 
@@ -551,7 +477,6 @@ cd indexer && pnpm test
 ### Phase 1: Current Implementation ✅
 
 - [x] Basic prediction markets
-- [x] Cross-chain bridging with Avail Nexus
 - [x] Browser extension
 - [x] Real-time indexing
 - [x] AI-powered post analysis

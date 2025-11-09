@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: indexer
 networks:
-  - id: 421614
+  - id: 97
     start_block: 0
     contracts:
       - name: MarketFactory
         address:
-          - 0x6b70e7fC5E40AcFC76EbC3Fa148159E5EF6F7643
+          - 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4
         handler: src/EventHandlers.ts
         events:
           - event: MarketCreated(address indexed creator, address indexed market, (address,uint64,string,uint64,uint96) params, (string,string,string,uint8,string,string[]) metadata)

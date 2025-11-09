@@ -185,7 +185,7 @@ export function USDCAcquisition({ onUSDCReceived }: USDCAcquisitionProps) {
                 </Button>
                 
                 <Button
-                  onClick={() => window.open('https://faucet.quicknode.com/arbitrum/sepolia', '_blank')}
+                  onClick={() => window.open('https://testnet.bnbchain.org/faucet-smart', '_blank')}
                   variant="outline"
                   className="w-full"
                 >
@@ -199,9 +199,9 @@ export function USDCAcquisition({ onUSDCReceived }: USDCAcquisitionProps) {
             <div className="text-xs text-muted-foreground space-y-1">
               <p><strong>Steps to get USDC:</strong></p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Get Arbitrum Sepolia ETH first (for gas fees)</li>
+                <li>Get BSC Testnet BNB first (for gas fees)</li>
                 <li>Visit the Circle faucet (recommended) or other faucet links above</li>
-                <li>Select "Arbitrum Sepolia" network and connect your wallet</li>
+                <li>Select "BSC Testnet" network and connect your wallet</li>
                 <li>Request 10 USDC (limit: once per hour per address)</li>
                 <li>Add the USDC token to your wallet using the address above</li>
                 <li>Refresh this page to see your balance</li>

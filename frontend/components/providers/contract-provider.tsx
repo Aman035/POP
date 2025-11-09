@@ -143,7 +143,7 @@ export const ContractProvider: React.FC<ContractProviderProps> = ({ children }) 
   const getContractInfo = () => ({
     marketFactoryAddress: MARKET_FACTORY_ADDRESS,
     collateralTokenAddress: COLLATERAL_TOKEN_ADDRESS,
-    network: 'Arbitrum Sepolia',
+    network: 'BSC Testnet',
   });
 
   // Context value

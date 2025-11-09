@@ -6,7 +6,6 @@ import { useReadContract } from 'wagmi'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
-import { arbitrumSepolia } from 'wagmi/chains'
 import { WalletLoading } from './wallet-loading'
 import { WalletErrorBoundary } from './wallet-error-boundary'
 import { useState, useEffect } from 'react'
@@ -30,7 +29,7 @@ export function WalletConnectButton({
     isSwitchingChain,
     address,
     error,
-    switchToArbitrumSepolia,
+    switchToBSCTestnet,
     clearError,
   } = useWallet()
 
@@ -53,7 +52,7 @@ export function WalletConnectButton({
 
   const handleChainSwitch = async () => {
     try {
-      await switchToArbitrumSepolia()
+      await switchToBSCTestnet()
     } catch (err) {
       console.error('Failed to switch chain:', err)
     }
@@ -153,7 +152,7 @@ export function WalletConnectButton({
             ) : (
               <>
                 <span className="hidden sm:inline">
-                  Switch to Arbitrum Sepolia
+                  Switch to BSC Testnet
                 </span>
                 <span className="sm:hidden">Switch Network</span>
               </>

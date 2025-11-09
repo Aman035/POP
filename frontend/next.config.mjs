@@ -47,22 +47,6 @@ const nextConfig = {
       },
     });
 
-    // Handle Nexus SDK and other dynamic imports
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        ...config.optimization.splitChunks,
-        cacheGroups: {
-          ...config.optimization.splitChunks?.cacheGroups,
-          nexus: {
-            test: /[\\/]node_modules[\\/]@avail-project[\\/]/,
-            name: 'nexus',
-            chunks: 'all',
-            priority: 10,
-          },
-        },
-      },
-    };
 
     return config;
   },

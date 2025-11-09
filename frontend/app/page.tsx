@@ -31,7 +31,7 @@ export default function LandingPage() {
     {
       icon: Shield,
       title: "Secure & Transparent",
-      description: "Built on Arbitrum with PYUSD collateral. All transactions are verifiable onchain.",
+      description: "Built on BSC Testnet with USDC collateral. All transactions are verifiable onchain.",
     },
     {
       icon: TrendingUp,
