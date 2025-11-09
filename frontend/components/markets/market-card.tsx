@@ -12,7 +12,14 @@ interface MarketCardProps {
 
 export function MarketCard({ market }: MarketCardProps) {
   const timeRemaining = getTimeRemaining(new Date(market.endTime * 1000))
-  const totalLiquidity = parseFloat(market.totalLiquidity)
+  
+  // Safely parse liquidity, handling NaN and invalid values
+  const parseLiquidity = (value: string | number): number => {
+    const parsed = typeof value === 'string' ? parseFloat(value) : value
+    return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+  }
+  
+  const totalLiquidity = parseLiquidity(market.totalLiquidity)
   
   // Use actual contract states
   const isTrading = market.state === 0 // Trading state
@@ -30,7 +37,7 @@ export function MarketCard({ market }: MarketCardProps) {
   // Calculate odds for each option using real contract data
   const optionsWithOdds = market.options.map((option, index) => {
     const optionLiquidity = market.optionLiquidity && market.optionLiquidity[index] 
-      ? parseFloat(market.optionLiquidity[index]) 
+      ? parseLiquidity(market.optionLiquidity[index]) 
       : 0
     // Calculate real odds based on actual liquidity data
     const odds = totalLiquidity > 0 ? (optionLiquidity / totalLiquidity) * 100 : 50
@@ -106,7 +113,7 @@ export function MarketCard({ market }: MarketCardProps) {
               >
                 <span className="font-medium text-sm truncate flex-1 mr-2">{option.label}</span>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-muted-foreground">${option.pool.toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">${option.pool.toFixed(2)}</span>
                   <Badge className="gold-gradient text-background font-semibold text-xs">
                     {option.odds}%
                   </Badge>
@@ -120,7 +127,7 @@ export function MarketCard({ market }: MarketCardProps) {
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-1">
                 <DollarSign className="w-3 h-3" />
-                <span>${totalLiquidity.toLocaleString()}</span>
+                <span>${totalLiquidity.toFixed(2)}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-3 h-3" />

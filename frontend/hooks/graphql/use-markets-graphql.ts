@@ -235,12 +235,12 @@ export function useMarketsGraphQL() {
     query: { enabled: baseMarkets.length > 0 }
   })
 
-  // Process contract data as fallback
+  // Process contract data - use as primary source for accurate liquidity, state, and participant counts
   useEffect(() => {
     if (!contractData || baseMarkets.length === 0) return
 
     try {
-      console.log('🔍 GraphQL Hook: Processing contract fallback data...')
+      console.log('🔍 GraphQL Hook: Processing contract data for accurate market stats...')
       
       const updatedMarkets = baseMarkets.map((market, marketIndex) => {
         const startIndex = marketIndex * (3 + market.options.length)
@@ -251,23 +251,21 @@ export function useMarketsGraphQL() {
         const state = marketResults[2]?.result
         const optionLiquidityResults = marketResults.slice(3)
         
-        // Only update if GraphQL data is missing or zero
-        const shouldUpdate = parseFloat(market.totalLiquidity) === 0 || market.activeParticipantsCount === 0
-        
-        if (shouldUpdate && totalStaked) {
+        // Always use contract data as it's the source of truth
+        if (totalStaked !== undefined) {
           const totalLiquidity = formatUnits(totalStaked as bigint, 6)
           const optionLiquidity = optionLiquidityResults.map(result => 
             result?.result ? formatUnits(result.result as bigint, 6) : "0"
           )
           
-          const marketState = Number(state || 0)
+          const marketState = Number(state ?? 0)
           const isResolved = marketState === 2
           
           return {
             ...market,
             totalLiquidity,
             optionLiquidity,
-            activeParticipantsCount: Number(activeParticipantsCount || 0),
+            activeParticipantsCount: Number(activeParticipantsCount ?? 0),
             state: marketState,
             isResolved,
             status: isResolved ? MarketStatus.Resolved : MarketStatus.Active
@@ -278,10 +276,10 @@ export function useMarketsGraphQL() {
       })
 
       setMarkets(updatedMarkets)
-      console.log('✅ GraphQL Hook: Updated markets with contract fallback data')
+      console.log('✅ GraphQL Hook: Updated markets with accurate contract data')
       
     } catch (err) {
-      console.error('❌ GraphQL Hook: Error processing contract fallback data:', err)
+      console.error('❌ GraphQL Hook: Error processing contract data:', err)
     }
   }, [contractData, baseMarkets])
 

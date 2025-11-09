@@ -367,8 +367,8 @@ export function EthBalanceChecker({
               <div className="flex flex-wrap gap-2 mt-2">
                 <Badge variant="secondary" className="text-xs">
                   <ExternalLink className="w-3 h-3 mr-1" />
-                  <a href="https://testnet.bnbchain.org/faucet-smart" target="_blank" rel="noopener noreferrer">
-                    BSC Testnet Faucet
+                  <a href="https://www.bnbchain.org/en/testnet-faucet" target="_blank" rel="noopener noreferrer">
+                    BNB Chain Testnet Faucet
                   </a>
                 </Badge>
                 <Badge variant="secondary" className="text-xs">

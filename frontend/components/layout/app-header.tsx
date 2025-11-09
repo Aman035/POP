@@ -58,8 +58,8 @@ export function AppHeader({ minimalMode = false }: AppHeaderProps) {
             variant="ghost"
             size="sm"
             className="h-auto p-2 text-xs hover:bg-gold-50 dark:hover:bg-gold-950"
-            onClick={() => window.open('https://faucet.circle.com/', '_blank')}
-            title="Get USDC from Circle Faucet"
+            onClick={() => window.open('https://www.bnbchain.org/en/testnet-faucet', '_blank')}
+            title="Get Test Tokens from BNB Chain Faucet"
           >
             <ExternalLink className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">Faucet</span>

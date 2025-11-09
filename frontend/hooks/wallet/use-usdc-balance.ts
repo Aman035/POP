@@ -28,33 +28,49 @@ export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & Usdc
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get USDC balance using wagmi
+  // Check if we're on the correct chain (must be defined before useReadContract)
+  const isCorrectChain = chainId === BSC_TESTNET_CHAIN_ID;
+
+  // Get USDC balance using wagmi - only refetch when needed (not on interval)
   const { data: balanceData, isLoading: balanceLoading, error: balanceError, refetch } = useReadContract({
     address: COLLATERAL_TOKEN_ADDRESS as `0x${string}`,
     abi: IERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address,
-      refetchInterval: 10000, // Refetch every 10 seconds
+      enabled: !!address && isCorrectChain,
+      // No automatic refetch interval - only refetch manually or on address/chain change
+      refetchInterval: false,
+      // Refetch on window focus (user comes back to tab)
+      refetchOnWindowFocus: true,
+      // Refetch on reconnect
+      refetchOnReconnect: true,
     },
   });
-
-  // Check if we're on the correct chain
-  const isCorrectChain = chainId === BSC_TESTNET_CHAIN_ID;
 
   // Update balance state when balance data changes
   useEffect(() => {
     if (balanceData !== undefined && balanceData !== null) {
       const balanceWei = balanceData.toString();
-      const balanceUsdc = formatUnits(balanceData as bigint, 6); // USDC has 6 decimals
+      const balanceUsdc = formatUnits(balanceData as bigint, 18); // Token has 18 decimals
+      const balanceNum = parseFloat(balanceUsdc);
       
       setBalance(balanceWei);
-      setBalanceFormatted(parseFloat(balanceUsdc).toFixed(2));
+      // Format with proper decimal handling - always show 2 decimal places for consistency
+      if (isNaN(balanceNum) || !isFinite(balanceNum)) {
+        setBalanceFormatted('0.00');
+      } else if (balanceNum >= 1000000) {
+        // For very large numbers, use abbreviated format
+        setBalanceFormatted(balanceNum.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 }));
+      } else {
+        // Always show 2 decimal places for consistency
+        setBalanceFormatted(balanceNum.toFixed(2));
+      }
       
       // Check if balance is sufficient for required amount
       if (requiredAmount) {
-        const requiredAmountWei = parseUnits(requiredAmount, 6);
+        // Convert required amount to 18 decimals to compare with balance
+        const requiredAmountWei = parseUnits(requiredAmount, 18);
         const hasInsufficient = (balanceData as bigint) < requiredAmountWei;
         setHasInsufficientBalance(hasInsufficient);
       } else {
@@ -113,12 +129,20 @@ export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & Usdc
     await checkBalance();
   }, [checkBalance]);
 
-  // Auto-check balance when address or chain changes
+  // Auto-check balance when address or chain changes (only once, not on every render)
   useEffect(() => {
     if (address && isCorrectChain) {
-      checkBalance();
+      // Only refetch if we don't have data yet or if it's a new address/chain
+      if (!balanceData && !balanceLoading) {
+        refetch();
+      }
+    } else {
+      // Reset balance when disconnected or wrong chain
+      setBalance('0');
+      setBalanceFormatted('0.00');
+      setHasInsufficientBalance(!!requiredAmount);
     }
-  }, [address, isCorrectChain, checkBalance]);
+  }, [address, isCorrectChain, balanceData, balanceLoading, refetch]); // Include refetch but balanceData/balanceLoading prevent loops
 
   return {
     // Balance state

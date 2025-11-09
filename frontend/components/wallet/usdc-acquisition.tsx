@@ -167,30 +167,12 @@ export function USDCAcquisition({ onUSDCReceived }: USDCAcquisitionProps) {
               {/* External Faucets */}
               <div className="space-y-2">
                 <Button
-                  onClick={() => window.open('https://faucet.circle.com/', '_blank')}
+                  onClick={() => window.open('https://www.bnbchain.org/en/testnet-faucet', '_blank')}
                   variant="outline"
                   className="w-full"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Circle USDC Faucet
-                </Button>
-                
-                <Button
-                  onClick={() => window.open('https://developer.interlace.money/docs/usdc-on-testing-networks', '_blank')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Interlace USDC Faucet
-                </Button>
-                
-                <Button
-                  onClick={() => window.open('https://testnet.bnbchain.org/faucet-smart', '_blank')}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  QuickNode Faucet
+                  BNB Chain Testnet Faucet
                 </Button>
               </div>
             </div>
@@ -200,9 +182,9 @@ export function USDCAcquisition({ onUSDCReceived }: USDCAcquisitionProps) {
               <p><strong>Steps to get USDC:</strong></p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
                 <li>Get BSC Testnet BNB first (for gas fees)</li>
-                <li>Visit the Circle faucet (recommended) or other faucet links above</li>
+                <li>Visit the <a href="https://www.bnbchain.org/en/testnet-faucet" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">BNB Chain Testnet Faucet</a></li>
                 <li>Select "BSC Testnet" network and connect your wallet</li>
-                <li>Request 10 USDC (limit: once per hour per address)</li>
+                <li>Request test tokens (limit: once per 24 hours)</li>
                 <li>Add the USDC token to your wallet using the address above</li>
                 <li>Refresh this page to see your balance</li>
               </ol>

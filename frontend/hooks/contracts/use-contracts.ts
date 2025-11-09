@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, useReadContracts, usePublicClient } from 'wagmi';
-import { parseAbiItem, encodeFunctionData, decodeEventLog, formatUnits, keccak256, toBytes } from 'viem';
+import { parseAbiItem, encodeFunctionData, decodeEventLog, formatUnits, parseUnits, keccak256, toBytes } from 'viem';
 import type { Abi } from 'viem';
 import { 
   MARKET_FACTORY_ADDRESS, 
@@ -768,8 +768,9 @@ export const usePlaceBet = (marketAddress: string) => {
       setLoading(true);
       setError(null);
 
-      // Convert amount to wei (USDC has 6 decimals)
-      const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e6));
+      // Convert amount to wei - token has 18 decimals, but contract stores in 6 decimals
+      // So we send in 18 decimals (token native), and contract will store in 6 decimals internally
+      const amountWei = parseUnits(amount, 18);
       console.log("🎯 Contract hook - placeBet:", { option, amount, amountWei, marketAddress });
 
       // Execute the transaction
@@ -825,8 +826,8 @@ export const useExitBet = (marketAddress: string) => {
       setLoading(true);
       setError(null);
 
-      // Convert amount to wei (USDC has 6 decimals)
-      const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e6));
+      // Convert amount to wei - token has 18 decimals
+      const amountWei = parseUnits(amount, 18);
 
       // Execute the exit transaction
       writeContract({
@@ -899,6 +900,183 @@ export const useClaimPayout = (marketAddress: string) => {
 
   return {
     claimPayout,
+    loading: loading || isPending || isConfirming,
+    error: error || (writeError ? writeError.message : null),
+    hash,
+    isConfirmed,
+  };
+};
+
+// Hook for proposing resolution
+export const useProposeResolution = (marketAddress: string) => {
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  const proposeResolution = useCallback(async (option: number, evidenceURI: string) => {
+    if (!isConnected || !address) {
+      setError('Wallet not connected');
+      return null;
+    }
+
+    if (!marketAddress) {
+      setError('Invalid market address');
+      return null;
+    }
+
+    if (option < 0) {
+      setError('Invalid option');
+      return null;
+    }
+
+    if (!evidenceURI || evidenceURI.trim() === '') {
+      setError('Evidence URI is required');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Execute the propose resolution transaction
+      writeContract({
+        address: marketAddress as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'proposeResolution',
+        args: [option, evidenceURI],
+      });
+
+      return { hash, isPending, isConfirming, isConfirmed };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to propose resolution';
+      setError(errorMsg);
+      console.error('Error proposing resolution:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, address, marketAddress, writeContract]);
+
+  return {
+    proposeResolution,
+    loading: loading || isPending || isConfirming,
+    error: error || (writeError ? writeError.message : null),
+    hash,
+    isConfirmed,
+  };
+};
+
+// Hook for overriding resolution (creator only)
+export const useOverrideResolution = (marketAddress: string) => {
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  const overrideResolution = useCallback(async (option: number) => {
+    if (!isConnected || !address) {
+      setError('Wallet not connected');
+      return null;
+    }
+
+    if (!marketAddress) {
+      setError('Invalid market address');
+      return null;
+    }
+
+    if (option < 0) {
+      setError('Invalid option');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Execute the override resolution transaction
+      writeContract({
+        address: marketAddress as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'overrideResolution',
+        args: [option],
+      });
+
+      return { hash, isPending, isConfirming, isConfirmed };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to override resolution';
+      setError(errorMsg);
+      console.error('Error overriding resolution:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, address, marketAddress, writeContract]);
+
+  return {
+    overrideResolution,
+    loading: loading || isPending || isConfirming,
+    error: error || (writeError ? writeError.message : null),
+    hash,
+    isConfirmed,
+  };
+};
+
+// Hook for finalizing resolution
+export const useFinalizeResolution = (marketAddress: string) => {
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  const finalizeResolution = useCallback(async () => {
+    if (!isConnected || !address) {
+      setError('Wallet not connected');
+      return null;
+    }
+
+    if (!marketAddress) {
+      setError('Invalid market address');
+      return null;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Execute the finalize resolution transaction
+      writeContract({
+        address: marketAddress as `0x${string}`,
+        abi: MARKET_ABI,
+        functionName: 'finalizeResolution',
+        args: [],
+      });
+
+      return { hash, isPending, isConfirming, isConfirmed };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to finalize resolution';
+      setError(errorMsg);
+      console.error('Error finalizing resolution:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, address, marketAddress, writeContract]);
+
+  return {
+    finalizeResolution,
     loading: loading || isPending || isConfirming,
     error: error || (writeError ? writeError.message : null),
     hash,

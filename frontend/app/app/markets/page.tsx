@@ -64,12 +64,19 @@ export default function MarketsPage() {
     )
   }, [markets])
 
-  // Calculate comprehensive stats based on actual contract states and GraphQL data
+  // Calculate comprehensive stats based on actual contract states and contract data
   const stats = useMemo(() => {
+    // Safely parse liquidity values, handling NaN and invalid values
+    const parseLiquidity = (value: string | number): number => {
+      const parsed = typeof value === 'string' ? parseFloat(value) : value
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+    }
+
     const totalLiquidity = markets.reduce(
-      (sum, market) => sum + parseFloat(market.totalLiquidity),
+      (sum, market) => sum + parseLiquidity(market.totalLiquidity),
       0
     )
+    
     const tradingMarkets = markets.filter((market) => market.state === 0).length // Trading state
     const proposedMarkets = markets.filter(
       (market) => market.state === 1
@@ -78,34 +85,28 @@ export default function MarketsPage() {
       (market) => market.state === 2
     ).length // Resolved state
 
-    // Calculate total participants across all markets
+    // Calculate total participants across all markets (unique participants, not sum)
+    // For now, we'll sum active participants, but ideally we'd track unique addresses
     const totalParticipants = markets.reduce(
-      (sum, market) => sum + market.activeParticipantsCount,
+      (sum, market) => sum + (market.activeParticipantsCount || 0),
       0
     )
 
     // Calculate liquidity by state
     const tradingLiquidity = markets
       .filter((market) => market.state === 0)
-      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
     
     const proposedLiquidity = markets
       .filter((market) => market.state === 1)
-      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
     
     const resolvedLiquidity = markets
       .filter((market) => market.state === 2)
-      .reduce((sum, market) => sum + parseFloat(market.totalLiquidity), 0)
+      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
 
     // Calculate average liquidity per market
     const averageLiquidity = markets.length > 0 ? totalLiquidity / markets.length : 0
-
-    // Calculate total option liquidity across all markets
-    const totalOptionLiquidity = markets.reduce((sum, market) => {
-      return sum + market.optionLiquidity.reduce((optionSum, liquidity) => 
-        optionSum + parseFloat(liquidity), 0
-      )
-    }, 0)
 
     return {
       totalLiquidity,
@@ -118,7 +119,6 @@ export default function MarketsPage() {
       proposedLiquidity,
       resolvedLiquidity,
       averageLiquidity,
-      totalOptionLiquidity,
     }
   }, [markets])
 
@@ -170,95 +170,83 @@ export default function MarketsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-blue-900">Total Liquidity</span>
+      {/* Stats Cards - Minimal and Clean */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Total Liquidity</span>
           </div>
-          <p className="text-2xl font-bold text-blue-900">
-            ${stats.totalLiquidity.toLocaleString()}
+          <p className="text-xl font-bold">
+            ${stats.totalLiquidity.toFixed(2)}
           </p>
-          <p className="text-xs text-blue-700 mt-1">
-            Avg: ${stats.averageLiquidity.toLocaleString()}
+          <p className="text-xs text-muted-foreground mt-1">
+            Avg: ${stats.averageLiquidity.toFixed(2)}
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-green-900">Trading</span>
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-4 h-4 text-green-600" />
+            <span className="text-xs font-medium text-muted-foreground">Trading</span>
           </div>
-          <p className="text-2xl font-bold text-green-900">
+          <p className="text-xl font-bold">
             {stats.tradingMarkets}
           </p>
-          <p className="text-xs text-green-700 mt-1">
-            ${stats.tradingLiquidity.toLocaleString()} liquidity
+          <p className="text-xs text-muted-foreground mt-1">
+            ${stats.tradingLiquidity.toFixed(2)}
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-yellow-900">Proposed</span>
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-yellow-600" />
+            <span className="text-xs font-medium text-muted-foreground">Proposed</span>
           </div>
-          <p className="text-2xl font-bold text-yellow-900">
+          <p className="text-xl font-bold">
             {stats.proposedMarkets}
           </p>
-          <p className="text-xs text-yellow-700 mt-1">
-            ${stats.proposedLiquidity.toLocaleString()} liquidity
+          <p className="text-xs text-muted-foreground mt-1">
+            ${stats.proposedLiquidity.toFixed(2)}
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-purple-900">Resolved</span>
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="w-4 h-4 text-purple-600" />
+            <span className="text-xs font-medium text-muted-foreground">Resolved</span>
           </div>
-          <p className="text-2xl font-bold text-purple-900">
+          <p className="text-xl font-bold">
             {stats.resolvedMarkets}
           </p>
-          <p className="text-xs text-purple-700 mt-1">
-            ${stats.resolvedLiquidity.toLocaleString()} liquidity
+          <p className="text-xs text-muted-foreground mt-1">
+            ${stats.resolvedLiquidity.toFixed(2)}
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-orange-900">Participants</span>
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-orange-600" />
+            <span className="text-xs font-medium text-muted-foreground">Participants</span>
           </div>
-          <p className="text-2xl font-bold text-orange-900">
+          <p className="text-xl font-bold">
             {stats.totalParticipants}
           </p>
-          <p className="text-xs text-orange-700 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Across all markets
           </p>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-semibold text-indigo-900">Total Markets</span>
+        <Card className="p-4 border-border/50 bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-indigo-600" />
+            <span className="text-xs font-medium text-muted-foreground">Total Markets</span>
           </div>
-          <p className="text-2xl font-bold text-indigo-900">
+          <p className="text-xl font-bold">
             {stats.totalMarkets}
           </p>
-          <p className="text-xs text-indigo-700 mt-1">
-            ${stats.totalOptionLiquidity.toLocaleString()} in options
+          <p className="text-xs text-muted-foreground mt-1">
+            Active markets
           </p>
         </Card>
       </div>
