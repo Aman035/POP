@@ -2,7 +2,7 @@
 const POP_SITE_URL = 'https://predict-on-posts.vercel.app'
 // const POP_SITE_URL = 'http://localhost:3000'
 const POP_API_URL = 'https://13.213.208.119.sslip.io' // Backend API URL (for AI analysis only)
-const ENVIO_INDEXER_URL = 'https://api.13.213.208.119.sslip.io' // Envio indexer for market data
+const ENVIO_INDEXER_URL = 'https://api.13.213.208.119.sslip.io/v1/graphql' // Envio indexer for market data
 
 // Function to create and show the Pop Market modal
 function showPopModal(iframeUrl) {
@@ -482,6 +482,7 @@ async function fetchMarketStatus(tweetId) {
   const requestPromise = fetch(ENVIO_INDEXER_URL, {
     method: 'POST',
     headers: {
+      'x-hasura-admin-secret': 'testing',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
