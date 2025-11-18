@@ -100,7 +100,7 @@ export function useMarketGraphQL(marketAddress: string) {
     if (!liquidityData || liquidityData.length === 0) return []
     
     const fetchedLiquidity = liquidityData.map(result => 
-      result.result ? formatUnits(result.result as bigint, 6) : '0'
+      result.result ? formatUnits(result.result as bigint, 18) : '0'
     )
     console.log('✅ Market Hook: Fetched option liquidity from contract:', fetchedLiquidity)
     return fetchedLiquidity
@@ -141,7 +141,7 @@ export function useMarketGraphQL(marketAddress: string) {
         options: options, // Use the fetched options
         endTime: Number(endTime?.result || 0),
         creatorFeeBps: Number(creatorFeeBps?.result || 0),
-        totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
+        totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 18) : "0",
         isResolved,
         winningOption: undefined,
         question: question?.result as string || "",

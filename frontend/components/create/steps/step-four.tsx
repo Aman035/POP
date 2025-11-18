@@ -24,6 +24,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCreateMarket } from '@/hooks/contracts/use-contracts'
+import { NETWORK_CONFIG } from '@/lib/contracts'
 import { toast } from '@/hooks/utils/use-toast'
 import { Platform } from '@/lib/types'
 import { useEthBalance } from '@/hooks/wallet/use-eth-balance'
@@ -751,7 +752,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                         size="sm"
                         onClick={() =>
                           window.open(
-                            `https://sepolia.arbiscan.io/address/${
+                            `${NETWORK_CONFIG.blockExplorer}/address/${
                               contractAddress ||
                               marketAddress ||
                               marketData.marketAddress
@@ -760,7 +761,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                           )
                         }
                         className="h-6 px-2"
-                        title="View Contract on Arbiscan"
+                        title="View Contract on BSCScan"
                       >
                         <ExternalLink className="w-3 h-3" />
                       </Button>
@@ -777,7 +778,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                       size="sm"
                       onClick={() =>
                         window.open(
-                          `https://sepolia.arbiscan.io/address/${
+                          `${NETWORK_CONFIG.blockExplorer}/address/${
                             contractAddress ||
                             marketAddress ||
                             marketData.marketAddress
@@ -788,7 +789,7 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                       className="w-full"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      View Contract on Arbiscan
+                      View Contract on BSCScan
                     </Button>
                   </div>
                 </div>
@@ -818,12 +819,12 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                           size="sm"
                           onClick={() =>
                             window.open(
-                              `https://sepolia.arbiscan.io/tx/${txHash}`,
+                              `${NETWORK_CONFIG.blockExplorer}/tx/${txHash}`,
                               '_blank'
                             )
                           }
                           className="h-6 px-2"
-                          title="View Transaction on Arbiscan"
+                          title="View Transaction on BSCScan"
                         >
                           <ExternalLink className="w-3 h-3" />
                         </Button>
@@ -838,14 +839,14 @@ export function StepFour({ marketData, onCreateMarket }: StepFourProps) {
                         size="sm"
                         onClick={() =>
                           window.open(
-                            `https://sepolia.arbiscan.io/tx/${txHash}`,
+                            `${NETWORK_CONFIG.blockExplorer}/tx/${txHash}`,
                             '_blank'
                           )
                         }
                         className="w-full"
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        View Transaction on Arbiscan
+                        View Transaction on BSCScan
                       </Button>
                     </div>
                   </div>

@@ -98,7 +98,7 @@ async function readMarket(addr: `0x${string}`) {
     createdAt: createdAt,
     endTime: endTime,
     status: statusNum,
-    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e6).toString() : "0",
+    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e18).toString() : "0",
     activeParticipantsCount: Number(activeParticipantsCount || 0),
     options: options as string[],
     isResolved: statusNum === 1,

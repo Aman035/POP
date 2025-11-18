@@ -503,7 +503,7 @@ export const useAllMarkets = () => {
                 options: [], // Will be populated separately by fetching individual options
                 endTime: Number(endTime.result),
                 creatorFeeBps: Number(creatorFeeBps?.result || 0),
-                totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
+                totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 18) : "0",
                 isResolved: Number(state.result) === 2, // 2 = resolved
                 winningOption: undefined, // Not available in read ABI
                 question: question.result as string,
@@ -692,7 +692,7 @@ export const useMarketDetails = (marketAddress: string) => {
             options: [], // Will be populated separately by fetching individual options
             endTime: Number(endTime.result),
             creatorFeeBps: Number(creatorFeeBps?.result || 0),
-            totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
+            totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 18) : "0",
             isResolved: Number(state.result) === 2, // 2 = resolved
             winningOption: undefined, // Not available in read ABI
             question: question.result as string,
@@ -708,7 +708,7 @@ export const useMarketDetails = (marketAddress: string) => {
           };
 
           const marketStatsData: MarketStats = {
-            totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 6) : "0",
+            totalLiquidity: totalStaked?.result ? formatUnits(totalStaked.result as bigint, 18) : "0",
             totalBets: 0, // Would need to count events
             optionLiquidity: [], // Will be populated separately
             isActive: Number(state.result) === 0 && Number(endTime.result) > Math.floor(Date.now() / 1000),
@@ -768,8 +768,7 @@ export const usePlaceBet = (marketAddress: string) => {
       setLoading(true);
       setError(null);
 
-      // Convert amount to wei - token has 18 decimals, but contract stores in 6 decimals
-      // So we send in 18 decimals (token native), and contract will store in 6 decimals internally
+      // Convert amount to wei - USDC token has 6 decimals
       const amountWei = parseUnits(amount, 18);
       console.log("🎯 Contract hook - placeBet:", { option, amount, amountWei, marketAddress });
 
@@ -826,7 +825,7 @@ export const useExitBet = (marketAddress: string) => {
       setLoading(true);
       setError(null);
 
-      // Convert amount to wei - token has 18 decimals
+      // Convert amount to wei - USDC token has 6 decimals
       const amountWei = parseUnits(amount, 18);
 
       // Execute the exit transaction

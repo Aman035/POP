@@ -13,7 +13,7 @@ import { useWallet } from "@/hooks/wallet/use-wallet"
 import { usePlaceBet, useExitBet, useProposeResolution, useOverrideResolution, useFinalizeResolution, useClaimPayout } from "@/hooks/contracts/use-contracts"
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { formatUnits, parseUnits } from "viem"
-import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI } from "@/lib/contracts"
+import { COLLATERAL_TOKEN_ADDRESS, IERC20_ABI, MARKET_ABI, NETWORK_CONFIG } from "@/lib/contracts"
 import { useUsdcBalance } from "@/hooks/wallet/use-usdc-balance"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LiquidityChart } from "@/components/markets/liquidity-chart"
@@ -237,7 +237,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     ? userPositions[Number(resolvedOutcome)]?.result
     : null
   
-  // Calculate claimable amount properly (all values are in wei)
+  // Calculate claimable amount properly (all values are in 18 decimals)
   const claimableAmountFormatted = userWinningPosition && finalWinningPool && resolvedPayoutPool && Number(finalWinningPool) > 0
     ? Number(formatUnits(
         (BigInt(userWinningPosition as bigint) * BigInt(resolvedPayoutPool as bigint)) / BigInt(finalWinningPool as bigint),
@@ -246,13 +246,11 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     : 0
   
   // Calculate user's total position
-  // Handle both old bets (6 decimals) and new bets (18 decimals)
+  // USDC token has 18 decimals
   const userTotalPosition = userPositions?.reduce((total, position) => {
     if (!position.result) return total
     const amount18 = Number(formatUnits(position.result as bigint, 18))
-    const amount6 = Number(formatUnits(position.result as bigint, 6))
-    // Use whichever gives a reasonable value (> 0.01)
-    return total + (amount6 > 0.01 ? amount6 : amount18)
+    return total + amount18
   }, 0) || 0
   
   // Calculate potential winnings
@@ -351,7 +349,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     }
   }
   
-  // Format USDC balance (token has 18 decimals)
+  // Format USDC balance (USDC token has 18 decimals)
   const formatUSDCBalance = (balance: bigint | undefined) => {
     if (!balance) return "0.00"
     const balanceNum = Number(formatUnits(balance, 18))
@@ -387,7 +385,7 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
     try {
       setIsApproving(true)
       setTransactionStatus("Approving USDC...")
-      const amountWei = parseUnits(betAmount, 6)
+      const amountWei = parseUnits(betAmount, 18)
       console.log("🔐 Approving USDC:", { betAmount, amountWei, marketAddress: resolvedParams.address })
       
       await writeContractUSDC({
@@ -824,10 +822,9 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             {(() => {
                               const position = userPositions?.[index]?.result
                               if (position) {
-                                // Handle both old bets (6 decimals) and new bets (18 decimals)
+                                // USDC token has 18 decimals
                                 const amount18 = Number(formatUnits(position as bigint, 18))
-                                const amount6 = Number(formatUnits(position as bigint, 6))
-                                const positionAmount = amount6 > 0.01 ? amount6 : amount18
+                                const positionAmount = amount18
                                 if (positionAmount > 0) {
                                   return (
                                     <Badge variant="secondary" className="text-xs">
@@ -1035,10 +1032,9 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                       <div className="space-y-3">
                         {userPositions?.map((position, index) => {
                           if (!position.result) return null
-                          // Handle both old bets (6 decimals) and new bets (18 decimals)
+                          // USDC token has 18 decimals
                           const amount18 = Number(formatUnits(position.result as bigint, 18))
-                          const amount6 = Number(formatUnits(position.result as bigint, 6))
-                          const positionAmount = amount6 > 0.01 ? amount6 : amount18
+                          const positionAmount = amount18
                           if (positionAmount === 0) return null
                           
                           return (
@@ -1143,15 +1139,15 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">View on Arbiscan:</span>
+                            <span className="text-xs text-muted-foreground">View on BSCScan:</span>
                             <a
-                              href={`https://sepolia.arbiscan.io/tx/${transactionHash}`}
+                              href={`${NETWORK_CONFIG.blockExplorer}/tx/${transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              Open in Arbiscan
+                              Open in BSCScan
                             </a>
                           </div>
                         </div>
@@ -1192,15 +1188,15 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">View on Arbiscan:</span>
+                            <span className="text-xs text-muted-foreground">View on BSCScan:</span>
                             <a
-                              href={`https://sepolia.arbiscan.io/tx/${transactionHash}`}
+                              href={`${NETWORK_CONFIG.blockExplorer}/tx/${transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              Open in Arbiscan
+                              Open in BSCScan
                             </a>
                           </div>
                         </div>

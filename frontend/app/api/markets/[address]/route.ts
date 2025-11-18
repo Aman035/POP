@@ -93,7 +93,7 @@ async function readMarketDetails(address: `0x${string}`) {
     options: [], // Will be populated separately by fetching individual options
     endTime: endTime,
     creatorFeeBps: 0, // Not available in read ABI
-    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e6).toString() : "0",
+    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e18).toString() : "0",
     isResolved: stateNum === 2, // 2 = resolved
     winningOption: undefined, // Not available in read ABI
     question: question as string,

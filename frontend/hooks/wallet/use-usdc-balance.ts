@@ -52,7 +52,7 @@ export function useUsdcBalance(requiredAmount?: string): UsdcBalanceState & Usdc
   useEffect(() => {
     if (balanceData !== undefined && balanceData !== null) {
       const balanceWei = balanceData.toString();
-      const balanceUsdc = formatUnits(balanceData as bigint, 18); // Token has 18 decimals
+      const balanceUsdc = formatUnits(balanceData as bigint, 18); // USDC token has 18 decimals
       const balanceNum = parseFloat(balanceUsdc);
       
       setBalance(balanceWei);

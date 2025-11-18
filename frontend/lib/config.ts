@@ -17,8 +17,9 @@ export const config = {
   // Contract addresses - Single source of truth for all contract addresses
   contracts: {
     // Expected MarketFactory address on BSC Testnet: 0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4
-    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '',
-    collateralToken: process.env.NEXT_PUBLIC_COLLATERAL_TOKEN_ADDRESS || '',
+    // Fallback to default address if env var is not set (for production deployments)
+    marketFactory: process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS || '0x84bBEB5383A2da8AcA2008B3505fCb338AE850c4',
+    collateralToken: process.env.NEXT_PUBLIC_COLLATERAL_TOKEN_ADDRESS || '0x64544969ed7EBf5f083679233325356EbE738930',
   },
   
   // API configuration

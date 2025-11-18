@@ -10,7 +10,6 @@ import {
   RefreshCw,
   TrendingUp,
   DollarSign,
-  Users,
   Clock,
   AlertCircle,
   Plus,
@@ -68,42 +67,57 @@ export default function MarketsPage() {
   const stats = useMemo(() => {
     // Safely parse liquidity values, handling NaN and invalid values
     const parseLiquidity = (value: string | number): number => {
-      const parsed = typeof value === 'string' ? parseFloat(value) : value
-      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed
+      if (value === null || value === undefined || value === '') return 0
+      
+      // Handle string values
+      if (typeof value === 'string') {
+        // Remove any whitespace
+        const cleaned = value.trim()
+        if (cleaned === '' || cleaned === '0') return 0
+        const parsed = parseFloat(cleaned)
+        return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed)
+      }
+      
+      // Handle number values
+      const num = Number(value)
+      return isNaN(num) || !isFinite(num) ? 0 : Math.max(0, num)
     }
 
+    // Calculate total liquidity across all markets
     const totalLiquidity = markets.reduce(
-      (sum, market) => sum + parseLiquidity(market.totalLiquidity),
+      (sum, market) => {
+        const liquidity = parseLiquidity(market.totalLiquidity)
+        return sum + liquidity
+      },
       0
     )
     
+    // Count markets by state
     const tradingMarkets = markets.filter((market) => market.state === 0).length // Trading state
-    const proposedMarkets = markets.filter(
-      (market) => market.state === 1
-    ).length // Proposed state
-    const resolvedMarkets = markets.filter(
-      (market) => market.state === 2
-    ).length // Resolved state
+    const proposedMarkets = markets.filter((market) => market.state === 1).length // Proposed state
+    const resolvedMarkets = markets.filter((market) => market.state === 2).length // Resolved state
 
-    // Calculate total participants across all markets (unique participants, not sum)
-    // For now, we'll sum active participants, but ideally we'd track unique addresses
-    const totalParticipants = markets.reduce(
-      (sum, market) => sum + (market.activeParticipantsCount || 0),
-      0
-    )
-
-    // Calculate liquidity by state
+    // Calculate liquidity by state - ensure we're using the correct state values
     const tradingLiquidity = markets
-      .filter((market) => market.state === 0)
-      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
+      .filter((market) => market.state === 0) // Only trading markets
+      .reduce((sum, market) => {
+        const liquidity = parseLiquidity(market.totalLiquidity)
+        return sum + liquidity
+      }, 0)
     
     const proposedLiquidity = markets
-      .filter((market) => market.state === 1)
-      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
+      .filter((market) => market.state === 1) // Only proposed markets
+      .reduce((sum, market) => {
+        const liquidity = parseLiquidity(market.totalLiquidity)
+        return sum + liquidity
+      }, 0)
     
     const resolvedLiquidity = markets
-      .filter((market) => market.state === 2)
-      .reduce((sum, market) => sum + parseLiquidity(market.totalLiquidity), 0)
+      .filter((market) => market.state === 2) // Only resolved markets
+      .reduce((sum, market) => {
+        const liquidity = parseLiquidity(market.totalLiquidity)
+        return sum + liquidity
+      }, 0)
 
     // Calculate average liquidity per market
     const averageLiquidity = markets.length > 0 ? totalLiquidity / markets.length : 0
@@ -114,7 +128,6 @@ export default function MarketsPage() {
       proposedMarkets,
       resolvedMarkets,
       totalMarkets: markets.length,
-      totalParticipants,
       tradingLiquidity,
       proposedLiquidity,
       resolvedLiquidity,
@@ -171,7 +184,7 @@ export default function MarketsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Stats Cards - Minimal and Clean */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <Card className="p-4 border-border/50 bg-card/50">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-muted-foreground" />
@@ -221,19 +234,6 @@ export default function MarketsPage() {
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             ${stats.resolvedLiquidity.toFixed(2)}
-          </p>
-        </Card>
-
-        <Card className="p-4 border-border/50 bg-card/50">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-orange-600" />
-            <span className="text-xs font-medium text-muted-foreground">Participants</span>
-          </div>
-          <p className="text-xl font-bold">
-            {stats.totalParticipants}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Across all markets
           </p>
         </Card>
 

@@ -84,7 +84,7 @@ async function readMarketStats(addr: `0x${string}`) {
     createdAt: createdAt,
     endTime: endTime,
     status: statusNum,
-    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e6) : 0,
+    totalLiquidity: totalStaked ? (Number(totalStaked) / 1e18) : 0,
     activeParticipantsCount: Number(activeParticipantsCount || 0),
     isResolved: statusNum === 1,
     isCancelled: statusNum === 2,

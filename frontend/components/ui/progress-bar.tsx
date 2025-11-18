@@ -3,6 +3,7 @@
 import React from 'react';
 import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NETWORK_CONFIG } from '@/lib/contracts';
 
 export interface ProgressStep {
   id: string;
@@ -62,7 +63,7 @@ export function ProgressBar({ steps, className }: ProgressBarProps) {
                 </h3>
                 {step.txHash && (
                   <a
-                    href={`https://sepolia.arbiscan.io/tx/${step.txHash}`}
+                    href={`${NETWORK_CONFIG.blockExplorer}/tx/${step.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"

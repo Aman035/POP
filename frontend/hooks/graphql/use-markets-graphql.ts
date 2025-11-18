@@ -50,7 +50,7 @@ export function useMarketsGraphQL() {
           // We need to find which market this bet belongs to
           // Since we don't have direct market address in bet events, we'll use a different approach
           // For now, we'll process all bets and try to match them to markets
-          const amount = parseFloat(bet.amount) / 1e6 // Convert from wei to USDC
+          const amount = parseFloat(bet.amount) / 1e18 // Convert from wei to USDC (18 decimals)
           const option = parseInt(bet.option)
           
           // This is a simplified approach - in reality we'd need to match bets to markets
@@ -69,7 +69,7 @@ export function useMarketsGraphQL() {
         
         // Process bet exited events to subtract liquidity
         data.Market_BetExited.forEach((bet: BetExited) => {
-          const amount = parseFloat(bet.amount) / 1e6
+          const amount = parseFloat(bet.amount) / 1e18
           const option = parseInt(bet.option)
           
           if (data.MarketFactory_MarketCreated.length > 0) {
@@ -114,7 +114,8 @@ export function useMarketsGraphQL() {
             const firstMarket = data.MarketFactory_MarketCreated[0]
             const stats = marketStats.get(firstMarket.market)
             if (stats) {
-              stats.activeParticipantsCount = parseInt(update.newCount)
+              const parsedCount = parseInt(update.newCount, 10)
+              stats.activeParticipantsCount = isNaN(parsedCount) ? 0 : parsedCount
             }
           }
         })
@@ -252,31 +253,46 @@ export function useMarketsGraphQL() {
         const optionLiquidityResults = marketResults.slice(3)
         
         // Always use contract data as it's the source of truth
-        if (totalStaked !== undefined) {
-          const totalLiquidity = formatUnits(totalStaked as bigint, 6)
-          const optionLiquidity = optionLiquidityResults.map(result => 
-            result?.result ? formatUnits(result.result as bigint, 6) : "0"
-          )
+        if (totalStaked !== undefined && totalStaked !== null) {
+          // Ensure we have a valid bigint value
+          const totalStakedBigInt = typeof totalStaked === 'bigint' ? totalStaked : BigInt(String(totalStaked || 0))
+          const totalLiquidity = formatUnits(totalStakedBigInt, 18)
+          
+          const optionLiquidity = optionLiquidityResults.map(result => {
+            if (!result?.result) return "0"
+            const resultBigInt = typeof result.result === 'bigint' ? result.result : BigInt(String(result.result || 0))
+            return formatUnits(resultBigInt, 18)
+          })
           
           const marketState = Number(state ?? 0)
           const isResolved = marketState === 2
           
           return {
             ...market,
-            totalLiquidity,
+            totalLiquidity: totalLiquidity, // This is already a formatted string from formatUnits
             optionLiquidity,
-            activeParticipantsCount: Number(activeParticipantsCount ?? 0),
+            activeParticipantsCount: activeParticipantsCount 
+              ? (typeof activeParticipantsCount === 'bigint' 
+                  ? Number(activeParticipantsCount) 
+                  : typeof activeParticipantsCount === 'string'
+                  ? parseInt(activeParticipantsCount, 10)
+                  : Number(activeParticipantsCount) || 0)
+              : 0,
             state: marketState,
             isResolved,
             status: isResolved ? MarketStatus.Resolved : MarketStatus.Active
           }
         }
         
-        return market
+        // If no contract data, keep the market as-is but ensure liquidity is a valid string
+        return {
+          ...market,
+          totalLiquidity: market.totalLiquidity || "0"
+        }
       })
 
       setMarkets(updatedMarkets)
-      console.log('✅ GraphQL Hook: Updated markets with accurate contract data')
+      console.log('✅ GraphQL Hook: Updated markets with accurate contract data', updatedMarkets.map(m => ({ address: m.address, liquidity: m.totalLiquidity })))
       
     } catch (err) {
       console.error('❌ GraphQL Hook: Error processing contract data:', err)

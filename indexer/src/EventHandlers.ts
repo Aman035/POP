@@ -98,10 +98,10 @@ MarketFactory.MarketCreated.handler(async ({ event, context }) => {
 
   context.MarketFactory_MarketCreated.set(entity)
 })
-
 MarketFactory.MarketCreated.contractRegister(({ event, context }) => {
   // Register the new NFT contract using its address from the event
   context.addMarket(event.params.market)
 
   context.log.info(`Registered new Market at ${event.params.market}`)
 })
+

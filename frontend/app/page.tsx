@@ -111,8 +111,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-balance">
-              POP transforms Twitter and Farcaster polls into onchain prediction markets. Bet with PYUSD, earn from your
-              insights, and watch odds move in real-time.
+              Predict posts on Twitter. Bet with native USDC on BSC. Earn from insights. Real-time odds.
             </p>
 
             <div className="flex items-center justify-center gap-4 mb-12">
@@ -222,7 +221,7 @@ export default function LandingPage() {
             {
               step: "02",
               title: "Place Your Bet",
-              description: "Stake PYUSD on your prediction. Watch odds update in real-time as others bet.",
+              description: "Stake USDC on BSC for your prediction. Watch odds update in real-time as others bet.",
             },
             {
               step: "03",
