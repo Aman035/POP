@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Clock, Users, TrendingUp, Twitter, MessageCircle, Eye, LucideIcon } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Platform } from "@/lib/types"
 import { getPlatformLabel } from "@/lib/platform"
 
@@ -56,6 +57,14 @@ export function EnhancedMarketCard({
   isResolved,
   timeRemaining
 }: EnhancedMarketCardProps) {
+  const searchParams = useSearchParams()
+  const hideUI = searchParams.get('hideUI') === 'true'
+  
+  // Preserve hideUI parameter when navigating
+  const marketUrl = hideUI 
+    ? `/app/markets/${address}?hideUI=true&embed=true`
+    : `/app/markets/${address}`
+  
   const PlatformIcon = PLATFORM_ICONS[platform] || TrendingUp
   const platformName = getPlatformLabel(platform)
   
@@ -78,7 +87,7 @@ export function EnhancedMarketCard({
   }
 
   return (
-    <Link href={`/app/markets/${address}`}>
+    <Link href={marketUrl}>
       <Card className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-gold-2/50">
         <div className="space-y-3">
           {/* Header with platform and category */}

@@ -1,8 +1,11 @@
+'use client'
+
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, Users, Twitter, MessageSquare, TrendingUp, Calendar, User, ExternalLink, Activity } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { MarketInfo } from "@/lib/types"
 import { formatUnits } from "viem"
 
@@ -11,6 +14,13 @@ interface MarketCardProps {
 }
 
 export function MarketCard({ market }: MarketCardProps) {
+  const searchParams = useSearchParams()
+  const hideUI = searchParams.get('hideUI') === 'true'
+  
+  // Preserve hideUI parameter when navigating
+  const marketUrl = hideUI 
+    ? `/app/markets/${market.address}?hideUI=true&embed=true`
+    : `/app/markets/${market.address}`
   const timeRemaining = getTimeRemaining(new Date(market.endTime * 1000))
   
   // Safely parse liquidity, handling NaN and invalid values
@@ -67,7 +77,7 @@ export function MarketCard({ market }: MarketCardProps) {
   const PlatformIcon = platformInfo.icon
 
   return (
-    <Link href={`/app/markets/${market.address}`}>
+    <Link href={marketUrl}>
       <Card className="group relative overflow-hidden bg-card border-border hover:border-gold-2/50 transition-all duration-300 hover:shadow-lg hover:shadow-gold-2/10 cursor-pointer h-full">
         {/* Subtle gradient overlay on hover */}
         <div className="absolute inset-0 bg-gradient-to-br from-gold-2/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
